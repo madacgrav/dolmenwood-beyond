@@ -1,0 +1,98 @@
+targetScope = 'resourceGroup'
+
+@description('Environment name (prod, staging)')
+@allowed(['prod', 'staging'])
+param environment string = 'prod'
+
+@description('Location for all resources')
+param location string = resourceGroup().location
+
+@description('Project name prefix used in resource naming')
+param projectName string = 'dolmenwood'
+
+@description('Docker image tag to deploy')
+param imageTag string = 'latest'
+
+@description('Supabase project URL (non-secret)')
+param supabaseUrl string
+
+// ---- Naming convention ----
+var prefix = '${projectName}-${environment}'
+var acrName = replace('${projectName}${environment}acr', '-', '')  // ACR names: alphanumeric only
+var appName = '${prefix}-web'
+var planName = '${prefix}-plan'
+var kvName = '${prefix}-kv'
+
+var tags = {
+  project: 'dolmenwood-beyond'
+  environment: environment
+  managedBy: 'bicep'
+}
+
+// ---- Monitoring ----
+module monitoring 'modules/monitoring.bicep' = {
+  name: 'monitoring'
+  params: {
+    name: prefix
+    location: location
+    tags: tags
+  }
+}
+
+// ---- Container Registry ----
+module acr 'modules/container-registry.bicep' = {
+  name: 'acr'
+  params: {
+    name: acrName
+    location: location
+    tags: tags
+    sku: environment == 'prod' ? 'Standard' : 'Basic'
+  }
+}
+
+// ---- App Service ----
+// Deploy with placeholder image first; GitHub Actions updates the image tag
+module appService 'modules/app-service.bicep' = {
+  name: 'appService'
+  params: {
+    name: appName
+    location: location
+    tags: tags
+    planName: planName
+    planSku: environment == 'prod' ? {
+      name: 'B2'
+      tier: 'Basic'
+      capacity: 1
+    } : {
+      name: 'B1'
+      tier: 'Basic'
+      capacity: 1
+    }
+    dockerImage: '${acr.outputs.loginServer}/dolmenwood-web:${imageTag}'
+    acrLoginServer: acr.outputs.loginServer
+    acrId: acr.outputs.acrId
+    appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
+    keyVaultUri: keyVault.outputs.keyVaultUri
+    supabaseUrl: supabaseUrl
+  }
+}
+
+// ---- Key Vault ----
+// Deployed after App Service so we have its managed identity principal ID
+module keyVault 'modules/key-vault.bicep' = {
+  name: 'keyVault'
+  params: {
+    name: kvName
+    location: location
+    tags: tags
+    appServicePrincipalId: appService.outputs.principalId
+  }
+}
+
+// ---- Outputs ----
+output acrLoginServer string = acr.outputs.loginServer
+output acrName string = acr.outputs.acrName
+output webAppName string = appService.outputs.webAppName
+output webAppUrl string = appService.outputs.webAppUrl
+output keyVaultName string = keyVault.outputs.keyVaultName
+output appInsightsConnectionString string = monitoring.outputs.appInsightsConnectionString
