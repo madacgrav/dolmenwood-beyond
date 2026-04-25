@@ -1,0 +1,738 @@
+{
+  "Breggle": {
+    "pdfPage": 36,
+    "dieSize": "d20",
+    "backgrounds": [
+      {
+        "roll": 1,
+        "background": "Alchemist's assistant"
+      },
+      {
+        "roll": 2,
+        "background": "Angler"
+      },
+      {
+        "roll": 3,
+        "background": "Beekeeper"
+      },
+      {
+        "roll": 4,
+        "background": "Blacksmith"
+      },
+      {
+        "roll": 5,
+        "background": "Brewer"
+      },
+      {
+        "roll": 6,
+        "background": "Chandler"
+      },
+      {
+        "roll": 7,
+        "background": "Devil goat handler"
+      },
+      {
+        "roll": 8,
+        "background": "Gambler"
+      },
+      {
+        "roll": 9,
+        "background": "Grave digger"
+      },
+      {
+        "roll": 10,
+        "background": "Merchant"
+      },
+      {
+        "roll": 11,
+        "background": "Onion farmer"
+      },
+      {
+        "roll": 12,
+        "background": "Page"
+      },
+      {
+        "roll": 13,
+        "background": "Pig farmer"
+      },
+      {
+        "roll": 14,
+        "background": "Servant"
+      },
+      {
+        "roll": 15,
+        "background": "Smuggler"
+      },
+      {
+        "roll": 16,
+        "background": "Sorcerer's assistant"
+      },
+      {
+        "roll": 17,
+        "background": "Standard-bearer"
+      },
+      {
+        "roll": 18,
+        "background": "Thatcher"
+      },
+      {
+        "roll": 19,
+        "background": "Turnip farmer"
+      },
+      {
+        "roll": 20,
+        "background": "Vagrant"
+      }
+    ]
+  },
+  "Elf": {
+    "pdfPage": 40,
+    "dieSize": "d20",
+    "backgrounds": [
+      {
+        "roll": 1,
+        "background": "Chronicler"
+      },
+      {
+        "roll": 2,
+        "background": "Coiffeur"
+      },
+      {
+        "roll": 3,
+        "background": "Confectioner"
+      },
+      {
+        "roll": 4,
+        "background": "Courtier"
+      },
+      {
+        "roll": 5,
+        "background": "Dream thief"
+      },
+      {
+        "roll": 6,
+        "background": "Elk hunter"
+      },
+      {
+        "roll": 7,
+        "background": "Explorer"
+      },
+      {
+        "roll": 8,
+        "background": "Frost sculptor"
+      },
+      {
+        "roll": 9,
+        "background": "Harpist"
+      },
+      {
+        "roll": 10,
+        "background": "Highway robber"
+      },
+      {
+        "roll": 11,
+        "background": "Librarian"
+      },
+      {
+        "roll": 12,
+        "background": "Mountebank"
+      },
+      {
+        "roll": 13,
+        "background": "Nut forager"
+      },
+      {
+        "roll": 14,
+        "background": "Peacock trainer"
+      },
+      {
+        "roll": 15,
+        "background": "Poet"
+      },
+      {
+        "roll": 16,
+        "background": "Swordsmith"
+      },
+      {
+        "roll": 17,
+        "background": "Tailor"
+      },
+      {
+        "roll": 18,
+        "background": "Thespian"
+      },
+      {
+        "roll": 19,
+        "background": "Unicorn handler"
+      },
+      {
+        "roll": 20,
+        "background": "Vintner"
+      }
+    ]
+  },
+  "Grimalkin": {
+    "pdfPage": 44,
+    "dieSize": "d20",
+    "backgrounds": [
+      {
+        "roll": 1,
+        "background": "Alchemist's aide"
+      },
+      {
+        "roll": 2,
+        "background": "Angler"
+      },
+      {
+        "roll": 3,
+        "background": "Barber"
+      },
+      {
+        "roll": 4,
+        "background": "Card-sharp"
+      },
+      {
+        "roll": 5,
+        "background": "Catnip brewer"
+      },
+      {
+        "roll": 6,
+        "background": "Clothier"
+      },
+      {
+        "roll": 7,
+        "background": "Duellist"
+      },
+      {
+        "roll": 8,
+        "background": "Highway robber"
+      },
+      {
+        "roll": 9,
+        "background": "Knifemaker"
+      },
+      {
+        "roll": 10,
+        "background": "Libertine"
+      },
+      {
+        "roll": 11,
+        "background": "Mariner"
+      },
+      {
+        "roll": 12,
+        "background": "Pheasant poacher"
+      },
+      {
+        "roll": 13,
+        "background": "Rat hunter"
+      },
+      {
+        "roll": 14,
+        "background": "Spy"
+      },
+      {
+        "roll": 15,
+        "background": "Stage magician"
+      },
+      {
+        "roll": 16,
+        "background": "Swindler"
+      },
+      {
+        "roll": 17,
+        "background": "Thespian"
+      },
+      {
+        "roll": 18,
+        "background": "Trapper / furrier"
+      },
+      {
+        "roll": 19,
+        "background": "Vole farmer"
+      },
+      {
+        "roll": 20,
+        "background": "Weasel tamer"
+      }
+    ]
+  },
+  "Human": {
+    "pdfPage": 48,
+    "dieSize": "d100",
+    "backgrounds": [
+      {
+        "rollMin": 1,
+        "rollMax": 1,
+        "background": "Actor"
+      },
+      {
+        "rollMin": 2,
+        "rollMax": 5,
+        "background": "Angler"
+      },
+      {
+        "rollMin": 6,
+        "rollMax": 6,
+        "background": "Animal trainer"
+      },
+      {
+        "rollMin": 7,
+        "rollMax": 7,
+        "background": "Apothecary"
+      },
+      {
+        "rollMin": 8,
+        "rollMax": 10,
+        "background": "Baker"
+      },
+      {
+        "rollMin": 11,
+        "rollMax": 11,
+        "background": "Barber"
+      },
+      {
+        "rollMin": 12,
+        "rollMax": 12,
+        "background": "Beekeeper"
+      },
+      {
+        "rollMin": 13,
+        "rollMax": 15,
+        "background": "Beggar"
+      },
+      {
+        "rollMin": 16,
+        "rollMax": 18,
+        "background": "Blacksmith"
+      },
+      {
+        "rollMin": 19,
+        "rollMax": 19,
+        "background": "Bookbinder"
+      },
+      {
+        "rollMin": 20,
+        "rollMax": 21,
+        "background": "Brewer"
+      },
+      {
+        "rollMin": 22,
+        "rollMax": 24,
+        "background": "Butcher"
+      },
+      {
+        "rollMin": 25,
+        "rollMax": 28,
+        "background": "Carpenter"
+      },
+      {
+        "rollMin": 29,
+        "rollMax": 29,
+        "background": "Cartographer"
+      },
+      {
+        "rollMin": 30,
+        "rollMax": 32,
+        "background": "Cattle farmer"
+      },
+      {
+        "rollMin": 33,
+        "rollMax": 33,
+        "background": "Chandler"
+      },
+      {
+        "rollMin": 34,
+        "rollMax": 34,
+        "background": "Cheesemaker"
+      },
+      {
+        "rollMin": 35,
+        "rollMax": 35,
+        "background": "Cobbler"
+      },
+      {
+        "rollMin": 36,
+        "rollMax": 36,
+        "background": "Cooper"
+      },
+      {
+        "rollMin": 37,
+        "rollMax": 37,
+        "background": "Dockhand"
+      },
+      {
+        "rollMin": 38,
+        "rollMax": 38,
+        "background": "Fortune-teller"
+      },
+      {
+        "rollMin": 39,
+        "rollMax": 39,
+        "background": "Fur trapper"
+      },
+      {
+        "rollMin": 40,
+        "rollMax": 41,
+        "background": "Gambler"
+      },
+      {
+        "rollMin": 42,
+        "rollMax": 42,
+        "background": "Glassblower"
+      },
+      {
+        "rollMin": 43,
+        "rollMax": 43,
+        "background": "Grave digger"
+      },
+      {
+        "rollMin": 44,
+        "rollMax": 45,
+        "background": "Hog farmer"
+      },
+      {
+        "rollMin": 46,
+        "rollMax": 49,
+        "background": "Hunter"
+      },
+      {
+        "rollMin": 50,
+        "rollMax": 50,
+        "background": "Jester"
+      },
+      {
+        "rollMin": 51,
+        "rollMax": 51,
+        "background": "Jeweller"
+      },
+      {
+        "rollMin": 52,
+        "rollMax": 52,
+        "background": "Leather worker"
+      },
+      {
+        "rollMin": 53,
+        "rollMax": 53,
+        "background": "Locksmith"
+      },
+      {
+        "rollMin": 54,
+        "rollMax": 54,
+        "background": "Merchant"
+      },
+      {
+        "rollMin": 55,
+        "rollMax": 56,
+        "background": "Miner"
+      },
+      {
+        "rollMin": 57,
+        "rollMax": 58,
+        "background": "Outlaw"
+      },
+      {
+        "rollMin": 59,
+        "rollMax": 60,
+        "background": "Pedlar"
+      },
+      {
+        "rollMin": 61,
+        "rollMax": 61,
+        "background": "Pilgrim"
+      },
+      {
+        "rollMin": 62,
+        "rollMax": 63,
+        "background": "Poacher"
+      },
+      {
+        "rollMin": 64,
+        "rollMax": 64,
+        "background": "Potter"
+      },
+      {
+        "rollMin": 65,
+        "rollMax": 65,
+        "background": "Roper"
+      },
+      {
+        "rollMin": 66,
+        "rollMax": 66,
+        "background": "Sailor"
+      },
+      {
+        "rollMin": 67,
+        "rollMax": 67,
+        "background": "Scribe"
+      },
+      {
+        "rollMin": 68,
+        "rollMax": 71,
+        "background": "Servant"
+      },
+      {
+        "rollMin": 72,
+        "rollMax": 73,
+        "background": "Sheep farmer"
+      },
+      {
+        "rollMin": 74,
+        "rollMax": 74,
+        "background": "Shipwright"
+      },
+      {
+        "rollMin": 75,
+        "rollMax": 75,
+        "background": "Smuggler"
+      },
+      {
+        "rollMin": 76,
+        "rollMax": 76,
+        "background": "Stable hand"
+      },
+      {
+        "rollMin": 77,
+        "rollMax": 77,
+        "background": "Stonemason"
+      },
+      {
+        "rollMin": 78,
+        "rollMax": 78,
+        "background": "Swindler"
+      },
+      {
+        "rollMin": 79,
+        "rollMax": 79,
+        "background": "Tailor"
+      },
+      {
+        "rollMin": 80,
+        "rollMax": 80,
+        "background": "Tax collector"
+      },
+      {
+        "rollMin": 81,
+        "rollMax": 81,
+        "background": "Thatcher"
+      },
+      {
+        "rollMin": 82,
+        "rollMax": 84,
+        "background": "Turnip farmer"
+      },
+      {
+        "rollMin": 85,
+        "rollMax": 85,
+        "background": "Unicorn hunter"
+      },
+      {
+        "rollMin": 86,
+        "rollMax": 87,
+        "background": "Vagrant"
+      },
+      {
+        "rollMin": 88,
+        "rollMax": 88,
+        "background": "Wainwright"
+      },
+      {
+        "rollMin": 89,
+        "rollMax": 90,
+        "background": "Wayfarer"
+      },
+      {
+        "rollMin": 91,
+        "rollMax": 92,
+        "background": "Weaver"
+      },
+      {
+        "rollMin": 93,
+        "rollMax": 95,
+        "background": "Wheat farmer"
+      },
+      {
+        "rollMin": 96,
+        "rollMax": 96,
+        "background": "Wizard's assistant"
+      },
+      {
+        "rollMin": 97,
+        "rollMax": 100,
+        "background": "Woodcutter"
+      }
+    ]
+  },
+  "Mossling": {
+    "pdfPage": 52,
+    "dieSize": "d20",
+    "backgrounds": [
+      {
+        "roll": 1,
+        "background": "Bark tailor"
+      },
+      {
+        "roll": 2,
+        "background": "Boar hunter"
+      },
+      {
+        "roll": 3,
+        "background": "Cheesemaker"
+      },
+      {
+        "roll": 4,
+        "background": "Compost raker"
+      },
+      {
+        "roll": 5,
+        "background": "Fungologist"
+      },
+      {
+        "roll": 6,
+        "background": "Fungus farmer"
+      },
+      {
+        "roll": 7,
+        "background": "Gambler"
+      },
+      {
+        "roll": 8,
+        "background": "Horn blower"
+      },
+      {
+        "roll": 9,
+        "background": "Moss brewer"
+      },
+      {
+        "roll": 10,
+        "background": "Moss farmer"
+      },
+      {
+        "roll": 11,
+        "background": "Night forager"
+      },
+      {
+        "roll": 12,
+        "background": "Oracle's apprentice"
+      },
+      {
+        "roll": 13,
+        "background": "Pipe maker"
+      },
+      {
+        "roll": 14,
+        "background": "Sausage maker"
+      },
+      {
+        "roll": 15,
+        "background": "Squirrel trainer"
+      },
+      {
+        "roll": 16,
+        "background": "Swineherd"
+      },
+      {
+        "roll": 17,
+        "background": "Tavernkeep"
+      },
+      {
+        "roll": 18,
+        "background": "Vagrant"
+      },
+      {
+        "roll": 19,
+        "background": "Worm farmer"
+      },
+      {
+        "roll": 20,
+        "background": "Yeast farmer"
+      }
+    ]
+  },
+  "Woodgrue": {
+    "pdfPage": 56,
+    "dieSize": "d20",
+    "backgrounds": [
+      {
+        "roll": 1,
+        "background": "Circus performer"
+      },
+      {
+        "roll": 2,
+        "background": "Convicted arsonist"
+      },
+      {
+        "roll": 3,
+        "background": "Court jester"
+      },
+      {
+        "roll": 4,
+        "background": "Crow hunter"
+      },
+      {
+        "roll": 5,
+        "background": "Dung collector"
+      },
+      {
+        "roll": 6,
+        "background": "Egg thief"
+      },
+      {
+        "roll": 7,
+        "background": "Errant piper"
+      },
+      {
+        "roll": 8,
+        "background": "Firework maker"
+      },
+      {
+        "roll": 9,
+        "background": "Fungus trader"
+      },
+      {
+        "roll": 10,
+        "background": "Juggler"
+      },
+      {
+        "roll": 11,
+        "background": "Maggot farmer"
+      },
+      {
+        "roll": 12,
+        "background": "Mead brewer"
+      },
+      {
+        "roll": 13,
+        "background": "Moth trapper"
+      },
+      {
+        "roll": 14,
+        "background": "Mushroom forager"
+      },
+      {
+        "roll": 15,
+        "background": "Pedlar"
+      },
+      {
+        "roll": 16,
+        "background": "Pipe carver"
+      },
+      {
+        "roll": 17,
+        "background": "Ragpicker"
+      },
+      {
+        "roll": 18,
+        "background": "Tent maker"
+      },
+      {
+        "roll": 19,
+        "background": "Tomb robber"
+      },
+      {
+        "roll": 20,
+        "background": "Wizard's servant"
+      }
+    ]
+  }
+}

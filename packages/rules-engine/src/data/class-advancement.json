@@ -1,0 +1,1926 @@
+{
+  "Bard": {
+    "primeAbilities": [
+      "CHA",
+      "DEX"
+    ],
+    "hitDie": "d6",
+    "hitDiePostLevel10": "+1 per level",
+    "combatAptitude": "Semi-martial",
+    "armour": "Light and Medium, no shields",
+    "weapons": "Small and Medium",
+    "pdfPage": 60,
+    "spellSlots": null,
+    "_notes": "Bards use Enchantment and Counter Charm abilities, not spell slots",
+    "levels": [
+      {
+        "level": 1,
+        "xp": 0,
+        "hitPoints": "1d6",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 13,
+          "ray": 14,
+          "hold": 13,
+          "blast": 15,
+          "spell": 15
+        }
+      },
+      {
+        "level": 2,
+        "xp": 1750,
+        "hitPoints": "+1d6",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 13,
+          "ray": 14,
+          "hold": 13,
+          "blast": 15,
+          "spell": 15
+        }
+      },
+      {
+        "level": 3,
+        "xp": 3500,
+        "hitPoints": "+1d6",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 12,
+          "blast": 14,
+          "spell": 14
+        }
+      },
+      {
+        "level": 4,
+        "xp": 7000,
+        "hitPoints": "+1d6",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 12,
+          "blast": 14,
+          "spell": 14
+        }
+      },
+      {
+        "level": 5,
+        "xp": 14000,
+        "hitPoints": "+1d6",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 11,
+          "blast": 13,
+          "spell": 13
+        }
+      },
+      {
+        "level": 6,
+        "xp": 28000,
+        "hitPoints": "+1d6",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 11,
+          "blast": 13,
+          "spell": 13
+        }
+      },
+      {
+        "level": 7,
+        "xp": 56000,
+        "hitPoints": "+1d6",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 10,
+          "blast": 12,
+          "spell": 12
+        }
+      },
+      {
+        "level": 8,
+        "xp": 112000,
+        "hitPoints": "+1d6",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 10,
+          "blast": 12,
+          "spell": 12
+        }
+      },
+      {
+        "level": 9,
+        "xp": 220000,
+        "hitPoints": "+1d6",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 9,
+          "blast": 11,
+          "spell": 11
+        }
+      },
+      {
+        "level": 10,
+        "xp": 340000,
+        "hitPoints": "+1d6",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 9,
+          "blast": 11,
+          "spell": 11
+        }
+      },
+      {
+        "level": 11,
+        "xp": 460000,
+        "hitPoints": "+1",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 8,
+          "blast": 10,
+          "spell": 10
+        }
+      },
+      {
+        "level": 12,
+        "xp": 580000,
+        "hitPoints": "+1",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 8,
+          "blast": 10,
+          "spell": 10
+        }
+      },
+      {
+        "level": 13,
+        "xp": 700000,
+        "hitPoints": "+1",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 7,
+          "blast": 9,
+          "spell": 9
+        }
+      },
+      {
+        "level": 14,
+        "xp": 820000,
+        "hitPoints": "+1",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 7,
+          "blast": 9,
+          "spell": 9
+        }
+      },
+      {
+        "level": 15,
+        "xp": 940000,
+        "hitPoints": "+1",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 6,
+          "blast": 8,
+          "spell": 8
+        }
+      }
+    ]
+  },
+  "Cleric": {
+    "primeAbilities": [
+      "WIS"
+    ],
+    "hitDie": "d6",
+    "hitDiePostLevel10": "+1 per level",
+    "combatAptitude": "Semi-martial",
+    "armour": "Any incl shields (no arcane/fairy)",
+    "weapons": "Any (no arcane/fairy)",
+    "pdfPage": 62,
+    "levels": [
+      {
+        "level": 1,
+        "xp": 0,
+        "hitPoints": "1d6",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        }
+      },
+      {
+        "level": 2,
+        "xp": 1500,
+        "hitPoints": "+1d6",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        }
+      },
+      {
+        "level": 3,
+        "xp": 3000,
+        "hitPoints": "+1d6",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        }
+      },
+      {
+        "level": 4,
+        "xp": 6000,
+        "hitPoints": "+1d6",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        }
+      },
+      {
+        "level": 5,
+        "xp": 12000,
+        "hitPoints": "+1d6",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        }
+      },
+      {
+        "level": 6,
+        "xp": 24000,
+        "hitPoints": "+1d6",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        }
+      },
+      {
+        "level": 7,
+        "xp": 48000,
+        "hitPoints": "+1d6",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        }
+      },
+      {
+        "level": 8,
+        "xp": 96000,
+        "hitPoints": "+1d6",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        }
+      },
+      {
+        "level": 9,
+        "xp": 190000,
+        "hitPoints": "+1d6",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        }
+      },
+      {
+        "level": 10,
+        "xp": 290000,
+        "hitPoints": "+1d6",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        }
+      },
+      {
+        "level": 11,
+        "xp": 390000,
+        "hitPoints": "+1",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 8,
+          "blast": 11,
+          "spell": 9
+        }
+      },
+      {
+        "level": 12,
+        "xp": 490000,
+        "hitPoints": "+1",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 8,
+          "blast": 11,
+          "spell": 9
+        }
+      },
+      {
+        "level": 13,
+        "xp": 590000,
+        "hitPoints": "+1",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 5,
+          "ray": 6,
+          "hold": 7,
+          "blast": 10,
+          "spell": 8
+        }
+      },
+      {
+        "level": 14,
+        "xp": 690000,
+        "hitPoints": "+1",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 5,
+          "ray": 6,
+          "hold": 7,
+          "blast": 10,
+          "spell": 8
+        }
+      },
+      {
+        "level": 15,
+        "xp": 790000,
+        "hitPoints": "+1",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 4,
+          "ray": 5,
+          "hold": 6,
+          "blast": 9,
+          "spell": 7
+        }
+      }
+    ]
+  },
+  "Enchanter": {
+    "primeAbilities": [
+      "INT",
+      "CHA"
+    ],
+    "hitDie": "d6",
+    "hitDiePostLevel10": "+1 per level",
+    "combatAptitude": "Non-martial",
+    "armour": "Light, no shields",
+    "weapons": "Small",
+    "pdfPage": 64,
+    "levels": [
+      {
+        "level": 1,
+        "xp": 0,
+        "hitPoints": "1d6",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        },
+        "glamours": 1
+      },
+      {
+        "level": 2,
+        "xp": 1750,
+        "hitPoints": "+1d6",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        },
+        "glamours": 2
+      },
+      {
+        "level": 3,
+        "xp": 3500,
+        "hitPoints": "+1d6",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        },
+        "glamours": 3
+      },
+      {
+        "level": 4,
+        "xp": 7000,
+        "hitPoints": "+1d6",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        },
+        "glamours": 3
+      },
+      {
+        "level": 5,
+        "xp": 14000,
+        "hitPoints": "+1d6",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        },
+        "glamours": 4
+      },
+      {
+        "level": 6,
+        "xp": 28000,
+        "hitPoints": "+1d6",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        },
+        "glamours": 5
+      },
+      {
+        "level": 7,
+        "xp": 56000,
+        "hitPoints": "+1d6",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        },
+        "glamours": 6
+      },
+      {
+        "level": 8,
+        "xp": 112000,
+        "hitPoints": "+1d6",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        },
+        "glamours": 6
+      },
+      {
+        "level": 9,
+        "xp": 220000,
+        "hitPoints": "+1d6",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        },
+        "glamours": 7
+      },
+      {
+        "level": 10,
+        "xp": 340000,
+        "hitPoints": "+1d6",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        },
+        "glamours": 7
+      },
+      {
+        "level": 11,
+        "xp": 460000,
+        "hitPoints": "+1",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 8,
+          "blast": 11,
+          "spell": 9
+        },
+        "glamours": 8
+      },
+      {
+        "level": 12,
+        "xp": 580000,
+        "hitPoints": "+1",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 8,
+          "blast": 11,
+          "spell": 9
+        },
+        "glamours": 8
+      },
+      {
+        "level": 13,
+        "xp": 700000,
+        "hitPoints": "+1",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 5,
+          "ray": 6,
+          "hold": 7,
+          "blast": 10,
+          "spell": 8
+        },
+        "glamours": 9
+      },
+      {
+        "level": 14,
+        "xp": 820000,
+        "hitPoints": "+1",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 5,
+          "ray": 6,
+          "hold": 7,
+          "blast": 10,
+          "spell": 8
+        },
+        "glamours": 9
+      },
+      {
+        "level": 15,
+        "xp": 940000,
+        "hitPoints": "+1",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 4,
+          "ray": 5,
+          "hold": 6,
+          "blast": 9,
+          "spell": 7
+        },
+        "glamours": 10
+      }
+    ]
+  },
+  "Fighter": {
+    "primeAbilities": [
+      "STR"
+    ],
+    "hitDie": "d8",
+    "hitDiePostLevel10": "+2 per level",
+    "combatAptitude": "Martial",
+    "armour": "Any incl shields",
+    "weapons": "Any",
+    "pdfPage": 66,
+    "levels": [
+      {
+        "level": 1,
+        "xp": 0,
+        "hitPoints": "1d8",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 14,
+          "blast": 15,
+          "spell": 16
+        },
+        "combatTalents": 0
+      },
+      {
+        "level": 2,
+        "xp": 2000,
+        "hitPoints": "+1d8",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 14,
+          "blast": 15,
+          "spell": 16
+        },
+        "combatTalents": 1
+      },
+      {
+        "level": 3,
+        "xp": 4000,
+        "hitPoints": "+1d8",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 13,
+          "blast": 14,
+          "spell": 15
+        },
+        "combatTalents": 1
+      },
+      {
+        "level": 4,
+        "xp": 8000,
+        "hitPoints": "+1d8",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 13,
+          "spell": 14
+        },
+        "combatTalents": 1
+      },
+      {
+        "level": 5,
+        "xp": 16000,
+        "hitPoints": "+1d8",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 13,
+          "spell": 14
+        },
+        "combatTalents": 1
+      },
+      {
+        "level": 6,
+        "xp": 32000,
+        "hitPoints": "+1d8",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 11,
+          "blast": 12,
+          "spell": 13
+        },
+        "combatTalents": 2
+      },
+      {
+        "level": 7,
+        "xp": 64000,
+        "hitPoints": "+1d8",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 11,
+          "spell": 12
+        },
+        "combatTalents": 2
+      },
+      {
+        "level": 8,
+        "xp": 128000,
+        "hitPoints": "+1d8",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 11,
+          "spell": 12
+        },
+        "combatTalents": 2
+      },
+      {
+        "level": 9,
+        "xp": 260000,
+        "hitPoints": "+1d8",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 9,
+          "blast": 10,
+          "spell": 11
+        },
+        "combatTalents": 2
+      },
+      {
+        "level": 10,
+        "xp": 380000,
+        "hitPoints": "+1d8",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 8,
+          "blast": 9,
+          "spell": 10
+        },
+        "combatTalents": 3
+      },
+      {
+        "level": 11,
+        "xp": 500000,
+        "hitPoints": "+2",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 8,
+          "blast": 9,
+          "spell": 10
+        },
+        "combatTalents": 3
+      },
+      {
+        "level": 12,
+        "xp": 620000,
+        "hitPoints": "+2",
+        "attackBonus": 8,
+        "saves": {
+          "doom": 5,
+          "ray": 6,
+          "hold": 7,
+          "blast": 8,
+          "spell": 9
+        },
+        "combatTalents": 3
+      },
+      {
+        "level": 13,
+        "xp": 740000,
+        "hitPoints": "+2",
+        "attackBonus": 9,
+        "saves": {
+          "doom": 4,
+          "ray": 5,
+          "hold": 6,
+          "blast": 7,
+          "spell": 8
+        },
+        "combatTalents": 3
+      },
+      {
+        "level": 14,
+        "xp": 860000,
+        "hitPoints": "+2",
+        "attackBonus": 9,
+        "saves": {
+          "doom": 4,
+          "ray": 5,
+          "hold": 6,
+          "blast": 7,
+          "spell": 8
+        },
+        "combatTalents": 4
+      },
+      {
+        "level": 15,
+        "xp": 980000,
+        "hitPoints": "+2",
+        "attackBonus": 10,
+        "saves": {
+          "doom": 3,
+          "ray": 4,
+          "hold": 5,
+          "blast": 6,
+          "spell": 7
+        },
+        "combatTalents": 4
+      }
+    ]
+  },
+  "Friar": {
+    "primeAbilities": [
+      "WIS",
+      "INT"
+    ],
+    "hitDie": "d4",
+    "hitDiePostLevel10": "+1 per level",
+    "combatAptitude": "Non-martial",
+    "armour": "None",
+    "weapons": "Improvised only (culinary implements)",
+    "pdfPage": 68,
+    "levels": [
+      {
+        "level": 1,
+        "xp": 0,
+        "hitPoints": "1d4",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        },
+        "acBonus": 2
+      },
+      {
+        "level": 2,
+        "xp": 1750,
+        "hitPoints": "+1d4",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        },
+        "acBonus": 2
+      },
+      {
+        "level": 3,
+        "xp": 3500,
+        "hitPoints": "+1d4",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        },
+        "acBonus": 2
+      },
+      {
+        "level": 4,
+        "xp": 7000,
+        "hitPoints": "+1d4",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        },
+        "acBonus": 3
+      },
+      {
+        "level": 5,
+        "xp": 14000,
+        "hitPoints": "+1d4",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        },
+        "acBonus": 3
+      },
+      {
+        "level": 6,
+        "xp": 28000,
+        "hitPoints": "+1d4",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        },
+        "acBonus": 3
+      },
+      {
+        "level": 7,
+        "xp": 56000,
+        "hitPoints": "+1d4",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        },
+        "acBonus": 4
+      },
+      {
+        "level": 8,
+        "xp": 112000,
+        "hitPoints": "+1d4",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        },
+        "acBonus": 4
+      },
+      {
+        "level": 9,
+        "xp": 220000,
+        "hitPoints": "+1d4",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        },
+        "acBonus": 4
+      },
+      {
+        "level": 10,
+        "xp": 340000,
+        "hitPoints": "+1d4",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        },
+        "acBonus": 4
+      },
+      {
+        "level": 11,
+        "xp": 460000,
+        "hitPoints": "+1",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        },
+        "acBonus": 5
+      },
+      {
+        "level": 12,
+        "xp": 580000,
+        "hitPoints": "+1",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        },
+        "acBonus": 5
+      },
+      {
+        "level": 13,
+        "xp": 700000,
+        "hitPoints": "+1",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        },
+        "acBonus": 5
+      },
+      {
+        "level": 14,
+        "xp": 820000,
+        "hitPoints": "+1",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        },
+        "acBonus": 5
+      },
+      {
+        "level": 15,
+        "xp": 940000,
+        "hitPoints": "+1",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        },
+        "acBonus": 5
+      }
+    ]
+  },
+  "Hunter": {
+    "primeAbilities": [
+      "CON",
+      "DEX"
+    ],
+    "hitDie": "d8",
+    "hitDiePostLevel10": "+2 per level",
+    "combatAptitude": "Martial",
+    "armour": "Light and Medium",
+    "weapons": "Small and Medium",
+    "pdfPage": 70,
+    "levels": [
+      {
+        "level": 1,
+        "xp": 0,
+        "hitPoints": "1d8",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 14,
+          "blast": 15,
+          "spell": 16
+        }
+      },
+      {
+        "level": 2,
+        "xp": 2250,
+        "hitPoints": "+1d8",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 14,
+          "blast": 15,
+          "spell": 16
+        }
+      },
+      {
+        "level": 3,
+        "xp": 4500,
+        "hitPoints": "+1d8",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 13,
+          "blast": 14,
+          "spell": 15
+        }
+      },
+      {
+        "level": 4,
+        "xp": 9000,
+        "hitPoints": "+1d8",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 13,
+          "spell": 14
+        }
+      },
+      {
+        "level": 5,
+        "xp": 18000,
+        "hitPoints": "+1d8",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 12,
+          "blast": 13,
+          "spell": 14
+        }
+      },
+      {
+        "level": 6,
+        "xp": 36000,
+        "hitPoints": "+1d8",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 11,
+          "blast": 12,
+          "spell": 13
+        }
+      },
+      {
+        "level": 7,
+        "xp": 72000,
+        "hitPoints": "+1d8",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 11,
+          "spell": 12
+        }
+      },
+      {
+        "level": 8,
+        "xp": 144000,
+        "hitPoints": "+1d8",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 10,
+          "blast": 11,
+          "spell": 12
+        }
+      },
+      {
+        "level": 9,
+        "xp": 290000,
+        "hitPoints": "+1d8",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 9,
+          "blast": 10,
+          "spell": 11
+        }
+      },
+      {
+        "level": 10,
+        "xp": 420000,
+        "hitPoints": "+1d8",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 8,
+          "blast": 9,
+          "spell": 10
+        }
+      },
+      {
+        "level": 11,
+        "xp": 550000,
+        "hitPoints": "+2",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 8,
+          "blast": 9,
+          "spell": 10
+        }
+      },
+      {
+        "level": 12,
+        "xp": 680000,
+        "hitPoints": "+2",
+        "attackBonus": 8,
+        "saves": {
+          "doom": 5,
+          "ray": 6,
+          "hold": 7,
+          "blast": 8,
+          "spell": 9
+        }
+      },
+      {
+        "level": 13,
+        "xp": 810000,
+        "hitPoints": "+2",
+        "attackBonus": 9,
+        "saves": {
+          "doom": 4,
+          "ray": 5,
+          "hold": 6,
+          "blast": 7,
+          "spell": 8
+        }
+      },
+      {
+        "level": 14,
+        "xp": 940000,
+        "hitPoints": "+2",
+        "attackBonus": 9,
+        "saves": {
+          "doom": 4,
+          "ray": 5,
+          "hold": 6,
+          "blast": 7,
+          "spell": 8
+        }
+      },
+      {
+        "level": 15,
+        "xp": 1070000,
+        "hitPoints": "+2",
+        "attackBonus": 10,
+        "saves": {
+          "doom": 3,
+          "ray": 4,
+          "hold": 5,
+          "blast": 6,
+          "spell": 7
+        }
+      }
+    ]
+  },
+  "Knight": {
+    "primeAbilities": [
+      "STR",
+      "CHA"
+    ],
+    "hitDie": "d8",
+    "hitDiePostLevel10": "+2 per level",
+    "combatAptitude": "Martial",
+    "armour": "Any incl shields",
+    "weapons": "Any",
+    "pdfPage": 72,
+    "levels": [
+      {
+        "level": 1,
+        "xp": 0,
+        "hitPoints": "1d8",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 12,
+          "blast": 15,
+          "spell": 15
+        }
+      },
+      {
+        "level": 2,
+        "xp": 2250,
+        "hitPoints": "+1d8",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 12,
+          "blast": 15,
+          "spell": 15
+        }
+      },
+      {
+        "level": 3,
+        "xp": 4500,
+        "hitPoints": "+1d8",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 11,
+          "blast": 14,
+          "spell": 14
+        }
+      },
+      {
+        "level": 4,
+        "xp": 9000,
+        "hitPoints": "+1d8",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 10,
+          "blast": 13,
+          "spell": 13
+        }
+      },
+      {
+        "level": 5,
+        "xp": 18000,
+        "hitPoints": "+1d8",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 10,
+          "blast": 13,
+          "spell": 13
+        }
+      },
+      {
+        "level": 6,
+        "xp": 36000,
+        "hitPoints": "+1d8",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 9,
+          "blast": 12,
+          "spell": 12
+        }
+      },
+      {
+        "level": 7,
+        "xp": 72000,
+        "hitPoints": "+1d8",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 8,
+          "blast": 11,
+          "spell": 11
+        }
+      },
+      {
+        "level": 8,
+        "xp": 144000,
+        "hitPoints": "+1d8",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 8,
+          "blast": 11,
+          "spell": 11
+        }
+      },
+      {
+        "level": 9,
+        "xp": 290000,
+        "hitPoints": "+1d8",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 7,
+          "blast": 10,
+          "spell": 10
+        }
+      },
+      {
+        "level": 10,
+        "xp": 420000,
+        "hitPoints": "+1d8",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 6,
+          "blast": 9,
+          "spell": 9
+        }
+      },
+      {
+        "level": 11,
+        "xp": 550000,
+        "hitPoints": "+2",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 6,
+          "blast": 9,
+          "spell": 9
+        }
+      },
+      {
+        "level": 12,
+        "xp": 680000,
+        "hitPoints": "+2",
+        "attackBonus": 8,
+        "saves": {
+          "doom": 5,
+          "ray": 6,
+          "hold": 5,
+          "blast": 8,
+          "spell": 8
+        }
+      },
+      {
+        "level": 13,
+        "xp": 810000,
+        "hitPoints": "+2",
+        "attackBonus": 9,
+        "saves": {
+          "doom": 4,
+          "ray": 5,
+          "hold": 4,
+          "blast": 7,
+          "spell": 7
+        }
+      },
+      {
+        "level": 14,
+        "xp": 940000,
+        "hitPoints": "+2",
+        "attackBonus": 9,
+        "saves": {
+          "doom": 4,
+          "ray": 5,
+          "hold": 4,
+          "blast": 7,
+          "spell": 7
+        }
+      },
+      {
+        "level": 15,
+        "xp": 1070000,
+        "hitPoints": "+2",
+        "attackBonus": 10,
+        "saves": {
+          "doom": 3,
+          "ray": 4,
+          "hold": 3,
+          "blast": 6,
+          "spell": 6
+        }
+      }
+    ]
+  },
+  "Magician": {
+    "primeAbilities": [
+      "INT"
+    ],
+    "hitDie": "d4",
+    "hitDiePostLevel10": "+1 per level",
+    "combatAptitude": "Non-martial",
+    "armour": "None",
+    "weapons": "Small",
+    "pdfPage": 74,
+    "levels": [
+      {
+        "level": 1,
+        "xp": 0,
+        "hitPoints": "1d4",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 14,
+          "ray": 14,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        }
+      },
+      {
+        "level": 2,
+        "xp": 2500,
+        "hitPoints": "+1d4",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 14,
+          "ray": 14,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        }
+      },
+      {
+        "level": 3,
+        "xp": 5000,
+        "hitPoints": "+1d4",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 14,
+          "ray": 14,
+          "hold": 13,
+          "blast": 16,
+          "spell": 14
+        }
+      },
+      {
+        "level": 4,
+        "xp": 10000,
+        "hitPoints": "+1d4",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 13,
+          "ray": 13,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        }
+      },
+      {
+        "level": 5,
+        "xp": 20000,
+        "hitPoints": "+1d4",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 13,
+          "ray": 13,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        }
+      },
+      {
+        "level": 6,
+        "xp": 40000,
+        "hitPoints": "+1d4",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 13,
+          "ray": 13,
+          "hold": 12,
+          "blast": 15,
+          "spell": 13
+        }
+      },
+      {
+        "level": 7,
+        "xp": 80000,
+        "hitPoints": "+1d4",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 12,
+          "ray": 12,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        }
+      },
+      {
+        "level": 8,
+        "xp": 160000,
+        "hitPoints": "+1d4",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 12,
+          "ray": 12,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        }
+      },
+      {
+        "level": 9,
+        "xp": 320000,
+        "hitPoints": "+1d4",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 12,
+          "ray": 12,
+          "hold": 11,
+          "blast": 14,
+          "spell": 12
+        }
+      },
+      {
+        "level": 10,
+        "xp": 470000,
+        "hitPoints": "+1d4",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 11,
+          "ray": 11,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        }
+      },
+      {
+        "level": 11,
+        "xp": 620000,
+        "hitPoints": "+1",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 11,
+          "ray": 11,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        }
+      },
+      {
+        "level": 12,
+        "xp": 770000,
+        "hitPoints": "+1",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 11,
+          "ray": 11,
+          "hold": 10,
+          "blast": 13,
+          "spell": 11
+        }
+      },
+      {
+        "level": 13,
+        "xp": 920000,
+        "hitPoints": "+1",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 10,
+          "ray": 10,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        }
+      },
+      {
+        "level": 14,
+        "xp": 1070000,
+        "hitPoints": "+1",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 10,
+          "ray": 10,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        }
+      },
+      {
+        "level": 15,
+        "xp": 1220000,
+        "hitPoints": "+1",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 10,
+          "ray": 10,
+          "hold": 9,
+          "blast": 12,
+          "spell": 10
+        }
+      }
+    ]
+  },
+  "Thief": {
+    "primeAbilities": [
+      "DEX"
+    ],
+    "hitDie": "d4",
+    "hitDiePostLevel10": "+1 per level",
+    "combatAptitude": "Semi-martial",
+    "armour": "Light",
+    "weapons": "Small and Medium",
+    "pdfPage": 76,
+    "levels": [
+      {
+        "level": 1,
+        "xp": 0,
+        "hitPoints": "1d4",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 13,
+          "ray": 14,
+          "hold": 13,
+          "blast": 15,
+          "spell": 15
+        }
+      },
+      {
+        "level": 2,
+        "xp": 1200,
+        "hitPoints": "+1d4",
+        "attackBonus": 0,
+        "saves": {
+          "doom": 13,
+          "ray": 14,
+          "hold": 13,
+          "blast": 15,
+          "spell": 15
+        }
+      },
+      {
+        "level": 3,
+        "xp": 2400,
+        "hitPoints": "+1d4",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 12,
+          "blast": 14,
+          "spell": 14
+        }
+      },
+      {
+        "level": 4,
+        "xp": 4800,
+        "hitPoints": "+1d4",
+        "attackBonus": 1,
+        "saves": {
+          "doom": 12,
+          "ray": 13,
+          "hold": 12,
+          "blast": 14,
+          "spell": 14
+        }
+      },
+      {
+        "level": 5,
+        "xp": 9600,
+        "hitPoints": "+1d4",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 11,
+          "blast": 13,
+          "spell": 13
+        }
+      },
+      {
+        "level": 6,
+        "xp": 19200,
+        "hitPoints": "+1d4",
+        "attackBonus": 2,
+        "saves": {
+          "doom": 11,
+          "ray": 12,
+          "hold": 11,
+          "blast": 13,
+          "spell": 13
+        }
+      },
+      {
+        "level": 7,
+        "xp": 38400,
+        "hitPoints": "+1d4",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 10,
+          "blast": 12,
+          "spell": 12
+        }
+      },
+      {
+        "level": 8,
+        "xp": 76800,
+        "hitPoints": "+1d4",
+        "attackBonus": 3,
+        "saves": {
+          "doom": 10,
+          "ray": 11,
+          "hold": 10,
+          "blast": 12,
+          "spell": 12
+        }
+      },
+      {
+        "level": 9,
+        "xp": 150000,
+        "hitPoints": "+1d4",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 9,
+          "blast": 11,
+          "spell": 11
+        }
+      },
+      {
+        "level": 10,
+        "xp": 270000,
+        "hitPoints": "+1d4",
+        "attackBonus": 4,
+        "saves": {
+          "doom": 9,
+          "ray": 10,
+          "hold": 9,
+          "blast": 11,
+          "spell": 11
+        }
+      },
+      {
+        "level": 11,
+        "xp": 390000,
+        "hitPoints": "+1",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 8,
+          "blast": 10,
+          "spell": 10
+        }
+      },
+      {
+        "level": 12,
+        "xp": 510000,
+        "hitPoints": "+1",
+        "attackBonus": 5,
+        "saves": {
+          "doom": 8,
+          "ray": 9,
+          "hold": 8,
+          "blast": 10,
+          "spell": 10
+        }
+      },
+      {
+        "level": 13,
+        "xp": 630000,
+        "hitPoints": "+1",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 7,
+          "blast": 9,
+          "spell": 9
+        }
+      },
+      {
+        "level": 14,
+        "xp": 750000,
+        "hitPoints": "+1",
+        "attackBonus": 6,
+        "saves": {
+          "doom": 7,
+          "ray": 8,
+          "hold": 7,
+          "blast": 9,
+          "spell": 9
+        }
+      },
+      {
+        "level": 15,
+        "xp": 870000,
+        "hitPoints": "+1",
+        "attackBonus": 7,
+        "saves": {
+          "doom": 6,
+          "ray": 7,
+          "hold": 6,
+          "blast": 8,
+          "spell": 8
+        }
+      }
+    ]
+  }
+}

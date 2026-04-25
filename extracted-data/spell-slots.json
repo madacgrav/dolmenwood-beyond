@@ -1,0 +1,422 @@
+{
+  "_notes": "Cleric and Friar use Holy spells (5 ranks). Magician uses Arcane spells (6 ranks). Enchanter uses Glamours (counted in advancement table). Bard has no spell slots (uses Counter Charm/Enchantment abilities).",
+  "Cleric": {
+    "spellType": "Holy",
+    "maxRank": 5,
+    "pdfPage": 62,
+    "slotsPerLevel": [
+      {
+        "level": 1,
+        "rank1": 0,
+        "rank2": 0,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 2,
+        "rank1": 1,
+        "rank2": 0,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 3,
+        "rank1": 2,
+        "rank2": 0,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 4,
+        "rank1": 2,
+        "rank2": 1,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 5,
+        "rank1": 2,
+        "rank2": 2,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 6,
+        "rank1": 2,
+        "rank2": 2,
+        "rank3": 1,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 7,
+        "rank1": 3,
+        "rank2": 2,
+        "rank3": 2,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 8,
+        "rank1": 3,
+        "rank2": 2,
+        "rank3": 2,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 9,
+        "rank1": 3,
+        "rank2": 3,
+        "rank3": 2,
+        "rank4": 1,
+        "rank5": 0
+      },
+      {
+        "level": 10,
+        "rank1": 3,
+        "rank2": 3,
+        "rank3": 2,
+        "rank4": 2,
+        "rank5": 0
+      },
+      {
+        "level": 11,
+        "rank1": 4,
+        "rank2": 3,
+        "rank3": 3,
+        "rank4": 2,
+        "rank5": 0
+      },
+      {
+        "level": 12,
+        "rank1": 4,
+        "rank2": 3,
+        "rank3": 3,
+        "rank4": 2,
+        "rank5": 1
+      },
+      {
+        "level": 13,
+        "rank1": 4,
+        "rank2": 4,
+        "rank3": 3,
+        "rank4": 2,
+        "rank5": 2
+      },
+      {
+        "level": 14,
+        "rank1": 4,
+        "rank2": 4,
+        "rank3": 3,
+        "rank4": 3,
+        "rank5": 2
+      },
+      {
+        "level": 15,
+        "rank1": 5,
+        "rank2": 4,
+        "rank3": 4,
+        "rank4": 3,
+        "rank5": 2
+      }
+    ]
+  },
+  "Friar": {
+    "spellType": "Holy",
+    "maxRank": 5,
+    "pdfPage": 68,
+    "slotsPerLevel": [
+      {
+        "level": 1,
+        "rank1": 1,
+        "rank2": 0,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 2,
+        "rank1": 2,
+        "rank2": 0,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 3,
+        "rank1": 2,
+        "rank2": 1,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 4,
+        "rank1": 2,
+        "rank2": 2,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 5,
+        "rank1": 3,
+        "rank2": 2,
+        "rank3": 1,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 6,
+        "rank1": 3,
+        "rank2": 2,
+        "rank3": 2,
+        "rank4": 0,
+        "rank5": 0
+      },
+      {
+        "level": 7,
+        "rank1": 3,
+        "rank2": 3,
+        "rank3": 2,
+        "rank4": 1,
+        "rank5": 0
+      },
+      {
+        "level": 8,
+        "rank1": 4,
+        "rank2": 3,
+        "rank3": 2,
+        "rank4": 2,
+        "rank5": 0
+      },
+      {
+        "level": 9,
+        "rank1": 4,
+        "rank2": 3,
+        "rank3": 3,
+        "rank4": 2,
+        "rank5": 1
+      },
+      {
+        "level": 10,
+        "rank1": 4,
+        "rank2": 4,
+        "rank3": 3,
+        "rank4": 2,
+        "rank5": 2
+      },
+      {
+        "level": 11,
+        "rank1": 5,
+        "rank2": 4,
+        "rank3": 3,
+        "rank4": 3,
+        "rank5": 2
+      },
+      {
+        "level": 12,
+        "rank1": 5,
+        "rank2": 4,
+        "rank3": 4,
+        "rank4": 3,
+        "rank5": 2
+      },
+      {
+        "level": 13,
+        "rank1": 5,
+        "rank2": 5,
+        "rank3": 4,
+        "rank4": 3,
+        "rank5": 3
+      },
+      {
+        "level": 14,
+        "rank1": 6,
+        "rank2": 5,
+        "rank3": 4,
+        "rank4": 4,
+        "rank5": 3
+      },
+      {
+        "level": 15,
+        "rank1": 6,
+        "rank2": 5,
+        "rank3": 5,
+        "rank4": 4,
+        "rank5": 3
+      }
+    ]
+  },
+  "Magician": {
+    "spellType": "Arcane",
+    "maxRank": 6,
+    "pdfPage": 74,
+    "slotsPerLevel": [
+      {
+        "level": 1,
+        "rank1": 1,
+        "rank2": 0,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0,
+        "rank6": 0
+      },
+      {
+        "level": 2,
+        "rank1": 2,
+        "rank2": 0,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0,
+        "rank6": 0
+      },
+      {
+        "level": 3,
+        "rank1": 2,
+        "rank2": 1,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0,
+        "rank6": 0
+      },
+      {
+        "level": 4,
+        "rank1": 2,
+        "rank2": 2,
+        "rank3": 0,
+        "rank4": 0,
+        "rank5": 0,
+        "rank6": 0
+      },
+      {
+        "level": 5,
+        "rank1": 2,
+        "rank2": 2,
+        "rank3": 1,
+        "rank4": 0,
+        "rank5": 0,
+        "rank6": 0
+      },
+      {
+        "level": 6,
+        "rank1": 3,
+        "rank2": 2,
+        "rank3": 2,
+        "rank4": 0,
+        "rank5": 0,
+        "rank6": 0
+      },
+      {
+        "level": 7,
+        "rank1": 3,
+        "rank2": 2,
+        "rank3": 2,
+        "rank4": 1,
+        "rank5": 0,
+        "rank6": 0
+      },
+      {
+        "level": 8,
+        "rank1": 3,
+        "rank2": 3,
+        "rank3": 2,
+        "rank4": 2,
+        "rank5": 0,
+        "rank6": 0
+      },
+      {
+        "level": 9,
+        "rank1": 3,
+        "rank2": 3,
+        "rank3": 2,
+        "rank4": 2,
+        "rank5": 1,
+        "rank6": 0
+      },
+      {
+        "level": 10,
+        "rank1": 4,
+        "rank2": 3,
+        "rank3": 3,
+        "rank4": 2,
+        "rank5": 2,
+        "rank6": 0
+      },
+      {
+        "level": 11,
+        "rank1": 4,
+        "rank2": 3,
+        "rank3": 3,
+        "rank4": 2,
+        "rank5": 2,
+        "rank6": 1
+      },
+      {
+        "level": 12,
+        "rank1": 4,
+        "rank2": 4,
+        "rank3": 3,
+        "rank4": 3,
+        "rank5": 2,
+        "rank6": 2
+      },
+      {
+        "level": 13,
+        "rank1": 4,
+        "rank2": 4,
+        "rank3": 3,
+        "rank4": 3,
+        "rank5": 3,
+        "rank6": 2
+      },
+      {
+        "level": 14,
+        "rank1": 5,
+        "rank2": 4,
+        "rank3": 4,
+        "rank4": 3,
+        "rank5": 3,
+        "rank6": 2
+      },
+      {
+        "level": 15,
+        "rank1": 5,
+        "rank2": 4,
+        "rank3": 4,
+        "rank4": 3,
+        "rank5": 3,
+        "rank6": 3
+      }
+    ]
+  },
+  "Enchanter": {
+    "spellType": "Glamours (Fairy Magic)",
+    "maxRank": null,
+    "pdfPage": 64,
+    "_notes": "Enchanters use Glamours. Number known per level is in class advancement table (glamours column). See Glamours rules p94.",
+    "glamoursKnownByLevel": [
+      1,
+      2,
+      3,
+      3,
+      4,
+      5,
+      6,
+      6,
+      7,
+      7,
+      8,
+      8,
+      9,
+      9,
+      10
+    ]
+  }
+}

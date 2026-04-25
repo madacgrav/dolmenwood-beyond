@@ -1,0 +1,510 @@
+{
+  "_notes": "Skills use 1d6 roll, succeed if result >= Skill Target. Natural 1 always fails, natural 6 always succeeds. Default target for unlisted skills is 6.",
+  "universal": {
+    "description": "All characters have these skills",
+    "defaultTarget": 6,
+    "skills": [
+      {
+        "name": "Listen",
+        "defaultTarget": 6,
+        "description": "Pressed to a door to detect creatures on the other side.",
+        "kindredModifiers": [
+          {
+            "kindred": "Elf",
+            "target": 5
+          },
+          {
+            "kindred": "Grimalkin",
+            "target": 5
+          }
+        ]
+      },
+      {
+        "name": "Search",
+        "defaultTarget": 6,
+        "description": "Searching for secret doors or traps.",
+        "kindredModifiers": [
+          {
+            "kindred": "Elf",
+            "target": 5
+          }
+        ]
+      },
+      {
+        "name": "Survival",
+        "defaultTarget": 6,
+        "description": "Finding food in the wild.",
+        "kindredModifiers": [
+          {
+            "kindred": "Mossling",
+            "target": 5,
+            "condition": "when foraging"
+          }
+        ]
+      }
+    ]
+  },
+  "classBased": {
+    "Bard": {
+      "pdfPage": 60,
+      "skills": [
+        "Decipher Document",
+        "Legerdemain",
+        "Listen",
+        "Monster Lore"
+      ],
+      "targets": [
+        {
+          "level": 1,
+          "decipherDoc": 6,
+          "legerdemain": 6,
+          "listen": 5,
+          "monsterLore": 5
+        },
+        {
+          "level": 2,
+          "decipherDoc": 5,
+          "legerdemain": 6,
+          "listen": 5,
+          "monsterLore": 5
+        },
+        {
+          "level": 3,
+          "decipherDoc": 5,
+          "legerdemain": 6,
+          "listen": 5,
+          "monsterLore": 4
+        },
+        {
+          "level": 4,
+          "decipherDoc": 5,
+          "legerdemain": 5,
+          "listen": 5,
+          "monsterLore": 4
+        },
+        {
+          "level": 5,
+          "decipherDoc": 5,
+          "legerdemain": 5,
+          "listen": 4,
+          "monsterLore": 4
+        },
+        {
+          "level": 6,
+          "decipherDoc": 4,
+          "legerdemain": 5,
+          "listen": 4,
+          "monsterLore": 4
+        },
+        {
+          "level": 7,
+          "decipherDoc": 4,
+          "legerdemain": 5,
+          "listen": 4,
+          "monsterLore": 3
+        },
+        {
+          "level": 8,
+          "decipherDoc": 4,
+          "legerdemain": 4,
+          "listen": 4,
+          "monsterLore": 3
+        },
+        {
+          "level": 9,
+          "decipherDoc": 4,
+          "legerdemain": 4,
+          "listen": 3,
+          "monsterLore": 3
+        },
+        {
+          "level": 10,
+          "decipherDoc": 3,
+          "legerdemain": 4,
+          "listen": 3,
+          "monsterLore": 3
+        },
+        {
+          "level": 11,
+          "decipherDoc": 3,
+          "legerdemain": 3,
+          "listen": 3,
+          "monsterLore": 3
+        },
+        {
+          "level": 12,
+          "decipherDoc": 3,
+          "legerdemain": 3,
+          "listen": 3,
+          "monsterLore": 2
+        },
+        {
+          "level": 13,
+          "decipherDoc": 2,
+          "legerdemain": 3,
+          "listen": 3,
+          "monsterLore": 2
+        },
+        {
+          "level": 14,
+          "decipherDoc": 2,
+          "legerdemain": 3,
+          "listen": 2,
+          "monsterLore": 2
+        },
+        {
+          "level": 15,
+          "decipherDoc": 2,
+          "legerdemain": 2,
+          "listen": 2,
+          "monsterLore": 2
+        }
+      ]
+    },
+    "Hunter": {
+      "pdfPage": 70,
+      "skills": [
+        "Alertness",
+        "Stalking",
+        "Survival",
+        "Tracking"
+      ],
+      "targets": [
+        {
+          "level": 1,
+          "alertness": 6,
+          "stalking": 6,
+          "survival": 5,
+          "tracking": 5
+        },
+        {
+          "level": 2,
+          "alertness": 6,
+          "stalking": 6,
+          "survival": 4,
+          "tracking": 5
+        },
+        {
+          "level": 3,
+          "alertness": 6,
+          "stalking": 6,
+          "survival": 4,
+          "tracking": 4
+        },
+        {
+          "level": 4,
+          "alertness": 6,
+          "stalking": 5,
+          "survival": 4,
+          "tracking": 4
+        },
+        {
+          "level": 5,
+          "alertness": 5,
+          "stalking": 5,
+          "survival": 4,
+          "tracking": 4
+        },
+        {
+          "level": 6,
+          "alertness": 5,
+          "stalking": 5,
+          "survival": 3,
+          "tracking": 4
+        },
+        {
+          "level": 7,
+          "alertness": 5,
+          "stalking": 5,
+          "survival": 3,
+          "tracking": 3
+        },
+        {
+          "level": 8,
+          "alertness": 5,
+          "stalking": 4,
+          "survival": 3,
+          "tracking": 3
+        },
+        {
+          "level": 9,
+          "alertness": 4,
+          "stalking": 4,
+          "survival": 3,
+          "tracking": 3
+        },
+        {
+          "level": 10,
+          "alertness": 4,
+          "stalking": 3,
+          "survival": 3,
+          "tracking": 3
+        },
+        {
+          "level": 11,
+          "alertness": 4,
+          "stalking": 3,
+          "survival": 2,
+          "tracking": 3
+        },
+        {
+          "level": 12,
+          "alertness": 4,
+          "stalking": 3,
+          "survival": 2,
+          "tracking": 2
+        },
+        {
+          "level": 13,
+          "alertness": 3,
+          "stalking": 3,
+          "survival": 2,
+          "tracking": 2
+        },
+        {
+          "level": 14,
+          "alertness": 3,
+          "stalking": 2,
+          "survival": 2,
+          "tracking": 2
+        },
+        {
+          "level": 15,
+          "alertness": 2,
+          "stalking": 2,
+          "survival": 2,
+          "tracking": 2
+        }
+      ]
+    },
+    "Magician": {
+      "pdfPage": 74,
+      "skills": [
+        "Detect Magic"
+      ],
+      "targets": [
+        {
+          "level": 1,
+          "detectMagic": 6
+        },
+        {
+          "level": 2,
+          "detectMagic": 6
+        },
+        {
+          "level": 3,
+          "detectMagic": 5
+        },
+        {
+          "level": 4,
+          "detectMagic": 5
+        },
+        {
+          "level": 5,
+          "detectMagic": 5
+        },
+        {
+          "level": 6,
+          "detectMagic": 4
+        },
+        {
+          "level": 7,
+          "detectMagic": 4
+        },
+        {
+          "level": 8,
+          "detectMagic": 4
+        },
+        {
+          "level": 9,
+          "detectMagic": 3
+        },
+        {
+          "level": 10,
+          "detectMagic": 3
+        }
+      ],
+      "_notes": "Detect Magic at Level 10+ remains at 3"
+    },
+    "Thief": {
+      "pdfPage": 76,
+      "skills": [
+        "Climb Wall",
+        "Decipher Document",
+        "Disarm Mechanism",
+        "Legerdemain",
+        "Listen",
+        "Pick Lock",
+        "Search",
+        "Stealth"
+      ],
+      "targets": [
+        {
+          "level": 1,
+          "climbWall": 4,
+          "decipherDoc": 6,
+          "disarmMech": 6,
+          "legerdemain": 6,
+          "listen": 6,
+          "pickLock": 5,
+          "search": 6,
+          "stealth": 5
+        },
+        {
+          "level": 2,
+          "climbWall": 4,
+          "decipherDoc": 6,
+          "disarmMech": 5,
+          "legerdemain": 6,
+          "listen": 6,
+          "pickLock": 5,
+          "search": 5,
+          "stealth": 5
+        },
+        {
+          "level": 3,
+          "climbWall": 4,
+          "decipherDoc": 6,
+          "disarmMech": 5,
+          "legerdemain": 5,
+          "listen": 5,
+          "pickLock": 5,
+          "search": 5,
+          "stealth": 5
+        },
+        {
+          "level": 4,
+          "climbWall": 3,
+          "decipherDoc": 5,
+          "disarmMech": 5,
+          "legerdemain": 5,
+          "listen": 5,
+          "pickLock": 5,
+          "search": 5,
+          "stealth": 5
+        },
+        {
+          "level": 5,
+          "climbWall": 3,
+          "decipherDoc": 5,
+          "disarmMech": 5,
+          "legerdemain": 5,
+          "listen": 5,
+          "pickLock": 4,
+          "search": 5,
+          "stealth": 4
+        },
+        {
+          "level": 6,
+          "climbWall": 3,
+          "decipherDoc": 5,
+          "disarmMech": 4,
+          "legerdemain": 5,
+          "listen": 5,
+          "pickLock": 4,
+          "search": 4,
+          "stealth": 4
+        },
+        {
+          "level": 7,
+          "climbWall": 3,
+          "decipherDoc": 5,
+          "disarmMech": 4,
+          "legerdemain": 4,
+          "listen": 4,
+          "pickLock": 4,
+          "search": 4,
+          "stealth": 4
+        },
+        {
+          "level": 8,
+          "climbWall": 2,
+          "decipherDoc": 4,
+          "disarmMech": 4,
+          "legerdemain": 4,
+          "listen": 4,
+          "pickLock": 4,
+          "search": 4,
+          "stealth": 4
+        },
+        {
+          "level": 9,
+          "climbWall": 2,
+          "decipherDoc": 4,
+          "disarmMech": 4,
+          "legerdemain": 4,
+          "listen": 4,
+          "pickLock": 3,
+          "search": 4,
+          "stealth": 3
+        },
+        {
+          "level": 10,
+          "climbWall": 2,
+          "decipherDoc": 4,
+          "disarmMech": 3,
+          "legerdemain": 4,
+          "listen": 4,
+          "pickLock": 3,
+          "search": 3,
+          "stealth": 3
+        },
+        {
+          "level": 11,
+          "climbWall": 2,
+          "decipherDoc": 4,
+          "disarmMech": 3,
+          "legerdemain": 3,
+          "listen": 3,
+          "pickLock": 3,
+          "search": 3,
+          "stealth": 3
+        },
+        {
+          "level": 12,
+          "climbWall": 2,
+          "decipherDoc": 3,
+          "disarmMech": 3,
+          "legerdemain": 3,
+          "listen": 3,
+          "pickLock": 2,
+          "search": 3,
+          "stealth": 3
+        },
+        {
+          "level": 13,
+          "climbWall": 2,
+          "decipherDoc": 3,
+          "disarmMech": 3,
+          "legerdemain": 3,
+          "listen": 3,
+          "pickLock": 2,
+          "search": 2,
+          "stealth": 2
+        },
+        {
+          "level": 14,
+          "climbWall": 2,
+          "decipherDoc": 3,
+          "disarmMech": 2,
+          "legerdemain": 3,
+          "listen": 2,
+          "pickLock": 2,
+          "search": 2,
+          "stealth": 2
+        },
+        {
+          "level": 15,
+          "climbWall": 2,
+          "decipherDoc": 2,
+          "disarmMech": 2,
+          "legerdemain": 2,
+          "listen": 2,
+          "pickLock": 2,
+          "search": 2,
+          "stealth": 2
+        }
+      ]
+    }
+  }
+}

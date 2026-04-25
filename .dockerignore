@@ -1,0 +1,49 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+.next
+dist
+build
+out
+
+# Dev/test files
+**/*.test.ts
+**/*.spec.ts
+coverage
+
+# Environment files (NEVER in image)
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+.github
+
+# Docs and PDFs
+*.pdf
+docs/
+extracted-data/
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# Turbo cache
+.turbo
+
+# Supabase local
+supabase/.branches
+supabase/.temp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+README.md
+*.md

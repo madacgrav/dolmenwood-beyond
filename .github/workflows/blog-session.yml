@@ -1,0 +1,67 @@
+name: Generate Blog Session Draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      session_summary:
+        description: 'Brief summary of what was built, decisions made, AI tools used'
+        required: true
+        type: string
+      session_number:
+        description: 'Dev log session number'
+        required: true
+        type: string
+
+jobs:
+  generate-and-publish:
+    name: Generate & Publish Draft
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
+
+      - name: Get recent commits
+        id: commits
+        run: |
+          COMMITS=$(git log -10 --pretty=format:"- %s (%h)" | head -20)
+          echo "recent_commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Publish draft to WordPress
+        run: |
+          DATE=$(date +"%B %d, %Y")
+          TITLE="Dolmenwood Beyond Dev Log #${{ inputs.session_number }} — Session Notes"
+          
+          CONTENT="<h2>What Was Built</h2>
+          <p>${{ inputs.session_summary }}</p>
+          
+          <h2>Recent Commits</h2>
+          <pre>${{ steps.commits.outputs.recent_commits }}</pre>
+          
+          <h2>AI Tools &amp; Prompts Used</h2>
+          <p>[Fill in: which AI tools were used, example prompts, how they helped]</p>
+          
+          <h2>Key Decisions Made</h2>
+          <p>[Fill in: architecture, UX, or scope decisions with rationale]</p>
+          
+          <h2>Challenges &amp; What Failed</h2>
+          <p>[Fill in: honest account of blockers, wrong turns, things that didn't work]</p>
+          
+          <h2>What's Next</h2>
+          <p>[Fill in: next session focus]</p>"
+
+          curl -s -X POST \
+            "${{ secrets.WORDPRESS_API_URL }}/posts" \
+            -H "Content-Type: application/json" \
+            -u "${{ secrets.WORDPRESS_USERNAME }}:${{ secrets.WORDPRESS_APP_PASSWORD }}" \
+            -d "{
+              \"title\": \"$TITLE\",
+              \"content\": \"$CONTENT\",
+              \"status\": \"draft\",
+              \"tags\": [],
+              \"categories\": []
+            }"
+        env:
+          WORDPRESS_API_URL: ${{ secrets.WORDPRESS_API_URL }}

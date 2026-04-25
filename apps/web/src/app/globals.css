@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+/* Dolmenwood Beyond Design Tokens */
+@theme {
+  /* Color Palette — Light mode defaults */
+  --color-bg: #f5f2e8;
+  --color-surface: #faf8f0;
+  --color-primary: #2d5a27;
+  --color-primary-hover: #234820;
+  --color-text: #1e1b0f;
+  --color-text-muted: #6b6450;
+  --color-gold: #c49a1a;
+  --color-danger: #8b1a1a;
+  --color-border: #d4ceb8;
+
+  /* Typography */
+  --font-display: 'Cinzel', 'Georgia', serif;
+  --font-body: 'Satoshi', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* Spacing / Sizing */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --touch-target: 44px;
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #17160f;
+    --color-surface: #1e1d15;
+    --color-primary: #5a9e50;
+    --color-primary-hover: #4d8844;
+    --color-text: #d8d4c0;
+    --color-text-muted: #8a8470;
+    --color-gold: #e8b830;
+    --color-danger: #c44040;
+    --color-border: #2e2c1e;
+  }
+}
+
+html {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes diceShake {
+  0%, 100% { transform: rotate(-3deg) scale(1.05); }
+  50% { transform: rotate(3deg) scale(1.05); }
+}
+
+@keyframes celebrationBounce {
+  0%   { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+  60%  { transform: scale(1.2) rotate(5deg);   opacity: 1; }
+  100% { transform: scale(1)   rotate(0deg); }
+}
+
+/* Ensure touch targets meet 44px minimum */
+button, [role="button"], a {
+  min-height: var(--touch-target);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

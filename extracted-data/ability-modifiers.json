@@ -1,0 +1,83 @@
+{
+  "_notes": "Source: page 24 (PDF page), printed page 22",
+  "modifiers": [
+    {
+      "score": 3,
+      "modifier": -3
+    },
+    {
+      "scoreMin": 4,
+      "scoreMax": 5,
+      "modifier": -2
+    },
+    {
+      "scoreMin": 6,
+      "scoreMax": 8,
+      "modifier": -1
+    },
+    {
+      "scoreMin": 9,
+      "scoreMax": 12,
+      "modifier": 0
+    },
+    {
+      "scoreMin": 13,
+      "scoreMax": 15,
+      "modifier": 1
+    },
+    {
+      "scoreMin": 16,
+      "scoreMax": 17,
+      "modifier": 2
+    },
+    {
+      "score": 18,
+      "modifier": 3
+    }
+  ],
+  "lookup": {
+    "3": -3,
+    "4": -2,
+    "5": -2,
+    "6": -1,
+    "7": -1,
+    "8": -1,
+    "9": 0,
+    "10": 0,
+    "11": 0,
+    "12": 0,
+    "13": 1,
+    "14": 1,
+    "15": 1,
+    "16": 2,
+    "17": 2,
+    "18": 3
+  },
+  "primeAbilityXPModifiers": [
+    {
+      "scoreMin": 3,
+      "scoreMax": 5,
+      "xpModifier": -20
+    },
+    {
+      "scoreMin": 6,
+      "scoreMax": 8,
+      "xpModifier": -10
+    },
+    {
+      "scoreMin": 9,
+      "scoreMax": 12,
+      "xpModifier": 0
+    },
+    {
+      "scoreMin": 13,
+      "scoreMax": 15,
+      "xpModifier": 5
+    },
+    {
+      "scoreMin": 16,
+      "scoreMax": 18,
+      "xpModifier": 10
+    }
+  ]
+}

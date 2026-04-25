@@ -1,0 +1,430 @@
+{
+  "Breggle": {
+    "kindredType": "Mortal",
+    "level1Age": "15 + 2d10 years",
+    "lifespan": "50 + 2d20 years",
+    "height": "5'4\" + 2d6\" (Medium)",
+    "weight": "120 + 6d10 lbs",
+    "nativeLanguages": [
+      "Woldish",
+      "Gaffe",
+      "Caprice"
+    ],
+    "pdfPage": 34,
+    "traits": [
+      {
+        "name": "Fur",
+        "description": "Thick woolly fur grants +1 AC when unarmoured or wearing Light armour."
+      },
+      {
+        "name": "Gaze (Longhorn, Level 4+)",
+        "description": "Can charm humans and shorthorns into obeisance. Target Saves vs Spell or is charmed. Duration until next sunrise. Usage by level: L4-5: 1/day, L6-7: 2/day, L8-9: 3/day, L10+: 4/day."
+      },
+      {
+        "name": "Horns",
+        "description": "Melee horn attack. Damage and length scale by level. L1: 1d4, L3: 1d4+1, L6: 1d6, L9: 1d6+1, L10+: 1d6+2."
+      }
+    ],
+    "acBonus": "+1 AC (unarmoured or light armour)",
+    "naturalAttack": {
+      "weapon": "horns",
+      "baseDamage": "1d4",
+      "scaling": "by level"
+    },
+    "classRestrictions": {
+      "common": [
+        "Fighter",
+        "Knight",
+        "Magician"
+      ],
+      "rare": [
+        "Bard",
+        "Cleric",
+        "Friar",
+        "Hunter",
+        "Thief"
+      ],
+      "veryRare": [
+        "Enchanter"
+      ],
+      "notes": "Seldom clerics or friars. Rare enchanters."
+    },
+    "skills": [],
+    "hornAdvancement": [
+      {
+        "levelMin": 1,
+        "levelMax": 1,
+        "length": "1\"",
+        "damage": "1d4",
+        "gazePerDay": 0
+      },
+      {
+        "levelMin": 2,
+        "levelMax": 2,
+        "length": "2\"",
+        "damage": "1d4",
+        "gazePerDay": 0
+      },
+      {
+        "levelMin": 3,
+        "levelMax": 3,
+        "length": "3\"",
+        "damage": "1d4+1",
+        "gazePerDay": 0
+      },
+      {
+        "levelMin": 4,
+        "levelMax": 5,
+        "length": "4\"",
+        "damage": "1d4+1",
+        "gazePerDay": 1
+      },
+      {
+        "levelMin": 6,
+        "levelMax": 7,
+        "length": "8\"",
+        "damage": "1d6",
+        "gazePerDay": 2
+      },
+      {
+        "levelMin": 8,
+        "levelMax": 8,
+        "length": "12\"",
+        "damage": "1d6",
+        "gazePerDay": 3
+      },
+      {
+        "levelMin": 9,
+        "levelMax": 9,
+        "length": "14\"",
+        "damage": "1d6+1",
+        "gazePerDay": 3
+      },
+      {
+        "levelMin": 10,
+        "levelMax": null,
+        "length": "16\"",
+        "damage": "1d6+2",
+        "gazePerDay": 4
+      }
+    ]
+  },
+  "Elf": {
+    "kindredType": "Fairy",
+    "nativeLanguages": [
+      "Woldish",
+      "Sylvan"
+    ],
+    "size": "Medium",
+    "pdfPage": 38,
+    "traits": [
+      {
+        "name": "Elf Skills",
+        "description": "Skill Target 5 for Listen and Search."
+      },
+      {
+        "name": "Glamours",
+        "description": "Knows one randomly determined glamour."
+      },
+      {
+        "name": "Immortality",
+        "description": "Cannot die naturally. Immune to non-magical diseases. Cannot die of thirst/starvation (but becomes desperate/sadistic)."
+      },
+      {
+        "name": "Magic Resistance",
+        "description": "+2 Magic Resistance."
+      },
+      {
+        "name": "Unearthly Beauty",
+        "description": "+2 Charisma (max 18) when interacting with mortals."
+      },
+      {
+        "name": "Vulnerable to Cold Iron",
+        "description": "Cold iron weapons inflict +1 damage."
+      }
+    ],
+    "skills": [
+      {
+        "skill": "Listen",
+        "target": 5
+      },
+      {
+        "skill": "Search",
+        "target": 5
+      }
+    ],
+    "classRestrictions": {
+      "common": [
+        "Enchanter",
+        "Fighter",
+        "Hunter",
+        "Magician"
+      ],
+      "rare": [
+        "Bard",
+        "Thief"
+      ],
+      "forbidden": [
+        "Cleric",
+        "Friar",
+        "Knight"
+      ],
+      "notes": "Cannot be cleric or friar (no spiritual connection with mortal deities). Rarely accepted as knight."
+    },
+    "vulnerabilities": [
+      "Cold Iron (+1 damage)"
+    ],
+    "immunities": [
+      "Natural death",
+      "Non-magical diseases"
+    ],
+    "magicResistance": 2
+  },
+  "Grimalkin": {
+    "kindredType": "Fairy",
+    "size": "Small",
+    "nativeLanguages": [
+      "Woldish",
+      "Sylvan"
+    ],
+    "pdfPage": 42,
+    "traits": [
+      {
+        "name": "Armour and Weapons",
+        "description": "Armour tailored to small size. Cannot wield Large weapons."
+      },
+      {
+        "name": "Defensive Bonus",
+        "description": "+2 AC in melee with Large creatures."
+      },
+      {
+        "name": "Eating Giant Rodents",
+        "description": "After 1 Turn devouring a freshly killed giant rodent, heals 1 HP."
+      },
+      {
+        "name": "Glamours",
+        "description": "Knows one randomly determined glamour."
+      },
+      {
+        "name": "Grimalkin Skills",
+        "description": "Skill Target 5 for Listen."
+      },
+      {
+        "name": "Immortality",
+        "description": "Cannot die naturally. Immune to non-magical diseases."
+      },
+      {
+        "name": "Magic Resistance",
+        "description": "+2 Magic Resistance."
+      },
+      {
+        "name": "Shape-Shifting",
+        "description": "Can transform into Chester (fat domestic cat, unlimited) or Wilder (primal fey form, 1/day at <50% HP, heals 2d6 HP, lasts 2d4 Rounds)."
+      },
+      {
+        "name": "Vulnerable to Cold Iron",
+        "description": "Cold iron weapons inflict +1 damage."
+      }
+    ],
+    "skills": [
+      {
+        "skill": "Listen",
+        "target": 5
+      }
+    ],
+    "classRestrictions": {
+      "common": [
+        "Bard",
+        "Enchanter",
+        "Hunter",
+        "Thief"
+      ],
+      "rare": [
+        "Fighter",
+        "Magician"
+      ],
+      "forbidden": [
+        "Cleric",
+        "Friar",
+        "Knight"
+      ],
+      "notes": "Cannot be cleric or friar. Rarely accepted as knight."
+    },
+    "vulnerabilities": [
+      "Cold Iron (+1 damage)"
+    ],
+    "immunities": [
+      "Natural death",
+      "Non-magical diseases"
+    ],
+    "magicResistance": 2
+  },
+  "Human": {
+    "kindredType": "Mortal",
+    "level1Age": "15 + 1d6 years",
+    "lifespan": "50 + 2d20 years",
+    "height": "5'6\" + 2d6\" (Medium)",
+    "weight": "130 + 6d10 lbs",
+    "nativeLanguages": [
+      "Woldish"
+    ],
+    "pdfPage": 46,
+    "traits": [
+      {
+        "name": "Decisiveness",
+        "description": "When Initiative is tied, humans act first."
+      },
+      {
+        "name": "Leadership",
+        "description": "Loyalty of retainers increased by 1."
+      },
+      {
+        "name": "Spirited",
+        "description": "+10% bonus to all XP earned (in addition to Prime Ability XP bonus)."
+      }
+    ],
+    "skills": [],
+    "classRestrictions": {
+      "common": [
+        "Bard",
+        "Cleric",
+        "Fighter",
+        "Friar",
+        "Hunter",
+        "Knight",
+        "Magician",
+        "Thief"
+      ],
+      "rare": [
+        "Enchanter"
+      ],
+      "notes": "Can be any class. Rarely enchanters (rare connection to Fairy)."
+    }
+  },
+  "Mossling": {
+    "kindredType": "Mortal",
+    "level1Age": "20 + 1d6 years",
+    "lifespan": "100 + 2d20 years",
+    "height": "2'8\" + 2d4\" (Small)",
+    "weight": "40 + 2d8 lbs",
+    "nativeLanguages": [
+      "Woldish",
+      "Sylvan"
+    ],
+    "pdfPage": 50,
+    "traits": [
+      {
+        "name": "Armour and Weapons",
+        "description": "Armour tailored to small size. Cannot wield Large weapons. Prefer non-metal armour (bark, pinecone)."
+      },
+      {
+        "name": "Knacks",
+        "description": "Each mossling knows one knack (quasi-magical craft). See Mossling Knacks (p112)."
+      },
+      {
+        "name": "Mossling Skills",
+        "description": "Skill Target 5 for Survival when foraging."
+      },
+      {
+        "name": "Resilience",
+        "description": "+4 Save vs fungal spores or poisons. +2 to all other Saving Throws."
+      },
+      {
+        "name": "Symbiotic Flesh",
+        "description": "At each Level (incl. Level 1), gains a random trait from the Symbiotic Flesh table (d20)."
+      }
+    ],
+    "skills": [
+      {
+        "skill": "Survival (foraging)",
+        "target": 5
+      }
+    ],
+    "classRestrictions": {
+      "common": [
+        "Fighter",
+        "Hunter"
+      ],
+      "occasional": [
+        "Knight"
+      ],
+      "rare": [
+        "Bard",
+        "Cleric",
+        "Friar",
+        "Magician",
+        "Thief"
+      ],
+      "veryRare": [
+        "Enchanter"
+      ],
+      "notes": "Seldom clerics or friars. Rarely accepted as knights. Very rarely enchanters."
+    },
+    "savingThrowBonuses": {
+      "fungalSporesAndPoisons": 4,
+      "allOthers": 2
+    }
+  },
+  "Woodgrue": {
+    "kindredType": "Demi-fey",
+    "level1Age": "50 + 3d6 years",
+    "lifespan": "300 + 2d100 years",
+    "height": "3' + 2d6\" (Small)",
+    "weight": "60 + 2d10 lbs",
+    "nativeLanguages": [
+      "Woldish",
+      "Sylvan"
+    ],
+    "pdfPage": 54,
+    "traits": [
+      {
+        "name": "Armour and Weapons",
+        "description": "Armour tailored to small size. Cannot wield Large weapons."
+      },
+      {
+        "name": "Compulsive Jubilation",
+        "description": "Must partake in any witnessed party/feast/celebration. Save vs Spell to resist (at cost)."
+      },
+      {
+        "name": "Defensive Bonus",
+        "description": "+2 AC in melee with Large creatures."
+      },
+      {
+        "name": "Mad Revelry",
+        "description": "1/day: play enchanted melody on wind instrument to afflict nearby creatures (Save vs Spell). Options: Confide, Dance, Imbibe, Jape, Jubilate, Mount, Revel."
+      },
+      {
+        "name": "Moon Sight",
+        "description": "Darkvision 60'. Views darkness as if in faint moonlight."
+      },
+      {
+        "name": "Musical Instrument",
+        "description": "Can use a musical instrument as a melee weapon (1d4 damage)."
+      }
+    ],
+    "skills": [],
+    "classRestrictions": {
+      "common": [
+        "Bard",
+        "Magician",
+        "Thief"
+      ],
+      "rare": [
+        "Enchanter",
+        "Fighter",
+        "Hunter"
+      ],
+      "forbidden": [
+        "Cleric",
+        "Friar"
+      ],
+      "notes": "Cannot be cleric or friar. Rarely accepted as knight."
+    },
+    "vulnerabilities": [
+      "Cold Iron (+1 damage)"
+    ],
+    "specialSenses": [
+      "Moon Sight (darkvision 60')"
+    ]
+  }
+}
