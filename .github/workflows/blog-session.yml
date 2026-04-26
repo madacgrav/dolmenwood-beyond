@@ -1,10 +1,18 @@
 name: Publish Blog Post
 
 on:
+  # Auto-publish on every push to main that touches docs/blog/
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/blog/**.md'
+
+  # Manual trigger: publish a specific file (or re-publish with a status override)
   workflow_dispatch:
     inputs:
       post_file:
-        description: 'Filename in docs/blog/ to publish (e.g. 2026-04-25-dev-log-1-building-dolmenwood-beyond.md)'
+        description: 'Filename in docs/blog/ to publish (e.g. 2026-04-25-dev-log-1.md)'
         required: true
         type: string
       status_override:
@@ -18,9 +26,59 @@ on:
           - publish
 
 jobs:
-  publish:
-    name: Publish to WordPress
+  # ── Step 1: Detect which blog files to publish ───────────────────────────────
+  detect:
+    name: Detect changed blog posts
     runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.detect.outputs.files }}
+      count: ${{ steps.detect.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so we can diff against the previous commit on push
+          fetch-depth: 2
+
+      - name: Detect files
+        id: detect
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual run: use the specified file
+            FILES='["docs/blog/${{ inputs.post_file }}"]'
+            COUNT=1
+          else
+            # Push to main: find .md files added or modified in this commit
+            # Exclude README.md and any non-.md files
+            CHANGED=$(git diff --name-only --diff-filter=AM HEAD^ HEAD -- 'docs/blog/*.md' \
+              | grep -v 'README' \
+              | grep '\.md$' || true)
+
+            if [ -z "$CHANGED" ]; then
+              echo "No blog posts changed in this push."
+              FILES='[]'
+              COUNT=0
+            else
+              # Build JSON array
+              FILES=$(echo "$CHANGED" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+              COUNT=$(echo "$CHANGED" | grep -c '.' || true)
+            fi
+          fi
+
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "Detected $COUNT file(s): $FILES"
+
+  # ── Step 2: Publish each detected file ───────────────────────────────────────
+  publish:
+    name: Publish "${{ matrix.post_file }}"
+    needs: detect
+    if: needs.detect.outputs.count > 0
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false          # publish others even if one fails
+      matrix:
+        post_file: ${{ fromJson(needs.detect.outputs.files) }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -29,20 +87,18 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install markdown-to-html converter
-        run: npm install -g marked gray-matter
-
       - name: Parse and convert post
         id: post
+        env:
+          POST_FILE: ${{ matrix.post_file }}
+          STATUS_OVERRIDE: ${{ inputs.status_override }}
         run: |
-          FILE="docs/blog/${{ inputs.post_file }}"
-
-          if [ ! -f "$FILE" ]; then
-            echo "::error::Post file not found: $FILE"
+          if [ ! -f "$POST_FILE" ]; then
+            echo "::error::Post file not found: $POST_FILE"
             exit 1
           fi
 
-          node << 'EOF'
+          node << 'JSEOF'
           const fs = require('fs');
           const path = require('path');
 
@@ -107,13 +163,10 @@ jobs:
           fs.appendFileSync(outputs, `tags<<EOF\n${JSON.stringify(tags)}\nEOF\n`);
           fs.appendFileSync(outputs, `content<<HTMLEOF\n${html}\nHTMLEOF\n`);
 
-          console.log(`Title: ${fm.title}`);
+          console.log(`Title:  ${fm.title}`);
           console.log(`Status: ${status}`);
-          console.log(`Tags: ${tags.join(', ')}`);
-          EOF
-        env:
-          POST_FILE: docs/blog/${{ inputs.post_file }}
-          STATUS_OVERRIDE: ${{ inputs.status_override }}
+          console.log(`Tags:   ${tags.join(', ')}`);
+          JSEOF
 
       - name: Resolve tag IDs
         id: resolve_tags
@@ -137,7 +190,6 @@ jobs:
                   const existing = matches.find(t => t.slug === slug || t.name.toLowerCase() === slug.toLowerCase());
                   if (existing?.id) return existing.id;
                 }
-
                 const createRes = await fetch(\`\${base}/tags\`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', Authorization: token },
@@ -145,7 +197,6 @@ jobs:
                 });
                 const created = await createRes.json();
                 if (created?.id) return created.id;
-
                 console.error('Failed to resolve tag:', slug, JSON.stringify(created));
                 return null;
               } catch (err) {
@@ -163,6 +214,14 @@ jobs:
 
       - name: Publish to WordPress
         id: publish
+        env:
+          WORDPRESS_API_URL: ${{ secrets.WORDPRESS_API_URL }}
+          WP_API_TOKEN: ${{ secrets.WP_API_TOKEN }}
+          POST_TITLE: ${{ steps.post.outputs.title }}
+          POST_CONTENT: ${{ steps.post.outputs.content }}
+          POST_STATUS: ${{ steps.post.outputs.status }}
+          POST_EXCERPT: ${{ steps.post.outputs.excerpt }}
+          POST_TAGS: ${{ steps.resolve_tags.outputs.tag_ids }}
         run: |
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "${WORDPRESS_API_URL}/posts" \
@@ -184,22 +243,14 @@ jobs:
 
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             POST_URL=$(echo "$BODY" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).link||'')}catch{console.log('')}})")
-            POST_ID=$(echo "$BODY" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).id||'')}catch{console.log('')}})")
+            POST_ID=$(echo "$BODY"  | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).id||'')}catch{console.log('')}})")
             echo "post_url=$POST_URL" >> $GITHUB_OUTPUT
-            echo "post_id=$POST_ID" >> $GITHUB_OUTPUT
+            echo "post_id=$POST_ID"   >> $GITHUB_OUTPUT
             echo "✅ Published post ID $POST_ID — $POST_URL"
           else
             echo "::error::WordPress API returned $HTTP_CODE: $BODY"
             exit 1
           fi
-        env:
-          WORDPRESS_API_URL: ${{ secrets.WORDPRESS_API_URL }}
-          WP_API_TOKEN: ${{ secrets.WP_API_TOKEN }}
-          POST_TITLE: ${{ steps.post.outputs.title }}
-          POST_CONTENT: ${{ steps.post.outputs.content }}
-          POST_STATUS: ${{ steps.post.outputs.status }}
-          POST_EXCERPT: ${{ steps.post.outputs.excerpt }}
-          POST_TAGS: ${{ steps.resolve_tags.outputs.tag_ids }}
 
       - name: Summary
         run: |
@@ -211,4 +262,4 @@ jobs:
           echo "| Status | ${{ steps.post.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Post ID | ${{ steps.publish.outputs.post_id }} |" >> $GITHUB_STEP_SUMMARY
           echo "| URL | ${{ steps.publish.outputs.post_url }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Source file | docs/blog/${{ inputs.post_file }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Source file | ${{ matrix.post_file }} |" >> $GITHUB_STEP_SUMMARY
