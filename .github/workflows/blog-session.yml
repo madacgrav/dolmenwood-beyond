@@ -165,9 +165,9 @@ jobs:
         id: publish
         run: |
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "${{ secrets.WORDPRESS_API_URL }}/posts" \
+            "${WORDPRESS_API_URL}/posts" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.WP_API_TOKEN }}" \
+            -H "Authorization: Bearer ${WP_API_TOKEN}" \
             -d "$(node -e "
               const title = process.env.POST_TITLE;
               const content = process.env.POST_CONTENT;

@@ -100,6 +100,88 @@ The Bicep setup handles the circular dependency between App Service and Key Vaul
 
 ---
 
+## The WordPress Pipeline: Turns Out Blogging Is Also Infrastructure
+
+The app has a news feed built in — a tab that pulls posts from this very WordPress site using the REST API. I wanted the pipeline to close the loop: finish a coding session, push commits, and have a blog post auto-published as a record of what was built. Simple idea. The implementation was a lesson in how much hidden complexity lives in "just connect two things."
+
+### Step 1: What Version Is WordPress Even Running?
+
+First thing I needed to check. The answer is in **Dashboard → Updates** in the WordPress admin — or scroll to the footer of any admin page. On WordPress.com hosted sites, updates are managed automatically, so this was mostly a non-issue. But I needed to confirm the REST API was available (it requires WordPress 4.7+).
+
+### Step 2: Application Passwords Don't Exist Where You Expect
+
+The standard WordPress REST API auth story is **Application Passwords** — generate one under Users → Profile, use it as HTTP Basic Auth. Except on WordPress.com free plan, that section simply doesn't appear. No error, no explanation. The field is just absent.
+
+Upgraded to Personal plan. Still not there. The reason: WordPress.com's hosted platform manages Application Passwords differently from self-hosted WordPress. They live under **account-level security settings** at `wordpress.com/me/security`, not inside the site's `/wp-admin/profile.php` — and they require Two-Step Authentication to be enabled first before the section appears.
+
+### Step 3: The Right Auth for a Pipeline Is OAuth2, Not App Passwords
+
+For a headless CI/CD context — GitHub Actions running unattended — OAuth2 bearer tokens are cleaner than Application Passwords anyway. You register an app at `developer.wordpress.com/apps`, run the authorization code flow once to get a persistent token, store it as a GitHub secret, and never touch it again.
+
+The registration is straightforward. The OAuth flow has one awkward step: you have to open an authorization URL in a browser, click Approve, and capture the `?code=` value from the redirect URL (which lands on `https://localhost` and shows a connection error — intentionally, since localhost isn't running anything). Then exchange that code for a token via `curl`.
+
+```bash
+curl -X POST https://public-api.wordpress.com/oauth2/token \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET" \
+  -d "redirect_uri=https://localhost" \
+  -d "code=YOUR_AUTH_CODE" \
+  -d "grant_type=authorization_code"
+```
+
+WordPress.com returns a persistent bearer token — the same token for repeated exchanges on the same app, which is reassuring. It doesn't expire on a short rotation.
+
+### Step 4: Special Characters in Tokens Will Silently Break Your Pipeline
+
+The token WordPress issued contained `%`, `^`, `@`, `$`, `(`, `)` characters. Stored as a GitHub secret and injected inline into a bash `run:` block via `${{ secrets.WP_API_TOKEN }}`, GitHub Actions substitutes the raw value *before* bash sees it. Bash then interprets `$(ln)` as a subshell command, `$hs` as a variable reference, and so on — corrupting the token before it ever reaches the API.
+
+The result: a `401 invalid token` error that looks exactly like an authentication problem but is actually a string interpolation problem.
+
+The fix is to never inline secrets directly in `run:` scripts when the secret contains shell-special characters. Instead, map the secret to an environment variable in the `env:` block and reference it via the env var at runtime:
+
+```yaml
+# WRONG — GitHub substitutes before bash sees it
+-H "Authorization: Bearer ${{ secrets.WP_API_TOKEN }}"
+
+# RIGHT — bash reads from env at runtime, no interpolation
+-H "Authorization: Bearer ${WP_API_TOKEN}"
+env:
+  WP_API_TOKEN: ${{ secrets.WP_API_TOKEN }}
+```
+
+The `env:` block mapping is safe because GitHub Actions handles the injection, and bash only sees `${WP_API_TOKEN}` — a straightforward variable reference with no special characters to misinterpret.
+
+### Step 5: The API URL for WordPress.com Hosted Sites
+
+One final catch: the REST API base URL for WordPress.com hosted sites is not the standard `https://yoursite.com/wp-json/wp/v2`. It's the WordPress.com public API:
+
+```
+https://public-api.wordpress.com/wp/v2/sites/devopsinreverse.wordpress.com
+```
+
+The path structure is the same from there — `/posts`, `/pages`, `/media` — but the base is different. Self-hosted WordPress docs and WordPress.com docs are intermixed enough online that this trips you up if you don't know which platform you're on.
+
+### What the Final Secrets Look Like
+
+After all of that, the two GitHub Actions secrets the pipeline needs are:
+
+| Secret | Value |
+|---|---|
+| `WORDPRESS_API_URL` | `https://public-api.wordpress.com/wp/v2/sites/devopsinreverse.wordpress.com` |
+| `WP_API_TOKEN` | Bearer token from the OAuth2 authorization code flow |
+
+Total time to figure all of this out: longer than building any of the actual app features. The app code was fun. The WordPress wiring was archaeology.
+
+---
+
+## Infrastructure: OIDC and No Stored Credentials
+
+One thing I'm particularly happy with: the Azure deployment uses OIDC federated identity. There are no Azure credentials stored in GitHub secrets — only three non-secret identifiers (client ID, tenant ID, subscription ID). The `az login --federated-token` step in the workflow authenticates using a short-lived token that GitHub generates for that specific workflow run.
+
+The Bicep setup handles the circular dependency between App Service and Key Vault carefully: App Service deploys first (with placeholder KV URI), then Key Vault deploys and grants the App Service's managed identity access, then a final update wires the secrets. The App Service pulls its Docker image from ACR using managed identity — no registry credentials in config.
+
+---
+
 ## What's Next
 
 A few things didn't make it into v1 that I want to add:
@@ -110,7 +192,7 @@ A few things didn't make it into v1 that I want to add:
 - **Portrait upload** — the field and DB column exist, the upload UI doesn't
 - **Real PWA icons** — currently just an SVG placeholder; needs proper 192×512 PNGs
 
-The WordPress news feed integration is also ready but dormant — I need to actually set up a WordPress site to connect it to.
+The WordPress news feed integration is also ready — and as of this post, the pipeline that publishes it is finally wired up too.
 
 ---
 
