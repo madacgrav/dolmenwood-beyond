@@ -125,7 +125,7 @@ jobs:
           TAG_IDS=$(node -e "
             const tags = JSON.parse(process.env.POST_TAGS || '[]');
             const base = process.env.WORDPRESS_API_URL;
-            const token = process.env.WP_API_TOKEN;
+            const token = 'Bearer ' + process.env.WP_API_TOKEN;
 
             async function resolveTag(slug) {
               try {
