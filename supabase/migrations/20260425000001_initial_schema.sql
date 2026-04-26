@@ -45,15 +45,8 @@ create policy "Referees can manage their own campaigns"
   on public.campaigns for all
   using (auth.uid() = referee_id);
 
-create policy "Players can view campaigns they belong to"
-  on public.campaigns for select
-  using (
-    exists (
-      select 1 from public.campaign_members
-      where campaign_id = campaigns.id
-        and account_id = auth.uid()
-    )
-  );
+-- NOTE: "Players can view campaigns they belong to" policy is added AFTER
+-- campaign_members table is created below (avoids forward-reference error).
 
 -- ============================================================
 -- CAMPAIGN MEMBERS
@@ -88,6 +81,17 @@ create policy "Players can join campaigns"
 create policy "Members can leave campaigns"
   on public.campaign_members for delete
   using (auth.uid() = account_id);
+
+-- Deferred policy: now that campaign_members exists, add the cross-reference policy on campaigns
+create policy "Players can view campaigns they belong to"
+  on public.campaigns for select
+  using (
+    exists (
+      select 1 from public.campaign_members
+      where campaign_id = campaigns.id
+        and account_id = auth.uid()
+    )
+  );
 
 -- ============================================================
 -- CHARACTERS
