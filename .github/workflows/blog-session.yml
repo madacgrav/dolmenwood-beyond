@@ -42,14 +42,12 @@ jobs:
             exit 1
           fi
 
-          # Extract front matter and body using Node.js
           node << 'EOF'
           const fs = require('fs');
           const path = require('path');
 
           const raw = fs.readFileSync(process.env.POST_FILE, 'utf8');
 
-          // Parse YAML front matter manually (avoid external dep)
           const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
           if (!fmMatch) { console.error('No front matter found'); process.exit(1); }
 
@@ -60,24 +58,16 @@ jobs:
             if (m) fm[m[1]] = m[2].replace(/^["']|["']$/g, '').trim();
           });
 
-          // Extract tags array
           const tagsMatch = fmMatch[1].match(/tags:\s*\[([^\]]*)\]/);
           const tags = tagsMatch ? tagsMatch[1].split(',').map(t => t.trim().replace(/^["']|["']$/g, '')) : [];
 
-          // Convert Markdown body to HTML using marked (simple inline version)
           let body = fmMatch[2];
-
-          // Remove the H1 title line (WordPress uses the title field)
           body = body.replace(/^#[^#].*\n/, '');
 
-          // Basic Markdown → HTML (tables, headings, code, bold, italic, lists, links, hr)
           const html = body
-            // Fenced code blocks
             .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) =>
               `<pre><code${lang ? ` class="language-${lang}"` : ''}>${code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
-            // Inline code
             .replace(/`([^`]+)`/g, '<code>$1</code>')
-            // Tables
             .replace(/^\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n)+)/gm, (_, header, rows) => {
               const ths = header.split('|').filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join('');
               const trs = rows.trim().split('\n').map(row => {
@@ -86,24 +76,17 @@ jobs:
               }).join('');
               return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>\n`;
             })
-            // Headings
             .replace(/^### (.+)$/gm, '<h3>$1</h3>')
             .replace(/^## (.+)$/gm, '<h2>$1</h2>')
             .replace(/^# (.+)$/gm, '<h4>$1</h4>')
-            // HR
             .replace(/^---$/gm, '<hr>')
-            // Bold
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            // Italic
             .replace(/\*(.+?)\*/g, '<em>$1</em>')
-            // Links
             .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-            // Unordered lists
             .replace(/((?:^- .+\n?)+)/gm, (block) => {
               const items = block.trim().split('\n').map(l => `<li>${l.replace(/^- /, '')}</li>`).join('');
               return `<ul>${items}</ul>\n`;
             })
-            // Paragraphs (double newline separated)
             .split(/\n{2,}/)
             .map(block => {
               block = block.trim();
@@ -113,11 +96,9 @@ jobs:
             })
             .join('\n');
 
-          // Determine publish status
           const statusOverride = process.env.STATUS_OVERRIDE;
           const status = statusOverride && statusOverride !== '' ? statusOverride : (fm.status || 'draft');
 
-          // Write outputs
           const outputs = process.env.GITHUB_OUTPUT;
           const append = (k, v) => fs.appendFileSync(outputs, `${k}=${v}\n`);
           append('title', fm.title || path.basename(process.env.POST_FILE, '.md'));
@@ -133,6 +114,39 @@ jobs:
         env:
           POST_FILE: docs/blog/${{ inputs.post_file }}
           STATUS_OVERRIDE: ${{ inputs.status_override }}
+
+      - name: Resolve tag IDs
+        id: resolve_tags
+        env:
+          WORDPRESS_API_URL: ${{ secrets.WORDPRESS_API_URL }}
+          WP_API_TOKEN: ${{ secrets.WP_API_TOKEN }}
+          POST_TAGS: ${{ steps.post.outputs.tags }}
+        run: |
+          TAG_IDS=$(node -e "
+            const tags = JSON.parse(process.env.POST_TAGS || '[]');
+            const base = process.env.WORDPRESS_API_URL;
+            const token = process.env.WP_API_TOKEN;
+
+            async function resolveTag(slug) {
+              const searchRes = await fetch(\`\${base}/tags?search=\${encodeURIComponent(slug)}&per_page=5\`, {
+                headers: { Authorization: token }
+              });
+              const matches = await searchRes.json();
+              const existing = matches.find(t => t.slug === slug || t.name.toLowerCase() === slug.toLowerCase());
+              if (existing) return existing.id;
+
+              const createRes = await fetch(\`\${base}/tags\`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: token },
+                body: JSON.stringify({ name: slug, slug })
+              });
+              const created = await createRes.json();
+              return created.id;
+            }
+
+            Promise.all(tags.map(resolveTag)).then(ids => console.log(JSON.stringify(ids)));
+          ")
+          echo "tag_ids=$TAG_IDS" >> $GITHUB_OUTPUT
 
       - name: Publish to WordPress
         id: publish
@@ -172,7 +186,7 @@ jobs:
           POST_CONTENT: ${{ steps.post.outputs.content }}
           POST_STATUS: ${{ steps.post.outputs.status }}
           POST_EXCERPT: ${{ steps.post.outputs.excerpt }}
-          POST_TAGS: ${{ steps.post.outputs.tags }}
+          POST_TAGS: ${{ steps.resolve_tags.outputs.tag_ids }}
 
       - name: Summary
         run: |
