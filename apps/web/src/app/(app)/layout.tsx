@@ -1,5 +1,7 @@
 import { BottomNav } from '@/components/layout/BottomNav';
 
+export const dynamic = 'force-dynamic';
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>

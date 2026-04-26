@@ -1,67 +1,187 @@
-name: Generate Blog Session Draft
+name: Publish Blog Post
 
 on:
   workflow_dispatch:
     inputs:
-      session_summary:
-        description: 'Brief summary of what was built, decisions made, AI tools used'
+      post_file:
+        description: 'Filename in docs/blog/ to publish (e.g. 2026-04-25-dev-log-1-building-dolmenwood-beyond.md)'
         required: true
         type: string
-      session_number:
-        description: 'Dev log session number'
-        required: true
-        type: string
+      status_override:
+        description: 'Override publish status (leave blank to use front matter value)'
+        required: false
+        type: choice
+        default: ''
+        options:
+          - ''
+          - draft
+          - publish
 
 jobs:
-  generate-and-publish:
-    name: Generate & Publish Draft
+  publish:
+    name: Publish to WordPress
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          fetch-depth: 10
+          node-version: '22'
 
-      - name: Get recent commits
-        id: commits
+      - name: Install markdown-to-html converter
+        run: npm install -g marked gray-matter
+
+      - name: Parse and convert post
+        id: post
         run: |
-          COMMITS=$(git log -10 --pretty=format:"- %s (%h)" | head -20)
-          echo "recent_commits<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMITS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          FILE="docs/blog/${{ inputs.post_file }}"
 
-      - name: Publish draft to WordPress
+          if [ ! -f "$FILE" ]; then
+            echo "::error::Post file not found: $FILE"
+            exit 1
+          fi
+
+          # Extract front matter and body using Node.js
+          node << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          const raw = fs.readFileSync(process.env.POST_FILE, 'utf8');
+
+          // Parse YAML front matter manually (avoid external dep)
+          const fmMatch = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+          if (!fmMatch) { console.error('No front matter found'); process.exit(1); }
+
+          const fmLines = fmMatch[1].split('\n');
+          const fm = {};
+          fmLines.forEach(line => {
+            const m = line.match(/^(\w+):\s*(.+)$/);
+            if (m) fm[m[1]] = m[2].replace(/^["']|["']$/g, '').trim();
+          });
+
+          // Extract tags array
+          const tagsMatch = fmMatch[1].match(/tags:\s*\[([^\]]*)\]/);
+          const tags = tagsMatch ? tagsMatch[1].split(',').map(t => t.trim().replace(/^["']|["']$/g, '')) : [];
+
+          // Convert Markdown body to HTML using marked (simple inline version)
+          let body = fmMatch[2];
+
+          // Remove the H1 title line (WordPress uses the title field)
+          body = body.replace(/^#[^#].*\n/, '');
+
+          // Basic Markdown → HTML (tables, headings, code, bold, italic, lists, links, hr)
+          const html = body
+            // Fenced code blocks
+            .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) =>
+              `<pre><code${lang ? ` class="language-${lang}"` : ''}>${code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
+            // Inline code
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            // Tables
+            .replace(/^\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n)+)/gm, (_, header, rows) => {
+              const ths = header.split('|').filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join('');
+              const trs = rows.trim().split('\n').map(row => {
+                const tds = row.split('|').filter(c => c.trim()).map(c => `<td>${c.trim()}</td>`).join('');
+                return `<tr>${tds}</tr>`;
+              }).join('');
+              return `<table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>\n`;
+            })
+            // Headings
+            .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+            .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+            .replace(/^# (.+)$/gm, '<h4>$1</h4>')
+            // HR
+            .replace(/^---$/gm, '<hr>')
+            // Bold
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            // Italic
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            // Links
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+            // Unordered lists
+            .replace(/((?:^- .+\n?)+)/gm, (block) => {
+              const items = block.trim().split('\n').map(l => `<li>${l.replace(/^- /, '')}</li>`).join('');
+              return `<ul>${items}</ul>\n`;
+            })
+            // Paragraphs (double newline separated)
+            .split(/\n{2,}/)
+            .map(block => {
+              block = block.trim();
+              if (!block) return '';
+              if (/^<(h[2-4]|ul|ol|li|table|pre|hr|blockquote)/.test(block)) return block;
+              return `<p>${block.replace(/\n/g, ' ')}</p>`;
+            })
+            .join('\n');
+
+          // Determine publish status
+          const statusOverride = process.env.STATUS_OVERRIDE;
+          const status = statusOverride && statusOverride !== '' ? statusOverride : (fm.status || 'draft');
+
+          // Write outputs
+          const outputs = process.env.GITHUB_OUTPUT;
+          const append = (k, v) => fs.appendFileSync(outputs, `${k}=${v}\n`);
+          append('title', fm.title || path.basename(process.env.POST_FILE, '.md'));
+          append('status', status);
+          append('excerpt', (fm.excerpt || '').replace(/\n/g, ' ').trim());
+          fs.appendFileSync(outputs, `tags<<EOF\n${JSON.stringify(tags)}\nEOF\n`);
+          fs.appendFileSync(outputs, `content<<HTMLEOF\n${html}\nHTMLEOF\n`);
+
+          console.log(`Title: ${fm.title}`);
+          console.log(`Status: ${status}`);
+          console.log(`Tags: ${tags.join(', ')}`);
+          EOF
+        env:
+          POST_FILE: docs/blog/${{ inputs.post_file }}
+          STATUS_OVERRIDE: ${{ inputs.status_override }}
+
+      - name: Publish to WordPress
+        id: publish
         run: |
-          DATE=$(date +"%B %d, %Y")
-          TITLE="Dolmenwood Beyond Dev Log #${{ inputs.session_number }} — Session Notes"
-          
-          CONTENT="<h2>What Was Built</h2>
-          <p>${{ inputs.session_summary }}</p>
-          
-          <h2>Recent Commits</h2>
-          <pre>${{ steps.commits.outputs.recent_commits }}</pre>
-          
-          <h2>AI Tools &amp; Prompts Used</h2>
-          <p>[Fill in: which AI tools were used, example prompts, how they helped]</p>
-          
-          <h2>Key Decisions Made</h2>
-          <p>[Fill in: architecture, UX, or scope decisions with rationale]</p>
-          
-          <h2>Challenges &amp; What Failed</h2>
-          <p>[Fill in: honest account of blockers, wrong turns, things that didn't work]</p>
-          
-          <h2>What's Next</h2>
-          <p>[Fill in: next session focus]</p>"
-
-          curl -s -X POST \
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "${{ secrets.WORDPRESS_API_URL }}/posts" \
             -H "Content-Type: application/json" \
-            -u "${{ secrets.WORDPRESS_USERNAME }}:${{ secrets.WORDPRESS_APP_PASSWORD }}" \
-            -d "{
-              \"title\": \"$TITLE\",
-              \"content\": \"$CONTENT\",
-              \"status\": \"draft\",
-              \"tags\": [],
-              \"categories\": []
-            }"
+            -H "Authorization: Bearer ${{ secrets.WP_API_TOKEN }}" \
+            -d "$(node -e "
+              const title = process.env.POST_TITLE;
+              const content = process.env.POST_CONTENT;
+              const status = process.env.POST_STATUS;
+              const excerpt = process.env.POST_EXCERPT;
+              const tags = JSON.parse(process.env.POST_TAGS || '[]');
+              console.log(JSON.stringify({ title, content, status, excerpt, tags }));
+            ")")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            POST_URL=$(echo "$BODY" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).link||'')}catch{console.log('')}})")
+            POST_ID=$(echo "$BODY" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{console.log(JSON.parse(d).id||'')}catch{console.log('')}})")
+            echo "post_url=$POST_URL" >> $GITHUB_OUTPUT
+            echo "post_id=$POST_ID" >> $GITHUB_OUTPUT
+            echo "✅ Published post ID $POST_ID — $POST_URL"
+          else
+            echo "::error::WordPress API returned $HTTP_CODE: $BODY"
+            exit 1
+          fi
         env:
           WORDPRESS_API_URL: ${{ secrets.WORDPRESS_API_URL }}
+          WP_API_TOKEN: ${{ secrets.WP_API_TOKEN }}
+          POST_TITLE: ${{ steps.post.outputs.title }}
+          POST_CONTENT: ${{ steps.post.outputs.content }}
+          POST_STATUS: ${{ steps.post.outputs.status }}
+          POST_EXCERPT: ${{ steps.post.outputs.excerpt }}
+          POST_TAGS: ${{ steps.post.outputs.tags }}
+
+      - name: Summary
+        run: |
+          echo "### ✅ Blog Post Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Title | ${{ steps.post.outputs.title }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ${{ steps.post.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Post ID | ${{ steps.publish.outputs.post_id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| URL | ${{ steps.publish.outputs.post_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Source file | docs/blog/${{ inputs.post_file }} |" >> $GITHUB_STEP_SUMMARY
