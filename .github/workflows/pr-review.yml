@@ -37,6 +37,7 @@ jobs:
           {
             echo "diff<<${DIFF_DELIM}"
             cat pr.diff
+            echo
             echo "${DIFF_DELIM}"
           } >> $GITHUB_OUTPUT
 
@@ -47,6 +48,7 @@ jobs:
           {
             echo "system<<${AGENT_DELIM}"
             cat .github/agents/developer-architect-review.agent.md
+            echo
             echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 
@@ -96,6 +98,7 @@ jobs:
           {
             echo "diff<<${DIFF_DELIM}"
             cat pr.diff
+            echo
             echo "${DIFF_DELIM}"
           } >> $GITHUB_OUTPUT
 
@@ -106,6 +109,7 @@ jobs:
           {
             echo "system<<${AGENT_DELIM}"
             cat .github/agents/devops-review.agent.md
+            echo
             echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 
@@ -155,6 +159,7 @@ jobs:
           {
             echo "diff<<${DIFF_DELIM}"
             cat pr.diff
+            echo
             echo "${DIFF_DELIM}"
           } >> $GITHUB_OUTPUT
 
@@ -165,6 +170,7 @@ jobs:
           {
             echo "system<<${AGENT_DELIM}"
             cat .github/agents/security-reviewer.agent.md
+            echo
             echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 
@@ -214,6 +220,7 @@ jobs:
           {
             echo "diff<<${DIFF_DELIM}"
             cat pr.diff
+            echo
             echo "${DIFF_DELIM}"
           } >> $GITHUB_OUTPUT
 
@@ -224,6 +231,7 @@ jobs:
           {
             echo "system<<${AGENT_DELIM}"
             cat .github/agents/qa-reviewer.agent.md
+            echo
             echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 
@@ -279,6 +287,7 @@ jobs:
             {
               echo "content<<${BLOG_DELIM}"
               cat "$FIRST_FILE"
+              echo
               echo "${BLOG_DELIM}"
             } >> $GITHUB_OUTPUT
           fi
@@ -291,6 +300,7 @@ jobs:
           {
             echo "system<<${AGENT_DELIM}"
             cat .github/agents/blogger-review.agent.md
+            echo
             echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 

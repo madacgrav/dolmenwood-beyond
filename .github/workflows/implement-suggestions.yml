@@ -60,6 +60,7 @@ jobs:
           {
             echo "diff<<${DELIM2}"
             cat pr.diff
+            echo
             echo "${DELIM2}"
           } >> $GITHUB_OUTPUT
 
