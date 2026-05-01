@@ -385,5 +385,5 @@ jobs:
             echo "> ⚠️ Auto-implement generates a best-effort patch. Always review the resulting commit before merging."
           } > summary.md
 
-          gh pr comment $PR_NUM --body-file summary.md
+          gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file summary.md
 

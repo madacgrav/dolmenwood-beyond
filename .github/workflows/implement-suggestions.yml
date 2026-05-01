@@ -27,6 +27,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
             --body "⏳ **Auto-implement started** — collecting review feedback and generating changes..."
 
       - name: Gather PR feedback and diff
@@ -156,6 +157,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr edit ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
             --remove-label "auto-implement" 2>/dev/null || true
 
       - name: Post result comment
@@ -196,5 +198,5 @@ jobs:
             } > result.md
           fi
 
-          gh pr comment $PR_NUM --body-file result.md
+          gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file result.md
 
