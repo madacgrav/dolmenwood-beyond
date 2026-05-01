@@ -269,9 +269,10 @@ pnpm --filter @dolmenwood/web typecheck
 pnpm --filter @dolmenwood/rules-engine typecheck
 pnpm --filter @dolmenwood/web build
 
-# Tests (rules-engine only — web has no tests)
-pnpm test                                             # run all tests once
+# Tests
+pnpm test                                             # run all tests (rules-engine + web)
 pnpm --filter @dolmenwood/rules-engine test           # run rules-engine tests once
+pnpm --filter @dolmenwood/web test                    # run web component tests once
 pnpm --filter @dolmenwood/rules-engine test:watch     # watch mode
 
 # Run a single test file
@@ -283,11 +284,90 @@ npx supabase db reset                                 # re-apply all migrations 
 npx supabase gen types typescript --local > packages/types/src/supabase.ts  # regenerate DB types
 ```
 
-## Running Locally
+## Blog Posts
 
-```bash
-pnpm install
-npx supabase start
+Blog posts are Markdown files in `docs/blog/YYYY-MM-DD-slug.md`. They are published to
+WordPress via the `blog-session.yml` workflow and appear in the in-app News tab.
+The intended audience is LinkedIn — developer/builder readers.
+
+### Writing a new blog post
+
+**Always base the content on real work done since the last post — not invented topics.**
+
+**Step 1 — Find work done since the last post:**
+```powershell
+# Find the most recent blog file and its date
+Get-ChildItem docs\blog\*.md | Where-Object { $_.Name -ne 'README.md' } | Sort-Object Name | Select-Object -Last 1
+
+# Review commits since that date (replace YYYY-MM-DD with the date from frontmatter):
+git log --since="YYYY-MM-DD" --oneline
+
+# Also check merged PRs:
+gh pr list --state merged --base main --search "merged:>YYYY-MM-DD"
+```
+
+**Step 2 — Structure the post:**
+- Opening hook: 2-3 sentences, no warm-up phrases ("In this post I will...")
+- 3-5 `##` sections, each with a specific name (not "Part 1")
+- Code blocks with language hints for any code snippets
+- Screenshots or images where relevant
+- Closing takeaway or "what's next"
+
+**Step 3 — Add images** (see Image Conventions below)
+
+**Step 4 — Save as** `docs/blog/YYYY-MM-DD-short-slug.md` with `status: draft`
+
+### Required frontmatter
+
+All six fields are required. Always start with `status: draft`:
+
+```yaml
+---
+title: "Specific title that promises something (not 'Dev Log #N')"
+date: YYYY-MM-DD
+author: Adam Graves
+status: draft
+tags: [nextjs, supabase, devlog]
+excerpt: >
+  One or two compelling sentences. What did you learn? What is the hook?
+  This text appears in the in-app news feed and as the LinkedIn intro.
+---
+```
+
+### Image Conventions
+
+The `blog-session.yml` workflow **automatically uploads all local images to WordPress**
+and substitutes the real URLs. Just use relative paths in Markdown — no manual upload needed.
+
+**App screenshots** — save to `docs/blog/screenshots/` as `NN-description.png`:
+```markdown
+![Sign-in page](./screenshots/01-sign-in.png)
+```
+
+**Post-specific images** (diagrams, downloaded stock photos) — save to
+`docs/blog/images/YYYY-MM-DD-slug/` and reference as:
+```markdown
+![Architecture diagram](./images/2026-05-01-my-post/architecture.png)
+```
+
+**Free stock photos from Pexels** (royalty-free, no attribution required for editorial use):
+```powershell
+# Browse https://www.pexels.com, find an image, copy its direct image URL, then:
+Invoke-WebRequest `
+  -Uri "https://images.pexels.com/photos/ID/pexels-photo-ID.jpeg?auto=compress&cs=tinysrgb&w=1200" `
+  -OutFile "docs\blog\images\YYYY-MM-DD-slug\hero.jpg"
+```
+
+Supported image formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
+
+### Publishing
+
+Merge the PR to `main` — `blog-session.yml` triggers automatically.
+To publish manually: Actions → "Publish Blog Post" → select the file → Run workflow.
+
+---
+
+## Running Locally
 cp apps/web/.env.local.example apps/web/.env.local
 # Edit .env.local with keys from `supabase start` output
 npx supabase db reset
