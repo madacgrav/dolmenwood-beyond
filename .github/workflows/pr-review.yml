@@ -243,3 +243,69 @@ jobs:
           BODY: ${{ steps.review.outputs.response }}
         run: |
           gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+  blogger:
+    name: ✍️ Blogger Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for blog file changes
+        id: blog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Find any docs/blog/*.md files added or modified in this PR
+          BLOG_FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | .[] | select(startswith("docs/blog/") and endswith(".md"))' \
+            | head -2)
+
+          if [ -z "$BLOG_FILES" ]; then
+            echo "has_blogs=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_blogs=true" >> $GITHUB_OUTPUT
+            # Read the full content of the first changed blog file
+            FIRST_FILE=$(echo "$BLOG_FILES" | head -1)
+            echo "first_file=$FIRST_FILE" >> $GITHUB_OUTPUT
+            {
+              echo 'content<<__BLOG__'
+              cat "$FIRST_FILE"
+              echo '__BLOG__'
+            } >> $GITHUB_OUTPUT
+          fi
+
+      - name: Load agent system prompt
+        id: agent
+        if: steps.blog.outputs.has_blogs == 'true'
+        run: |
+          {
+            echo 'system<<__AGENT__'
+            cat .github/agents/blogger-review.agent.md
+            echo '__AGENT__'
+          } >> $GITHUB_OUTPUT
+
+      - name: Run review
+        id: review
+        if: steps.blog.outputs.has_blogs == 'true'
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this blog post for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Blog file:** ${{ steps.blog.outputs.first_file }}
+
+            **Full blog post content:**
+            ```markdown
+            ${{ steps.blog.outputs.content }}
+            ```
+
+      - name: Post review comment
+        if: steps.blog.outputs.has_blogs == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
