@@ -134,7 +134,8 @@ jobs:
           const html = body
             .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) =>
               `<pre><code${lang ? ` class="language-${lang}"` : ''}>${code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
-            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/`([^`]+)`/g, (_, code) =>
+              `<code>${code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\[/g,'&#91;').replace(/\]/g,'&#93;')}</code>`)
             .replace(/^\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n)+)/gm, (_, header, rows) => {
               const ths = header.split('|').filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join('');
               const trs = rows.trim().split('\n').map(row => {
