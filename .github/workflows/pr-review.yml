@@ -33,19 +33,21 @@ jobs:
             --json files --jq '[.files[].path] | join(", ")')
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
+          DIFF_DELIM=$(openssl rand -hex 16)
           {
-            echo 'diff<<__DIFF__'
+            echo "diff<<${DIFF_DELIM}"
             cat pr.diff
-            echo '__DIFF__'
+            echo "${DIFF_DELIM}"
           } >> $GITHUB_OUTPUT
 
       - name: Load agent system prompt
         id: agent
         run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
           {
-            echo 'system<<__AGENT__'
+            echo "system<<${AGENT_DELIM}"
             cat .github/agents/developer-architect-review.agent.md
-            echo '__AGENT__'
+            echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 
       - name: Run review
@@ -90,19 +92,21 @@ jobs:
             --json files --jq '[.files[].path] | join(", ")')
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
+          DIFF_DELIM=$(openssl rand -hex 16)
           {
-            echo 'diff<<__DIFF__'
+            echo "diff<<${DIFF_DELIM}"
             cat pr.diff
-            echo '__DIFF__'
+            echo "${DIFF_DELIM}"
           } >> $GITHUB_OUTPUT
 
       - name: Load agent system prompt
         id: agent
         run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
           {
-            echo 'system<<__AGENT__'
+            echo "system<<${AGENT_DELIM}"
             cat .github/agents/devops-review.agent.md
-            echo '__AGENT__'
+            echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 
       - name: Run review
@@ -147,19 +151,21 @@ jobs:
             --json files --jq '[.files[].path] | join(", ")')
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
+          DIFF_DELIM=$(openssl rand -hex 16)
           {
-            echo 'diff<<__DIFF__'
+            echo "diff<<${DIFF_DELIM}"
             cat pr.diff
-            echo '__DIFF__'
+            echo "${DIFF_DELIM}"
           } >> $GITHUB_OUTPUT
 
       - name: Load agent system prompt
         id: agent
         run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
           {
-            echo 'system<<__AGENT__'
+            echo "system<<${AGENT_DELIM}"
             cat .github/agents/security-reviewer.agent.md
-            echo '__AGENT__'
+            echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 
       - name: Run review
@@ -204,19 +210,21 @@ jobs:
             --json files --jq '[.files[].path] | join(", ")')
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
+          DIFF_DELIM=$(openssl rand -hex 16)
           {
-            echo 'diff<<__DIFF__'
+            echo "diff<<${DIFF_DELIM}"
             cat pr.diff
-            echo '__DIFF__'
+            echo "${DIFF_DELIM}"
           } >> $GITHUB_OUTPUT
 
       - name: Load agent system prompt
         id: agent
         run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
           {
-            echo 'system<<__AGENT__'
+            echo "system<<${AGENT_DELIM}"
             cat .github/agents/qa-reviewer.agent.md
-            echo '__AGENT__'
+            echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 
       - name: Run review
@@ -267,10 +275,11 @@ jobs:
             # Read the full content of the first changed blog file
             FIRST_FILE=$(echo "$BLOG_FILES" | head -1)
             echo "first_file=$FIRST_FILE" >> $GITHUB_OUTPUT
+            BLOG_DELIM=$(openssl rand -hex 16)
             {
-              echo 'content<<__BLOG__'
+              echo "content<<${BLOG_DELIM}"
               cat "$FIRST_FILE"
-              echo '__BLOG__'
+              echo "${BLOG_DELIM}"
             } >> $GITHUB_OUTPUT
           fi
 
@@ -278,10 +287,11 @@ jobs:
         id: agent
         if: steps.blog.outputs.has_blogs == 'true'
         run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
           {
-            echo 'system<<__AGENT__'
+            echo "system<<${AGENT_DELIM}"
             cat .github/agents/blogger-review.agent.md
-            echo '__AGENT__'
+            echo "${AGENT_DELIM}"
           } >> $GITHUB_OUTPUT
 
       - name: Run review
