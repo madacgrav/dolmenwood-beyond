@@ -27,7 +27,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Truncate diff to ~50KB to stay within model token limits
-          gh pr diff ${{ github.event.pull_request.number }} | head -c 51200 > pr.diff
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 20000 > pr.diff
 
           FILES=$(gh pr view ${{ github.event.pull_request.number }} \
             --json files --jq '[.files[].path] | join(", ")')
@@ -54,7 +54,7 @@ jobs:
         id: review
         uses: actions/ai-inference@v1
         with:
-          model: openai/gpt-4o-mini
+          model: openai/gpt-4o
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this pull request for Dolmenwood Beyond.
@@ -86,7 +86,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr diff ${{ github.event.pull_request.number }} | head -c 51200 > pr.diff
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 20000 > pr.diff
 
           FILES=$(gh pr view ${{ github.event.pull_request.number }} \
             --json files --jq '[.files[].path] | join(", ")')
@@ -113,7 +113,7 @@ jobs:
         id: review
         uses: actions/ai-inference@v1
         with:
-          model: openai/gpt-4o-mini
+          model: openai/gpt-4o
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this pull request for Dolmenwood Beyond.
@@ -145,7 +145,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr diff ${{ github.event.pull_request.number }} | head -c 51200 > pr.diff
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 20000 > pr.diff
 
           FILES=$(gh pr view ${{ github.event.pull_request.number }} \
             --json files --jq '[.files[].path] | join(", ")')
@@ -172,7 +172,7 @@ jobs:
         id: review
         uses: actions/ai-inference@v1
         with:
-          model: openai/gpt-4o-mini
+          model: openai/gpt-4o
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this pull request for Dolmenwood Beyond.
@@ -204,7 +204,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr diff ${{ github.event.pull_request.number }} | head -c 51200 > pr.diff
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 20000 > pr.diff
 
           FILES=$(gh pr view ${{ github.event.pull_request.number }} \
             --json files --jq '[.files[].path] | join(", ")')
@@ -231,7 +231,7 @@ jobs:
         id: review
         uses: actions/ai-inference@v1
         with:
-          model: openai/gpt-4o-mini
+          model: openai/gpt-4o
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this pull request for Dolmenwood Beyond.
@@ -299,7 +299,7 @@ jobs:
         if: steps.blog.outputs.has_blogs == 'true'
         uses: actions/ai-inference@v1
         with:
-          model: openai/gpt-4o-mini
+          model: openai/gpt-4o
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this blog post for Dolmenwood Beyond.
