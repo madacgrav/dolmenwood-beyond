@@ -33,3 +33,6 @@ Thumbs.db
 # Supabase
 supabase/.branches
 supabase/.temp
+
+# Local secrets reference (never commit)
+GITHUB_SECRETS.md
