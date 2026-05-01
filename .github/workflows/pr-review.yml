@@ -1,0 +1,245 @@
+name: PR Review Agents
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+  models: read
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  developer-architect:
+    name: 🏗️ Developer Architect Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Truncate diff to ~50KB to stay within model token limits
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 51200 > pr.diff
+
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | join(", ")')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          {
+            echo 'diff<<__DIFF__'
+            cat pr.diff
+            echo '__DIFF__'
+          } >> $GITHUB_OUTPUT
+
+      - name: Load agent system prompt
+        id: agent
+        run: |
+          {
+            echo 'system<<__AGENT__'
+            cat .github/agents/developer-architect-review.agent.md
+            echo '__AGENT__'
+          } >> $GITHUB_OUTPUT
+
+      - name: Run review
+        id: review
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this pull request for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Description:** ${{ github.event.pull_request.body || '(none)' }}
+            **Changed files:** ${{ steps.pr.outputs.files }}
+
+            **Diff:**
+            ```diff
+            ${{ steps.pr.outputs.diff }}
+            ```
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+  devops:
+    name: 🚀 DevOps Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 51200 > pr.diff
+
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | join(", ")')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          {
+            echo 'diff<<__DIFF__'
+            cat pr.diff
+            echo '__DIFF__'
+          } >> $GITHUB_OUTPUT
+
+      - name: Load agent system prompt
+        id: agent
+        run: |
+          {
+            echo 'system<<__AGENT__'
+            cat .github/agents/devops-review.agent.md
+            echo '__AGENT__'
+          } >> $GITHUB_OUTPUT
+
+      - name: Run review
+        id: review
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this pull request for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Description:** ${{ github.event.pull_request.body || '(none)' }}
+            **Changed files:** ${{ steps.pr.outputs.files }}
+
+            **Diff:**
+            ```diff
+            ${{ steps.pr.outputs.diff }}
+            ```
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+  security:
+    name: 🔒 Security Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 51200 > pr.diff
+
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | join(", ")')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          {
+            echo 'diff<<__DIFF__'
+            cat pr.diff
+            echo '__DIFF__'
+          } >> $GITHUB_OUTPUT
+
+      - name: Load agent system prompt
+        id: agent
+        run: |
+          {
+            echo 'system<<__AGENT__'
+            cat .github/agents/security-reviewer.agent.md
+            echo '__AGENT__'
+          } >> $GITHUB_OUTPUT
+
+      - name: Run review
+        id: review
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this pull request for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Description:** ${{ github.event.pull_request.body || '(none)' }}
+            **Changed files:** ${{ steps.pr.outputs.files }}
+
+            **Diff:**
+            ```diff
+            ${{ steps.pr.outputs.diff }}
+            ```
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+  qa:
+    name: 🧪 QA Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 51200 > pr.diff
+
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | join(", ")')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          {
+            echo 'diff<<__DIFF__'
+            cat pr.diff
+            echo '__DIFF__'
+          } >> $GITHUB_OUTPUT
+
+      - name: Load agent system prompt
+        id: agent
+        run: |
+          {
+            echo 'system<<__AGENT__'
+            cat .github/agents/qa-reviewer.agent.md
+            echo '__AGENT__'
+          } >> $GITHUB_OUTPUT
+
+      - name: Run review
+        id: review
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o-mini
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this pull request for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Description:** ${{ github.event.pull_request.body || '(none)' }}
+            **Changed files:** ${{ steps.pr.outputs.files }}
+
+            **Diff:**
+            ```diff
+            ${{ steps.pr.outputs.diff }}
+            ```
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
