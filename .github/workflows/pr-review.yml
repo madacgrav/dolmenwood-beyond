@@ -57,6 +57,7 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o
+          max-tokens: 1500
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this pull request for Dolmenwood Beyond.
@@ -118,6 +119,7 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o
+          max-tokens: 1500
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this pull request for Dolmenwood Beyond.
@@ -179,6 +181,7 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o
+          max-tokens: 1500
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this pull request for Dolmenwood Beyond.
@@ -240,6 +243,7 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o
+          max-tokens: 1500
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this pull request for Dolmenwood Beyond.
@@ -310,6 +314,7 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o
+          max-tokens: 1500
           system-prompt: ${{ steps.agent.outputs.system }}
           prompt: |
             Review this blog post for Dolmenwood Beyond.

@@ -70,6 +70,7 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o
+          max-tokens: 4000
           system-prompt: |
             You are a precise code editor. You receive automated code review feedback and the
             current PR diff, and you output ONLY the minimal changes needed to address the
