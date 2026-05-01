@@ -164,7 +164,7 @@ import {
 
 - **Auth state**: `useAuthStore()` from `@/stores/auth-store`
 - **Wizard state**: `useWizardStore()` from `@/stores/wizard-store` — holds all 13-step creation data
-- **Server state**: Supabase realtime subscriptions or standard `useEffect` fetches — no React Query
+- **Server state**: Supabase realtime subscriptions or standard `useEffect` fetches. `@tanstack/react-query` is installed and available but not yet widely used — prefer the Supabase pattern for consistency unless you have a good reason to use TanStack Query.
 
 ### Minimum Touch Target
 
@@ -255,31 +255,64 @@ One-time OIDC setup: `bash infra/azure/scripts/setup-oidc.sh`
 
 ---
 
+## Commands
+
+```bash
+# Dev
+pnpm dev                                              # start Next.js + watch packages
+pnpm lint                                             # lint all packages
+pnpm typecheck                                        # type-check all packages
+pnpm format                                           # prettier format
+
+# Per-package (avoid rebuilding the whole monorepo)
+pnpm --filter @dolmenwood/web typecheck
+pnpm --filter @dolmenwood/rules-engine typecheck
+pnpm --filter @dolmenwood/web build
+
+# Tests (rules-engine only — web has no tests)
+pnpm test                                             # run all tests once
+pnpm --filter @dolmenwood/rules-engine test           # run rules-engine tests once
+pnpm --filter @dolmenwood/rules-engine test:watch     # watch mode
+
+# Run a single test file
+pnpm --filter @dolmenwood/rules-engine test -- src/__tests__/ability-modifiers.test.ts
+
+# Supabase
+npx supabase start                                    # start local stack (requires Docker)
+npx supabase db reset                                 # re-apply all migrations from scratch
+npx supabase gen types typescript --local > packages/types/src/supabase.ts  # regenerate DB types
+```
+
 ## Running Locally
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Start Supabase locally
 npx supabase start
-
-# Start Next.js dev server
+cp apps/web/.env.local.example apps/web/.env.local
+# Edit .env.local with keys from `supabase start` output
+npx supabase db reset
 pnpm dev
-
-# Run type-check across all packages
-pnpm typecheck
-
-# Run tests
-pnpm test
 ```
+
+App: `http://localhost:3000` · Supabase dashboard: `http://localhost:54323`
 
 Environment variables needed in `apps/web/.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<local anon key from supabase start>
-NEXT_PUBLIC_WORDPRESS_URL=   # optional
+NEXT_PUBLIC_WORDPRESS_URL=   # optional, for news feed
 ```
+
+### File Naming
+
+- Pages: `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx` (Next.js conventions)
+- Components: PascalCase (`CharacterCard.tsx`)
+- Hooks: kebab-case with `use` prefix (`use-characters.ts`)
+- Utilities: camelCase (`wordpress.ts`)
+
+### TypeScript Strictness
+
+`strict: true` + `noUncheckedIndexedAccess: true` in tsconfig. Array and object index access returns `T | undefined` — use nullish coalescing or bounds checks. No `any` — use proper types or `unknown`.
 
 ---
 
