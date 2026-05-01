@@ -1,0 +1,199 @@
+name: Implement Agent Suggestions
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  implement:
+    name: 🔧 Apply Agent Suggestions
+    runs-on: ubuntu-latest
+    # Only run when the specific label is added
+    if: github.event.label.name == 'auto-implement'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Check out the PR branch so we can commit back to it
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ github.token }}
+
+      - name: Post "in progress" comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body "⏳ **Auto-implement started** — collecting review feedback and generating changes..."
+
+      - name: Gather PR feedback and diff
+        id: feedback
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+
+          # Truncate diff to stay within model token limits
+          gh pr diff $PR_NUM | head -c 40000 > pr.diff
+
+          FILES=$(gh pr view $PR_NUM \
+            --json files \
+            --jq '[.files[].path] | join(", ")')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          # Collect review comments posted by the github-actions bot (our agents)
+          COMMENTS=$(gh pr view $PR_NUM \
+            --json comments \
+            --jq '[.comments[] | select(.author.login == "github-actions") | .body] | join("\n\n---\n\n")')
+
+          DELIM=$(openssl rand -hex 16)
+          {
+            echo "comments<<${DELIM}"
+            echo "$COMMENTS"
+            echo "${DELIM}"
+          } >> $GITHUB_OUTPUT
+
+          DELIM2=$(openssl rand -hex 16)
+          {
+            echo "diff<<${DELIM2}"
+            cat pr.diff
+            echo "${DELIM2}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Generate unified diff of changes
+        id: patch
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o
+          system-prompt: |
+            You are a precise code editor. You receive automated code review feedback and the
+            current PR diff, and you output ONLY the minimal changes needed to address the
+            concrete, actionable suggestions in the feedback.
+
+            Output format — unified diff ONLY, no prose, no markdown fences:
+
+            --- a/path/to/file.ext
+            +++ b/path/to/file.ext
+            @@ -N,M +N,M @@
+             context line
+            -removed line
+            +added line
+             context line
+
+            Rules:
+            - Output a valid unified diff and nothing else
+            - Only change what reviewers explicitly asked for — do not refactor unrelated code
+            - Preserve indentation, formatting, and code style of surrounding lines
+            - Ignore subjective suggestions (style opinions, vague "consider" feedback)
+            - Only act on concrete, unambiguous requests (missing attribute, wrong type, etc.)
+            - If there are zero actionable code changes, output exactly: NO_CHANGES
+          prompt: |
+            ## Automated review feedback from PR agents
+
+            ${{ steps.feedback.outputs.comments }}
+
+            ## Current PR diff (what was changed)
+
+            ```diff
+            ${{ steps.feedback.outputs.diff }}
+            ```
+
+            Changed files: ${{ steps.feedback.outputs.files }}
+
+            Generate a unified diff implementing only the concrete code suggestions above.
+
+      - name: Apply patch
+        id: apply
+        env:
+          PATCH: ${{ steps.patch.outputs.response }}
+        run: |
+          TRIMMED=$(echo "$PATCH" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+          if [ "$TRIMMED" = "NO_CHANGES" ] || [ -z "$TRIMMED" ]; then
+            echo "No actionable code changes identified."
+            echo "applied=false" >> $GITHUB_OUTPUT
+            echo "reason=no_changes" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "$PATCH" > suggestions.patch
+
+          # Try clean apply first, then fall back to 3-way merge
+          if git apply --check suggestions.patch 2>/dev/null; then
+            git apply suggestions.patch
+            echo "applied=true" >> $GITHUB_OUTPUT
+            echo "reason=clean" >> $GITHUB_OUTPUT
+          elif git apply --3way suggestions.patch 2>/dev/null; then
+            echo "applied=true" >> $GITHUB_OUTPUT
+            echo "reason=3way" >> $GITHUB_OUTPUT
+          else
+            echo "applied=false" >> $GITHUB_OUTPUT
+            echo "reason=conflict" >> $GITHUB_OUTPUT
+            echo "::warning::Patch did not apply cleanly"
+          fi
+
+      - name: Commit and push
+        if: steps.apply.outputs.applied == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: apply automated agent review suggestions
+
+          Auto-generated by implement-suggestions workflow.
+          Review the changes before merging.
+
+          Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
+          git push
+
+      - name: Remove label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} \
+            --remove-label "auto-implement" 2>/dev/null || true
+
+      - name: Post result comment
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLIED: ${{ steps.apply.outputs.applied }}
+          REASON: ${{ steps.apply.outputs.reason }}
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+
+          if [ "$APPLIED" = "true" ]; then
+            if [ "$REASON" = "3way" ]; then
+              NOTE=" (applied via 3-way merge — double-check for conflicts)"
+            else
+              NOTE=""
+            fi
+            {
+              echo "✅ **Auto-implement complete**${NOTE}"
+              echo ""
+              echo "Changes from agent review suggestions have been committed to this branch."
+              echo "Please review the new commit carefully before merging."
+            } > result.md
+          elif [ "$REASON" = "no_changes" ]; then
+            {
+              echo "ℹ️ **Auto-implement — no actionable changes found**"
+              echo ""
+              echo "The agent reviews did not contain concrete code-level suggestions"
+              echo "that could be automatically applied. Address the feedback manually."
+            } > result.md
+          else
+            {
+              echo "⚠️ **Auto-implement failed — patch did not apply cleanly**"
+              echo ""
+              echo "The generated patch conflicted with the current branch state. Options:"
+              echo "- Rebase your branch and add the \`auto-implement\` label again"
+              echo "- Apply the agent suggestions manually (review the comments above)"
+            } > result.md
+          fi
+
+          gh pr comment $PR_NUM --body-file result.md
+
