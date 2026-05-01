@@ -1,13 +1,13 @@
 ---
-title: "Dev Log #3 — Teaching the Repo to Review Itself: AI Agents, 107 Tests, and a Blog Pipeline That Actually Works"
+title: "Dev Log #3 — Teaching the Repo to Review Itself: AI Agents, Auto-Implement, and Everything That Broke First"
 date: 2026-05-01
 author: Adam Graves
 status: draft
 tags: [dolmenwood, rpg, github-copilot, vitest, github-actions, testing, react-testing-library, devlog]
 excerpt: >
-  Solo projects skip quality gates — until the cost of skipping them becomes obvious. This week I
-  added five AI-powered PR review agents, went from zero to 107 tests, wired up pre-commit hooks,
-  and fixed a silent bug that had been dropping every image from published blog posts.
+  Five AI PR review agents, 107 new tests, a workflow that automatically applies their suggestions,
+  and the full debugging session that followed — heredoc collisions, token limits, rate limits, and
+  why the gh CLI needs a git repo to know what repo it's in.
 ---
 
 ![Developer reviewing code at desk](./images/2026-05-01-dev-log-3/hero.jpg)
@@ -43,13 +43,99 @@ The setup is a single `.github/workflows/pr-review.yml` that fans out into five 
 Each agent gets its persona from a markdown file in `.github/agents/`:
 
 ```yaml
-- uses: github/copilot-for-prs@v1
+- uses: actions/ai-inference@v1
   with:
-    agent-path: .github/agents/developer-review.agent.md
+    model: openai/gpt-4o
+    system-prompt: ${{ steps.agent.outputs.system }}
 ```
 
 Every PR now gets five structured reviews before anything merges. For a solo project that previously
 merged to main with a "looks good to me" from the same person who wrote the code, this is a step change.
+
+## Closing the Loop: Auto-Implement
+
+Reading five review comments and manually applying every suggestion is friction. The next step was
+closing the loop — taking the agent output and applying it automatically.
+
+The workflow is label-gated: after the five reviews post, a final `consolidate` job creates a summary
+table and leaves instructions. When you're ready, add the `auto-implement` label to the PR.
+
+That triggers `implement-suggestions.yml`:
+
+1. Collects all review comments posted by the `github-actions` bot
+2. Fetches the PR diff
+3. Calls GPT-4o with a strict system prompt: *output a unified diff only, no prose, `NO_CHANGES` if nothing concrete*
+4. Tries `git apply`, falls back to `git apply --3way`
+5. Commits the result back to the PR branch
+6. Removes the label and posts a result comment
+
+The label gate is intentional. The AI patch is best-effort — you always want to review the resulting
+commit before it merges, but you don't want to manually apply a dozen small suggestions across six files.
+
+## What Actually Happens When You Ship It
+
+Setting up CI tooling is easy. Running it against a real PR immediately produces a debugging session.
+Here's everything that broke in the first hour.
+
+**Heredoc delimiter collision.** The `GITHUB_OUTPUT` multiline syntax uses a delimiter to mark the
+end of a value:
+
+```bash
+{
+  echo "diff<<__DIFF__"
+  cat pr.diff
+  echo "__DIFF__"
+} >> $GITHUB_OUTPUT
+```
+
+If the diff contains the string `__DIFF__` anywhere — in a variable name, a comment, a string literal —
+the file command parser sees it as the closing delimiter and truncates the output. The fix is generating
+a random delimiter at runtime:
+
+```bash
+DIFF_DELIM=$(openssl rand -hex 16)
+{
+  echo "diff<<${DIFF_DELIM}"
+  cat pr.diff
+  echo
+  echo "${DIFF_DELIM}"
+} >> $GITHUB_OUTPUT
+```
+
+The bare `echo` before the delimiter is critical: `head -c` truncates at an arbitrary byte with no
+trailing newline, which causes the delimiter to land on the same line as the last bytes of the diff.
+The parser never finds it. Bare `echo` guarantees a newline.
+
+**429 rate limiting.** Five jobs starting simultaneously all hit the GitHub Models API at the same
+moment. The free tier rate-limits concurrent requests. Fix: stagger the inference calls with a sleep
+before each one (0s, 20s, 40s, 60s, 80s). Jobs still start in parallel — they just don't all reach
+the API at the same second.
+
+**8000 token ceiling.** GitHub Models caps every model — including `gpt-4o` — at 8000 tokens total
+(input + output combined). With agent system prompts consuming ~900 tokens and a 800-token output
+budget, only ~3000 tokens remain for the diff. That's about 12KB of raw diff. Exceeding it returns
+a `413`. The fix was aggressive truncation and careful token budgeting:
+
+| Component | Budget |
+|-----------|--------|
+| System prompt (agent persona) | ~900 tokens |
+| Prompt wrapper (title, files, template) | ~300 tokens |
+| Diff content | ~6000 tokens (12KB) |
+| Output | 800 tokens |
+
+**403 on `gpt-4o`.** The `implement-suggestions.yml` workflow was missing `models: read` in its
+permissions block. Without it, `actions/ai-inference` can't authenticate to the Models API regardless
+of which model you specify.
+
+**pnpm version conflict.** CI was failing with `ERR_PNPM_BAD_PM_VERSION` because `pnpm/action-setup@v4`
+had `version: 10` hardcoded in the workflow while `package.json` had `packageManager: pnpm@10.11.0`.
+The action reads `packageManager` automatically — having both causes an error. Remove the `version`
+key from the workflow and let `package.json` be the single source of truth.
+
+**`gh` CLI without git context.** The `consolidate` job posts a summary comment but doesn't check
+out the repo (it doesn't need to). Without a git repo on the filesystem, `gh` can't auto-detect
+which repository to operate on. Fix: add `--repo ${{ github.repository }}` to every `gh` command
+that runs in a checkout-free job.
 
 ## From Zero to 107 Tests
 
@@ -178,13 +264,18 @@ the WordPress side.
 
 ## What's Next
 
-The character creation wizard is the core feature and it's working well across both auto and manual
-modes. Next up: the character sheet — the view you live in once a character exists. HP tracking,
-spell slot management, inventory, combat stats. That's where Dolmenwood Beyond goes from "creation
-tool" to "session companion."
+All the quality infrastructure is in place. The character creation wizard works across both auto
+and manual modes. Next: the character sheet — the view you live in once a character exists.
+HP tracking, spell slot management, inventory, combat stats. That's where Dolmenwood Beyond goes
+from "creation tool" to "session companion."
 
-The `campaign/` route is still a stub. That's intentional — single-player utility first, then the
-multiplayer table features that make this something more than a fancy character sheet.
+The `campaign/` route is still a stub. That's intentional — single-player utility first, then
+the multiplayer table features.
+
+One more thing worth shipping before the character sheet: the GITHUB_SECRETS.md approach deserves
+a mention. Instead of a wiki page that drifts out of date, all required GitHub secrets and variables
+are documented in a gitignored local file that audits the actual workflow files for `secrets.*`
+references. It's always current because it's generated from the source of truth.
 
 ---
 
