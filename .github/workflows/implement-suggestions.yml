@@ -39,7 +39,7 @@ jobs:
           PR_NUM=${{ github.event.pull_request.number }}
 
           # Truncate diff to stay within model token limits
-          gh pr diff $PR_NUM | head -c 40000 > pr.diff
+          gh pr diff $PR_NUM | head -c 6000 > pr.diff
 
           FILES=$(gh pr view $PR_NUM \
             --json files \
@@ -49,7 +49,8 @@ jobs:
           # Collect review comments posted by the github-actions bot (our agents)
           COMMENTS=$(gh pr view $PR_NUM \
             --json comments \
-            --jq '[.comments[] | select(.author.login == "github-actions") | .body] | join("\n\n---\n\n")')
+            --jq '[.comments[] | select(.author.login == "github-actions") | .body] | join("\n\n---\n\n")' \
+            | head -c 3000)
 
           DELIM=$(openssl rand -hex 16)
           {
@@ -71,7 +72,7 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           model: openai/gpt-4o
-          max-tokens: 4000
+          max-tokens: 1500
           system-prompt: |
             You are a precise code editor. You receive automated code review feedback and the
             current PR diff, and you output ONLY the minimal changes needed to address the
