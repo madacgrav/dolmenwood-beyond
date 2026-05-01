@@ -360,6 +360,20 @@ Invoke-WebRequest `
 
 Supported image formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
 
+### Blog Log — Required Update
+
+**`docs/blog/BLOG_LOG.md` must be updated every time a blog post is created or modified.**
+
+After saving or editing a post, update the log row for that file:
+
+1. Get the current HEAD SHA: `git rev-parse --short HEAD`
+2. Update (or add) the row in `BLOG_LOG.md` with the new SHA, timestamp, status, and a one-sentence summary
+3. Commit `BLOG_LOG.md` together with the post file in the same commit
+
+The log columns are: `# | File | Last Updated | Last Commit SHA | Status | Summary`
+
+If creating a new post, append a new row. If updating an existing post, replace only that row.
+
 ### Publishing
 
 Merge the PR to `main` — `blog-session.yml` triggers automatically.
