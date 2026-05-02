@@ -56,10 +56,17 @@ Required GitHub secrets (set by script):
 In your GitHub repo → Settings → Secrets → Actions:
 
 ```
-SUPABASE_URL                 # Your Supabase project URL
-NEXT_PUBLIC_SUPABASE_URL     # Same as above (public)
-NEXT_PUBLIC_SUPABASE_ANON_KEY  # Supabase anon key (public)
-SUPABASE_SERVICE_ROLE_KEY    # Supabase service role key (keep secret)
+NEXT_PUBLIC_SUPABASE_ANON_KEY  # Supabase anon key
+SUPABASE_ACCESS_TOKEN          # Supabase CLI access token (for migrations)
+SUPABASE_DB_URL                # IPv4 pooler connection string for migrations
+                               # Format: postgresql://postgres.<ref>:<password>@aws-1-<region>.pooler.supabase.com:5432/postgres
+                               # (Use the Supavisor session-mode URL, NOT the direct IPv6 URL)
+```
+
+In your GitHub repo → Settings → Variables → Actions:
+
+```
+NEXT_PUBLIC_SUPABASE_URL       # Your Supabase project URL (non-secret, used as a var)
 ```
 
 ### 4. Deploy infrastructure for the first time
@@ -85,20 +92,19 @@ The `deploy-azure.yml` workflow runs a **Bicep what-if** to preview infrastructu
 Full deployment pipeline:
 
 ```
-1. OIDC login to Azure
-2. Build Docker image
-   └── BUILD_STANDALONE=true
-   └── NEXT_PUBLIC_* vars passed as --build-arg
-3. Push image to ACR with SHA tag + 'latest'
-4. Deploy Bicep (idempotent — only changes what's different)
-5. Update App Service to use new image tag
-6. Health check: GET https://<app-url>/api/health
+1. CI gate: lint + typecheck + tests must pass
+2. In parallel:
+   a. Build Docker image (BUILD_STANDALONE=true, NEXT_PUBLIC_* vars baked in)
+      └── Push to ACR with SHA tag + 'latest'
+   b. Run Supabase migrations (supabase db push via IPv4 pooler URL)
+3. Deploy Bicep (idempotent — only changes what's different)
+4. Update App Service to use new image tag
+5. Health check: GET https://<app-url>/api/health
 ```
 
 ### Manual trigger
 
 ```bash
-# Trigger deployment manually via GitHub CLI
 gh workflow run deploy-azure.yml
 ```
 
@@ -229,19 +235,3 @@ az keyvault secret set \
   --name supabase-anon-key \
   --value "new-secret-value"
 ```
-
----
-
-## Staging Environment
-
-To deploy a staging environment:
-
-```bash
-az deployment group create \
-  --resource-group dolmenwood-beyond-rg \
-  --template-file infra/azure/main.bicep \
-  --parameters environment=staging \
-  --parameters supabaseUrl=https://your-staging-project.supabase.co
-```
-
-This creates separate resources prefixed `dolmenwood-staging-*`.

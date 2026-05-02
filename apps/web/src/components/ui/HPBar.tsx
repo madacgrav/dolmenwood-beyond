@@ -28,7 +28,7 @@ export function HPBar({ current, max, showNumbers = true }: HPBarProps) {
           backgroundColor: color,
           borderRadius: '3px',
           transition: 'width 0.3s ease, background-color 0.3s ease',
-        }} />
+        }} data-testid="hp-bar-fill" />
       </div>
     </div>
   );

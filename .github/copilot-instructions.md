@@ -164,7 +164,7 @@ import {
 
 - **Auth state**: `useAuthStore()` from `@/stores/auth-store`
 - **Wizard state**: `useWizardStore()` from `@/stores/wizard-store` — holds all 13-step creation data
-- **Server state**: Supabase realtime subscriptions or standard `useEffect` fetches — no React Query
+- **Server state**: Supabase realtime subscriptions or standard `useEffect` fetches. `@tanstack/react-query` is installed and available but not yet widely used — prefer the Supabase pattern for consistency unless you have a good reason to use TanStack Query.
 
 ### Minimum Touch Target
 
@@ -255,31 +255,158 @@ One-time OIDC setup: `bash infra/azure/scripts/setup-oidc.sh`
 
 ---
 
-## Running Locally
+## Commands
 
 ```bash
-# Install dependencies
-pnpm install
+# Dev
+pnpm dev                                              # start Next.js + watch packages
+pnpm lint                                             # lint all packages
+pnpm typecheck                                        # type-check all packages
+pnpm format                                           # prettier format
 
-# Start Supabase locally
-npx supabase start
+# Per-package (avoid rebuilding the whole monorepo)
+pnpm --filter @dolmenwood/web typecheck
+pnpm --filter @dolmenwood/rules-engine typecheck
+pnpm --filter @dolmenwood/web build
 
-# Start Next.js dev server
-pnpm dev
+# Tests
+pnpm test                                             # run all tests (rules-engine + web)
+pnpm --filter @dolmenwood/rules-engine test           # run rules-engine tests once
+pnpm --filter @dolmenwood/web test                    # run web component tests once
+pnpm --filter @dolmenwood/rules-engine test:watch     # watch mode
 
-# Run type-check across all packages
-pnpm typecheck
+# Run a single test file
+pnpm --filter @dolmenwood/rules-engine test -- src/__tests__/ability-modifiers.test.ts
 
-# Run tests
-pnpm test
+# Supabase
+npx supabase start                                    # start local stack (requires Docker)
+npx supabase db reset                                 # re-apply all migrations from scratch
+npx supabase gen types typescript --local > packages/types/src/supabase.ts  # regenerate DB types
 ```
+
+## Blog Posts
+
+Blog posts are Markdown files in `docs/blog/YYYY-MM-DD-slug.md`. They are published to
+WordPress via the `blog-session.yml` workflow and appear in the in-app News tab.
+The intended audience is LinkedIn — developer/builder readers.
+
+### Writing a new blog post
+
+**Always base the content on real work done since the last post — not invented topics.**
+
+**Step 1 — Find work done since the last post:**
+```powershell
+# Find the most recent blog file and its date
+Get-ChildItem docs\blog\*.md | Where-Object { $_.Name -ne 'README.md' } | Sort-Object Name | Select-Object -Last 1
+
+# Review commits since that date (replace YYYY-MM-DD with the date from frontmatter):
+git log --since="YYYY-MM-DD" --oneline
+
+# Also check merged PRs:
+gh pr list --state merged --base main --search "merged:>YYYY-MM-DD"
+```
+
+**Step 2 — Structure the post:**
+- Opening hook: 2-3 sentences, no warm-up phrases ("In this post I will...")
+- 3-5 `##` sections, each with a specific name (not "Part 1")
+- Code blocks with language hints for any code snippets
+- Screenshots or images where relevant
+- Closing takeaway or "what's next"
+
+**Step 3 — Add images** (see Image Conventions below)
+
+**Step 4 — Save as** `docs/blog/YYYY-MM-DD-short-slug.md` with `status: draft`
+
+### Required frontmatter
+
+All six fields are required. Always start with `status: draft`:
+
+```yaml
+---
+title: "Specific title that promises something (not 'Dev Log #N')"
+date: YYYY-MM-DD
+author: Adam Graves
+status: draft
+tags: [nextjs, supabase, devlog]
+excerpt: >
+  One or two compelling sentences. What did you learn? What is the hook?
+  This text appears in the in-app news feed and as the LinkedIn intro.
+---
+```
+
+### Image Conventions
+
+The `blog-session.yml` workflow **automatically uploads all local images to WordPress**
+and substitutes the real URLs. Just use relative paths in Markdown — no manual upload needed.
+
+**App screenshots** — save to `docs/blog/screenshots/` as `NN-description.png`:
+```markdown
+![Sign-in page](./screenshots/01-sign-in.png)
+```
+
+**Post-specific images** (diagrams, downloaded stock photos) — save to
+`docs/blog/images/YYYY-MM-DD-slug/` and reference as:
+```markdown
+![Architecture diagram](./images/2026-05-01-my-post/architecture.png)
+```
+
+**Free stock photos from Pexels** (royalty-free, no attribution required for editorial use):
+```powershell
+# Browse https://www.pexels.com, find an image, copy its direct image URL, then:
+Invoke-WebRequest `
+  -Uri "https://images.pexels.com/photos/ID/pexels-photo-ID.jpeg?auto=compress&cs=tinysrgb&w=1200" `
+  -OutFile "docs\blog\images\YYYY-MM-DD-slug\hero.jpg"
+```
+
+Supported image formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
+
+### Blog Log — Required Update
+
+**`docs/blog/BLOG_LOG.md` must be updated every time a blog post is created or modified.**
+
+After saving or editing a post, update the log row for that file:
+
+1. Get the current HEAD SHA: `git rev-parse --short HEAD`
+2. Update (or add) the row in `BLOG_LOG.md` with the new SHA, timestamp, status, and a one-sentence summary
+3. Commit `BLOG_LOG.md` together with the post file in the same commit
+
+The log columns are: `# | File | Last Updated | Last Commit SHA | Status | Summary`
+
+If creating a new post, append a new row. If updating an existing post, replace only that row.
+
+### Publishing
+
+Merge the PR to `main` — `blog-session.yml` triggers automatically.
+To publish manually: Actions → "Publish Blog Post" → select the file → Run workflow.
+
+---
+
+## Running Locally
+cp apps/web/.env.local.example apps/web/.env.local
+# Edit .env.local with keys from `supabase start` output
+npx supabase db reset
+pnpm dev
+```
+
+App: `http://localhost:3000` · Supabase dashboard: `http://localhost:54323`
 
 Environment variables needed in `apps/web/.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<local anon key from supabase start>
-NEXT_PUBLIC_WORDPRESS_URL=   # optional
+NEXT_PUBLIC_WORDPRESS_URL=   # optional, for news feed
 ```
+
+### File Naming
+
+- Pages: `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx` (Next.js conventions)
+- Components: PascalCase (`CharacterCard.tsx`)
+- Hooks: kebab-case with `use` prefix (`use-characters.ts`)
+- Utilities: camelCase (`wordpress.ts`)
+
+### TypeScript Strictness
+
+`strict: true` + `noUncheckedIndexedAccess: true` in tsconfig. Array and object index access returns `T | undefined` — use nullish coalescing or bounds checks. No `any` — use proper types or `unknown`.
 
 ---
 

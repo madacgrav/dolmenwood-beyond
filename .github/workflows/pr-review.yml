@@ -1,0 +1,406 @@
+name: PR Review Agents
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: read
+  models: read
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  developer-architect:
+    name: 🏗️ Developer Architect Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Truncate diff to ~50KB to stay within model token limits
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
+
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | join(", ")')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          DIFF_DELIM=$(openssl rand -hex 16)
+          {
+            echo "diff<<${DIFF_DELIM}"
+            cat pr.diff
+            echo
+            echo "${DIFF_DELIM}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Load agent system prompt
+        id: agent
+        run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
+          {
+            echo "system<<${AGENT_DELIM}"
+            cat .github/agents/developer-architect-review.agent.md
+            echo
+            echo "${AGENT_DELIM}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Run review
+        id: review
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o
+          max-tokens: 800
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this pull request for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Description:** ${{ github.event.pull_request.body || '(none)' }}
+            **Changed files:** ${{ steps.pr.outputs.files }}
+
+            **Diff:**
+            ```diff
+            ${{ steps.pr.outputs.diff }}
+            ```
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+  devops:
+    name: 🚀 DevOps Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
+
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | join(", ")')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          DIFF_DELIM=$(openssl rand -hex 16)
+          {
+            echo "diff<<${DIFF_DELIM}"
+            cat pr.diff
+            echo
+            echo "${DIFF_DELIM}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Load agent system prompt
+        id: agent
+        run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
+          {
+            echo "system<<${AGENT_DELIM}"
+            cat .github/agents/devops-review.agent.md
+            echo
+            echo "${AGENT_DELIM}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Rate limit buffer
+        run: sleep 20
+
+      - name: Run review
+        id: review
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o
+          max-tokens: 800
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this pull request for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Description:** ${{ github.event.pull_request.body || '(none)' }}
+            **Changed files:** ${{ steps.pr.outputs.files }}
+
+            **Diff:**
+            ```diff
+            ${{ steps.pr.outputs.diff }}
+            ```
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+  security:
+    name: 🔒 Security Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
+
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | join(", ")')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          DIFF_DELIM=$(openssl rand -hex 16)
+          {
+            echo "diff<<${DIFF_DELIM}"
+            cat pr.diff
+            echo
+            echo "${DIFF_DELIM}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Load agent system prompt
+        id: agent
+        run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
+          {
+            echo "system<<${AGENT_DELIM}"
+            cat .github/agents/security-reviewer.agent.md
+            echo
+            echo "${AGENT_DELIM}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Rate limit buffer
+        run: sleep 40
+
+      - name: Run review
+        id: review
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o
+          max-tokens: 800
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this pull request for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Description:** ${{ github.event.pull_request.body || '(none)' }}
+            **Changed files:** ${{ steps.pr.outputs.files }}
+
+            **Diff:**
+            ```diff
+            ${{ steps.pr.outputs.diff }}
+            ```
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+  qa:
+    name: 🧪 QA Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gather PR data
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
+
+          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | join(", ")')
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+          DIFF_DELIM=$(openssl rand -hex 16)
+          {
+            echo "diff<<${DIFF_DELIM}"
+            cat pr.diff
+            echo
+            echo "${DIFF_DELIM}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Load agent system prompt
+        id: agent
+        run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
+          {
+            echo "system<<${AGENT_DELIM}"
+            cat .github/agents/qa-reviewer.agent.md
+            echo
+            echo "${AGENT_DELIM}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Rate limit buffer
+        run: sleep 60
+
+      - name: Run review
+        id: review
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o
+          max-tokens: 800
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this pull request for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Description:** ${{ github.event.pull_request.body || '(none)' }}
+            **Changed files:** ${{ steps.pr.outputs.files }}
+
+            **Diff:**
+            ```diff
+            ${{ steps.pr.outputs.diff }}
+            ```
+
+      - name: Post review comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+  blogger:
+    name: ✍️ Blogger Review
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for blog file changes
+        id: blog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Find any docs/blog/*.md files added or modified in this PR
+          BLOG_FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json files --jq '[.files[].path] | .[] | select(startswith("docs/blog/") and endswith(".md"))' \
+            | head -2)
+
+          if [ -z "$BLOG_FILES" ]; then
+            echo "has_blogs=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_blogs=true" >> $GITHUB_OUTPUT
+            # Read the full content of the first changed blog file
+            FIRST_FILE=$(echo "$BLOG_FILES" | head -1)
+            echo "first_file=$FIRST_FILE" >> $GITHUB_OUTPUT
+            BLOG_DELIM=$(openssl rand -hex 16)
+            {
+              echo "content<<${BLOG_DELIM}"
+              cat "$FIRST_FILE"
+              echo
+              echo "${BLOG_DELIM}"
+            } >> $GITHUB_OUTPUT
+          fi
+
+      - name: Load agent system prompt
+        id: agent
+        if: steps.blog.outputs.has_blogs == 'true'
+        run: |
+          AGENT_DELIM=$(openssl rand -hex 16)
+          {
+            echo "system<<${AGENT_DELIM}"
+            cat .github/agents/blogger-review.agent.md
+            echo
+            echo "${AGENT_DELIM}"
+          } >> $GITHUB_OUTPUT
+
+      - name: Rate limit buffer
+        run: sleep 80
+
+      - name: Run review
+        id: review
+        if: steps.blog.outputs.has_blogs == 'true'
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4o
+          max-tokens: 800
+          system-prompt: ${{ steps.agent.outputs.system }}
+          prompt: |
+            Review this blog post for Dolmenwood Beyond.
+
+            **PR title:** ${{ github.event.pull_request.title }}
+            **Blog file:** ${{ steps.blog.outputs.first_file }}
+
+            **Full blog post content:**
+            ```markdown
+            ${{ steps.blog.outputs.content }}
+            ```
+
+      - name: Post review comment
+        if: steps.blog.outputs.has_blogs == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ steps.review.outputs.response }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+
+  consolidate:
+    name: 📋 Consolidate Reviews
+    runs-on: ubuntu-latest
+    needs: [developer-architect, devops, security, qa, blogger]
+    if: always()
+    steps:
+      - name: Ensure auto-implement label exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create "auto-implement" \
+            --repo ${{ github.repository }} \
+            --color "7057ff" \
+            --description "Trigger automatic implementation of agent review suggestions" \
+            2>/dev/null || true
+
+      - name: Post consolidation summary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEV_RESULT: ${{ needs.developer-architect.result }}
+          DEVOPS_RESULT: ${{ needs.devops.result }}
+          SEC_RESULT: ${{ needs.security.result }}
+          QA_RESULT: ${{ needs.qa.result }}
+          BLOG_RESULT: ${{ needs.blogger.result }}
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+
+          status_icon() {
+            case $1 in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              skipped) echo "⏭️" ;;
+              *) echo "⚠️" ;;
+            esac
+          }
+
+          # Build body into a temp file to avoid pipe-character YAML issues
+          {
+            echo "## 🤖 Automated Review Complete"
+            echo ""
+            echo "| Agent | Status |"
+            echo "|-------|--------|"
+            echo "| 🏗️ Developer Architect | $(status_icon $DEV_RESULT) ${DEV_RESULT} |"
+            echo "| 🚀 DevOps | $(status_icon $DEVOPS_RESULT) ${DEVOPS_RESULT} |"
+            echo "| 🔒 Security | $(status_icon $SEC_RESULT) ${SEC_RESULT} |"
+            echo "| 🧪 QA | $(status_icon $QA_RESULT) ${QA_RESULT} |"
+            echo "| ✍️ Blogger | $(status_icon $BLOG_RESULT) ${BLOG_RESULT} |"
+            echo ""
+            echo "Review the individual agent comments above, then choose how to proceed:"
+            echo "- Add the \`auto-implement\` label to automatically apply the suggestions to this branch"
+            echo "- Or address the feedback manually"
+            echo ""
+            echo "> ⚠️ Auto-implement generates a best-effort patch. Always review the resulting commit before merging."
+          } > summary.md
+
+          gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file summary.md
+

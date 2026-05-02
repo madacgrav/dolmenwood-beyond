@@ -120,10 +120,22 @@ jobs:
           let body = fmMatch[2];
           body = body.replace(/^#[^#].*\n/, '');
 
+          // Collect local image refs so the upload step can push them to WordPress
+          const imageRefs = [];
+          const imgRefPattern = /!\[([^\]]*)\]\(([^)]+)\)/g;
+          let imgRefMatch;
+          while ((imgRefMatch = imgRefPattern.exec(body)) !== null) {
+            const imgPath = imgRefMatch[2];
+            if (!imgPath.startsWith('http://') && !imgPath.startsWith('https://')) {
+              imageRefs.push({ alt: imgRefMatch[1], path: imgPath });
+            }
+          }
+
           const html = body
             .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) =>
               `<pre><code${lang ? ` class="language-${lang}"` : ''}>${code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
-            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/`([^`]+)`/g, (_, code) =>
+              `<code>${code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\[/g,'&#91;').replace(/\]/g,'&#93;')}</code>`)
             .replace(/^\|(.+)\|\n\|[-| :]+\|\n((?:\|.+\|\n)+)/gm, (_, header, rows) => {
               const ths = header.split('|').filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join('');
               const trs = rows.trim().split('\n').map(row => {
@@ -138,6 +150,8 @@ jobs:
             .replace(/^---$/gm, '<hr>')
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, imgPath) =>
+              `<img src="${imgPath}" alt="${alt.replace(/"/g, '&quot;')}" style="max-width:100%;height:auto;" />`)
             .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
             .replace(/((?:^- .+\n?)+)/gm, (block) => {
               const items = block.trim().split('\n').map(l => `<li>${l.replace(/^- /, '')}</li>`).join('');
@@ -163,9 +177,88 @@ jobs:
           fs.appendFileSync(outputs, `tags<<EOF\n${JSON.stringify(tags)}\nEOF\n`);
           fs.appendFileSync(outputs, `content<<HTMLEOF\n${html}\nHTMLEOF\n`);
 
+          append('has_images', String(imageRefs.length > 0));
+          fs.appendFileSync(outputs, `image_refs<<REFSEOF\n${JSON.stringify(imageRefs)}\nREFSEOF\n`);
           console.log(`Title:  ${fm.title}`);
           console.log(`Status: ${status}`);
           console.log(`Tags:   ${tags.join(', ')}`);
+          console.log(`Images: ${imageRefs.length}`);
+          JSEOF
+
+      - name: Upload images to WordPress
+        id: upload_images
+        if: steps.post.outputs.has_images == 'true'
+        env:
+          WORDPRESS_API_URL: ${{ secrets.WORDPRESS_API_URL }}
+          WP_API_TOKEN: ${{ secrets.WP_API_TOKEN }}
+          POST_FILE: ${{ matrix.post_file }}
+          IMAGE_REFS: ${{ steps.post.outputs.image_refs }}
+          HTML_CONTENT: ${{ steps.post.outputs.content }}
+        run: |
+          node << 'JSEOF'
+          const fs = require('fs');
+          const path = require('path');
+
+          const base = process.env.WORDPRESS_API_URL;
+          const token = 'Bearer ' + process.env.WP_API_TOKEN;
+          const postDir = path.dirname(process.env.POST_FILE);
+          const imageRefs = JSON.parse(process.env.IMAGE_REFS || '[]');
+          let html = process.env.HTML_CONTENT;
+
+          const MIME_TYPES = {
+            '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+            '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp',
+          };
+
+          async function uploadImage(imgRef) {
+            const localPath = path.resolve(postDir, imgRef.path);
+            if (!fs.existsSync(localPath)) {
+              console.warn(`Image not found, skipping: ${localPath}`);
+              return null;
+            }
+            const ext = path.extname(localPath).toLowerCase();
+            const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+            const filename = path.basename(localPath);
+            const fileBuffer = fs.readFileSync(localPath);
+
+            try {
+              const response = await fetch(`${base}/media`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': token,
+                  'Content-Disposition': `attachment; filename="${filename}"`,
+                  'Content-Type': mimeType,
+                },
+                body: fileBuffer,
+              });
+              const data = await response.json();
+              if (data.source_url) {
+                console.log(`Uploaded ${filename} → ${data.source_url}`);
+                return { path: imgRef.path, url: data.source_url };
+              }
+              console.error(`Upload failed for ${filename}:`, JSON.stringify(data).substring(0, 200));
+              return null;
+            } catch (err) {
+              console.error(`Error uploading ${filename}:`, err.message);
+              return null;
+            }
+          }
+
+          async function main() {
+            let updatedHtml = html;
+            for (const imgRef of imageRefs) {
+              const result = await uploadImage(imgRef);
+              if (result) {
+                // Replace every occurrence of the local path with the WordPress URL
+                updatedHtml = updatedHtml.split(`src="${imgRef.path}"`).join(`src="${result.url}"`);
+              }
+            }
+            const outputs = process.env.GITHUB_OUTPUT;
+            fs.appendFileSync(outputs, `content<<HTMLEOF\n${updatedHtml}\nHTMLEOF\n`);
+            console.log('Image upload complete.');
+          }
+
+          main().catch(err => { console.error('Fatal error:', err); process.exit(1); });
           JSEOF
 
       - name: Resolve tag IDs
@@ -218,7 +311,7 @@ jobs:
           WORDPRESS_API_URL: ${{ secrets.WORDPRESS_API_URL }}
           WP_API_TOKEN: ${{ secrets.WP_API_TOKEN }}
           POST_TITLE: ${{ steps.post.outputs.title }}
-          POST_CONTENT: ${{ steps.post.outputs.content }}
+          POST_CONTENT: ${{ steps.upload_images.outputs.content != '' && steps.upload_images.outputs.content || steps.post.outputs.content }}
           POST_STATUS: ${{ steps.post.outputs.status }}
           POST_EXCERPT: ${{ steps.post.outputs.excerpt }}
           POST_TAGS: ${{ steps.resolve_tags.outputs.tag_ids }}
