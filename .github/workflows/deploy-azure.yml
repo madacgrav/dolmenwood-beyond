@@ -18,6 +18,7 @@ concurrency:
 env:
   AZURE_RESOURCE_GROUP: dolmenwood-beyond-rg
   ACR_IMAGE_NAME: dolmenwood-web
+  AZURE_ACR_NAME: dolmenwoodprodacr
   APP_SERVICE_NAME: dolmenwood-prod-web
 
 jobs:
@@ -75,10 +76,9 @@ jobs:
       - name: Get ACR login server
         id: acr-info
         run: |
-          ACR_NAME=$(az acr list --resource-group ${{ env.AZURE_RESOURCE_GROUP }} --query '[0].name' -o tsv)
-          LOGIN_SERVER=$(az acr show --name $ACR_NAME --query loginServer -o tsv)
+          LOGIN_SERVER=$(az acr show --name "${{ env.AZURE_ACR_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" --query loginServer -o tsv)
           echo "loginServer=$LOGIN_SERVER" >> $GITHUB_OUTPUT
-          echo "acrName=$ACR_NAME" >> $GITHUB_OUTPUT
+          echo "acrName=${{ env.AZURE_ACR_NAME }}" >> $GITHUB_OUTPUT
 
       - name: Generate image tag
         id: meta
