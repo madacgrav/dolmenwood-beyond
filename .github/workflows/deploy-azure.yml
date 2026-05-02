@@ -60,7 +60,6 @@ jobs:
     name: Deploy Azure Infrastructure
     runs-on: ubuntu-latest
     needs: [ci]
-    environment: production
     outputs:
       acr-login-server: ${{ steps.bicep.outputs.acrLoginServer }}
     steps:
@@ -150,7 +149,6 @@ jobs:
     name: Update App Service Image
     runs-on: ubuntu-latest
     needs: [build-and-push, run-migrations, deploy-infra]
-    environment: production
     steps:
       - name: Azure Login (OIDC)
         uses: azure/login@v2
