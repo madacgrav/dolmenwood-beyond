@@ -22,6 +22,9 @@ var acrName = replace('${projectName}${environment}acr', '-', '')  // ACR names:
 var appName = '${prefix}-web'
 var planName = '${prefix}-plan'
 var kvName = '${prefix}-kv'
+// Key Vault URI is deterministic — compute it to avoid a circular dependency
+// (appService needs the URI; keyVault needs appService's principal ID)
+var keyVaultUri = 'https://${kvName}${az.environment().suffixes.keyvaultDns}/'
 
 var tags = {
   project: 'dolmenwood-beyond'
@@ -72,7 +75,7 @@ module appService 'modules/app-service.bicep' = {
     acrLoginServer: acr.outputs.loginServer
     acrId: acr.outputs.acrId
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
-    keyVaultUri: keyVault.outputs.keyVaultUri
+    keyVaultUri: keyVaultUri
     supabaseUrl: supabaseUrl
   }
 }
