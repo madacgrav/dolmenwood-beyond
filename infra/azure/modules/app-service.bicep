@@ -121,13 +121,9 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
 // Grant Web App managed identity "AcrPull" on the ACR
 var acrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 
-resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: last(split(acrId, '/'))
-}
-
 resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(acrId, webApp.id, acrPullRoleId)
-  scope: acr
+  scope: resourceGroup()
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleId)
     principalId: webApp.identity.principalId
