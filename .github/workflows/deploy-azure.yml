@@ -72,14 +72,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Register required resource providers
-        run: |
-          az provider register --namespace Microsoft.OperationalInsights --wait
-          az provider register --namespace Microsoft.Insights --wait
-          az provider register --namespace Microsoft.Web --wait
-          az provider register --namespace Microsoft.ContainerRegistry --wait
-          az provider register --namespace Microsoft.KeyVault --wait
-
       - name: Deploy Bicep (incremental — creates ACR if it does not exist)
         id: bicep
         uses: azure/arm-deploy@v2
