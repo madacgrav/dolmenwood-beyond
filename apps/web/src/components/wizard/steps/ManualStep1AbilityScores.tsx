@@ -25,21 +25,42 @@ export function ManualStep1AbilityScores() {
   const router = useRouter();
   const { abilityScores, setAbilityScores } = useWizardStore();
   const [scores, setScores] = useState<AbilityScores>(abilityScores);
+  // Separate string state so partial input (e.g. typing "1" toward "15") isn't clamped mid-keystroke
+  const [inputValues, setInputValues] = useState<Record<keyof AbilityScores, string>>({
+    str: String(abilityScores.str),
+    int: String(abilityScores.int),
+    wis: String(abilityScores.wis),
+    dex: String(abilityScores.dex),
+    con: String(abilityScores.con),
+    cha: String(abilityScores.cha),
+  });
 
   function handleChange(key: keyof AbilityScores, raw: string) {
+    setInputValues(v => ({ ...v, [key]: raw }));
+  }
+
+  function handleBlur(key: keyof AbilityScores, raw: string) {
     const v = parseInt(raw, 10);
-    setScores(s => ({ ...s, [key]: isNaN(v) ? 0 : Math.min(18, Math.max(3, v)) }));
+    const clamped = isNaN(v) ? 3 : Math.min(18, Math.max(3, v));
+    setInputValues(iv => ({ ...iv, [key]: String(clamped) }));
+    setScores(s => ({ ...s, [key]: clamped }));
   }
 
   function rollOne(key: keyof AbilityScores) {
-    setScores(s => ({ ...s, [key]: roll3d6() }));
+    const rolled = roll3d6();
+    setScores(s => ({ ...s, [key]: rolled }));
+    setInputValues(iv => ({ ...iv, [key]: String(rolled) }));
   }
 
   function rollAll() {
-    setScores({
+    const next = {
       str: roll3d6(), int: roll3d6(), wis: roll3d6(),
       dex: roll3d6(), con: roll3d6(), cha: roll3d6(),
-    });
+    };
+    setScores(next);
+    setInputValues(Object.fromEntries(
+      Object.entries(next).map(([k, v]) => [k, String(v)])
+    ) as Record<keyof AbilityScores, string>);
   }
 
   const subpar = isSubpar(scores);
@@ -97,8 +118,9 @@ export function ManualStep1AbilityScores() {
                   <div style={{ fontSize: '0.875rem', color: 'var(--color-text)' }}>{label}</div>
                 </div>
                 <input
-                  type="number" min={3} max={18} value={val || ''}
+                  type="number" min={3} max={18} value={inputValues[key]}
                   onChange={e => handleChange(key, e.target.value)}
+                  onBlur={e => handleBlur(key, e.target.value)}
                   style={{
                     width: '4rem', padding: '0.5rem', textAlign: 'center',
                     fontSize: '1.25rem', fontWeight: '700',

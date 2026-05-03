@@ -31,6 +31,7 @@ export default function SignUpPage() {
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: { role, display_name: displayName || email.split('@')[0] },
       },
     });
