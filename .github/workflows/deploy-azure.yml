@@ -173,11 +173,16 @@ jobs:
 
       - name: Health check
         run: |
-          sleep 30
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ env.APP_SERVICE_NAME }}.azurewebsites.net/api/health)
-          if [ "$STATUS" != "200" ]; then
-            echo "Health check failed with status $STATUS"
-            exit 1
-          fi
-          echo "Health check passed ✅"
+          echo "Waiting for app to start..."
+          for i in $(seq 1 20); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${{ env.APP_SERVICE_NAME }}.azurewebsites.net/api/health)
+            echo "Attempt $i/20 — HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed ✅"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Health check failed after 5 minutes"
+          exit 1
 
