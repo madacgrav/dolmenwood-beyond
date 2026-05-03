@@ -24,9 +24,12 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=deps /app/packages/types/node_modules ./packages/types/node_modules 2>/dev/null || true
-COPY --from=deps /app/packages/rules-engine/node_modules ./packages/rules-engine/node_modules 2>/dev/null || true
-COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules 2>/dev/null || true
+RUN --mount=type=bind,from=deps,source=/app,target=/deps,readonly \
+    for pkg in packages/types packages/rules-engine packages/ui; do \
+      if [ -d "/deps/${pkg}/node_modules" ]; then \
+        mkdir -p "./${pkg}" && cp -a "/deps/${pkg}/node_modules" "./${pkg}/"; \
+      fi; \
+    done
 
 COPY . .
 
