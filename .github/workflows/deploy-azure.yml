@@ -164,6 +164,10 @@ jobs:
             --name ${{ env.APP_SERVICE_NAME }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
             --docker-custom-image-name ${{ needs.deploy-infra.outputs.acr-login-server }}/${{ env.ACR_IMAGE_NAME }}:${{ needs.build-and-push.outputs.image-tag }}
+          az webapp update \
+            --name ${{ env.APP_SERVICE_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --set siteConfig.acrUseManagedIdentityCreds=true
 
       - name: Restart App Service
         run: |
