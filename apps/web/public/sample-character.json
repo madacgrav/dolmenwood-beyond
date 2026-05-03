@@ -1,0 +1,24 @@
+{
+  "name": "Aldric Thornwood",
+  "kindred": "Human",
+  "characterClass": "Fighter",
+  "alignment": "lawful",
+  "level": 1,
+  "xp": 0,
+  "hpMax": 8,
+  "hpCurrent": 8,
+  "abilityScores": {
+    "str": 15,
+    "int": 10,
+    "wis": 9,
+    "dex": 12,
+    "con": 14,
+    "cha": 8
+  },
+  "sex": "Male",
+  "age": "24",
+  "height": "5'11\"",
+  "weight": "180 lbs",
+  "background": "Former soldier turned wandering mercenary.",
+  "moonSign": "The Hound"
+}
