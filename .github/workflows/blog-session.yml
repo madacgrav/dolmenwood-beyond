@@ -51,6 +51,7 @@ jobs:
             # Exclude README.md and any non-.md files
             CHANGED=$(git diff --name-only --diff-filter=AM HEAD^ HEAD -- 'docs/blog/*.md' \
               | grep -v 'README' \
+              | grep -v 'BLOG_LOG' \
               | grep '\.md$' || true)
 
             if [ -z "$CHANGED" ]; then
