@@ -30,6 +30,14 @@ export function getKindredData(kindred: string): KindredData | null {
   return (kindredData as unknown as Record<string, KindredData>)[kindred] ?? null;
 }
 
+export function getKindredXPBonus(kindred: string): number {
+  const traits = getKindredTraits(kindred);
+  const spirited = traits.find(t => t.description.includes('XP earned'));
+  if (!spirited) return 0;
+  const match = spirited.description.match(/\+(\d+)%/);
+  return match ? parseInt(match[1]!, 10) : 0;
+}
+
 export function getKindredACBonus(kindred: string): number {
   const data = getKindredData(kindred);
   if (!data) return 0;

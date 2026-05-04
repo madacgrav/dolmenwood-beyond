@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Character } from '@dolmenwood/types';
-import { getXPThresholdForNextLevel, getPrimeAbilities, getXPModifier } from '@dolmenwood/rules-engine';
+import { getXPThresholdForNextLevel, getPrimeAbilities, getXPModifier, getKindredXPBonus } from '@dolmenwood/rules-engine';
 
 type CharacterWithNotes = Character & { notes?: string };
 
@@ -43,7 +43,12 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
 
   function commitXPInput() {
     const val = parseInt(xpInputVal, 10);
-    if (!isNaN(val) && val > 0) onUpdate({ xp: character.xp + val });
+    if (!isNaN(val) && val > 0) {
+      const kindredBonus = getKindredXPBonus(character.kindred);
+      const totalMod = xpMod + kindredBonus;
+      const gain = totalMod !== 0 ? Math.round(val * (1 + totalMod / 100)) : val;
+      onUpdate({ xp: character.xp + gain });
+    }
     setXpInputVal('');
     setXpEditOpen(false);
   }

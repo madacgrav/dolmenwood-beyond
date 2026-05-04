@@ -6,6 +6,7 @@ import {
   getXPModifier,
   getPrimeAbilities,
   getXPThresholdForNextLevel,
+  getKindredXPBonus,
 } from '@dolmenwood/rules-engine';
 
 interface Props {
@@ -20,6 +21,7 @@ interface MemberCharacter {
   level: number;
   xp: number;
   ability_scores: Record<string, number>;
+  kindred: string;
 }
 
 interface Member {
@@ -55,8 +57,9 @@ function charXPGain(ch: MemberCharacter, base: number, applyMod: boolean): numbe
   if (!applyMod || base <= 0) return base;
   const primes = getPrimeAbilities(ch.character_class);
   const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 10);
-  const mod = getXPModifier(scores);
-  return Math.round(base * (1 + mod / 100));
+  const abilityMod = getXPModifier(scores);
+  const kindredBonus = getKindredXPBonus(ch.kindred);
+  return Math.round(base * (1 + (abilityMod + kindredBonus) / 100));
 }
 
 function canLevelUpAfter(ch: MemberCharacter, gain: number): boolean {
@@ -106,7 +109,7 @@ function RefereView({ userId }: { userId: string }) {
         .in('campaign_id', campaignIds),
       supabase
         .from('characters')
-        .select('id, name, character_class, level, xp, ability_scores, owner_id')
+        .select('id, name, character_class, level, xp, ability_scores, kindred, owner_id')
         .order('name'),
     ]);
 
@@ -478,9 +481,15 @@ function RefereView({ userId }: { userId: string }) {
                     {campaign.members.flatMap(m => m.characters).map(ch => {
                       const gain = charXPGain(ch, parseInt(xpAward(campaign.id).baseXP) || 0, xpAward(campaign.id).applyModifier);
                       const willLevel = canLevelUpAfter(ch, gain);
+                      const applyMod = xpAward(campaign.id).applyModifier;
                       const primes = getPrimeAbilities(ch.character_class);
                       const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 10);
-                      const modPct = xpAward(campaign.id).applyModifier ? getXPModifier(scores) : 0;
+                      const abilityMod = applyMod ? getXPModifier(scores) : 0;
+                      const kindredBonus = applyMod ? getKindredXPBonus(ch.kindred) : 0;
+                      const totalMod = abilityMod + kindredBonus;
+                      const modLabel = totalMod !== 0
+                        ? ` (${totalMod > 0 ? '+' : ''}${totalMod}%${kindredBonus > 0 ? ` incl. +${kindredBonus}% ${ch.kindred}` : ''})`
+                        : '';
                       return (
                         <div key={ch.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0' }}>
                           <span>
@@ -488,7 +497,7 @@ function RefereView({ userId }: { userId: string }) {
                             {willLevel && <span title="Level up eligible!"> ⬆️</span>}
                           </span>
                           <span style={{ color: 'var(--color-gold)' }}>
-                            +{gain} XP{modPct !== 0 ? ` (${modPct > 0 ? '+' : ''}${modPct}%)` : ''}
+                            +{gain} XP{modLabel}
                           </span>
                         </div>
                       );
