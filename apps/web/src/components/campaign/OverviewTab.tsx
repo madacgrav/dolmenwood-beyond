@@ -2,6 +2,11 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import {
+  getXPModifier,
+  getPrimeAbilities,
+  getXPThresholdForNextLevel,
+} from '@dolmenwood/rules-engine';
 
 interface Props {
   isReferee: boolean;
@@ -13,6 +18,8 @@ interface MemberCharacter {
   name: string;
   character_class: string;
   level: number;
+  xp: number;
+  ability_scores: Record<string, number>;
 }
 
 interface Member {
@@ -31,6 +38,32 @@ interface CampaignData {
   showMembers: boolean;
 }
 
+interface XPAwardState {
+  showPanel: boolean;
+  baseXP: string;
+  applyModifier: boolean;
+  awarding: boolean;
+  error: string;
+  lastAwardAt: number | null;
+}
+
+function defaultXPAward(): XPAwardState {
+  return { showPanel: false, baseXP: '', applyModifier: true, awarding: false, error: '', lastAwardAt: null };
+}
+
+function charXPGain(ch: MemberCharacter, base: number, applyMod: boolean): number {
+  if (!applyMod || base <= 0) return base;
+  const primes = getPrimeAbilities(ch.character_class);
+  const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 10);
+  const mod = getXPModifier(scores);
+  return Math.round(base * (1 + mod / 100));
+}
+
+function canLevelUpAfter(ch: MemberCharacter, gain: number): boolean {
+  const threshold = getXPThresholdForNextLevel(ch.character_class, ch.level);
+  return threshold > 0 && ch.xp + gain >= threshold;
+}
+
 // ─── Referee View ─────────────────────────────────────────────────────────────
 
 function RefereView({ userId }: { userId: string }) {
@@ -42,6 +75,14 @@ function RefereView({ userId }: { userId: string }) {
   const [createError, setCreateError] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [xpAwards, setXpAwards] = useState<Record<string, XPAwardState>>({});
+
+  function xpAward(id: string): XPAwardState {
+    return xpAwards[id] ?? defaultXPAward();
+  }
+  function patchXP(id: string, patch: Partial<XPAwardState>) {
+    setXpAwards(prev => ({ ...prev, [id]: { ...(prev[id] ?? defaultXPAward()), ...patch } }));
+  }
 
   const loadCampaigns = useCallback(async () => {
     const { data: rawCampaigns } = await supabase
@@ -65,7 +106,7 @@ function RefereView({ userId }: { userId: string }) {
         .in('campaign_id', campaignIds),
       supabase
         .from('characters')
-        .select('id, name, character_class, level, owner_id')
+        .select('id, name, character_class, level, xp, ability_scores, owner_id')
         .order('name'),
     ]);
 
@@ -127,6 +168,36 @@ function RefereView({ userId }: { userId: string }) {
 
   function toggleMembers(id: string) {
     setCampaigns(prev => prev.map(c => c.id === id ? { ...c, showMembers: !c.showMembers } : c));
+  }
+
+  async function handleAwardXP(campaign: CampaignData) {
+    const state = xpAward(campaign.id);
+    const base = parseInt(state.baseXP);
+    if (!base || base <= 0) { patchXP(campaign.id, { error: 'Enter a positive XP amount.' }); return; }
+
+    const allChars = campaign.members.flatMap(m => m.characters);
+    if (allChars.length === 0) { patchXP(campaign.id, { error: 'No characters to award XP to.' }); return; }
+
+    patchXP(campaign.id, { awarding: true, error: '' });
+
+    const updates = await Promise.all(
+      allChars.map(ch => {
+        const gain = charXPGain(ch, base, state.applyModifier);
+        return supabase
+          .from('characters')
+          .update({ xp: ch.xp + gain })
+          .eq('id', ch.id);
+      })
+    );
+
+    const failed = updates.find(r => r.error);
+    if (failed?.error) {
+      patchXP(campaign.id, { awarding: false, error: failed.error.message });
+      return;
+    }
+
+    patchXP(campaign.id, { awarding: false, lastAwardAt: base, baseXP: '' });
+    await loadCampaigns();
   }
 
   if (loading) {
@@ -310,16 +381,119 @@ function RefereView({ userId }: { userId: string }) {
                         <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>No characters yet</div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                          {member.characters.map(ch => (
-                            <div key={ch.id} style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                              <span style={{ color: 'var(--color-text)' }}>{ch.name}</span>
-                              {' · '}{ch.character_class} · Lv {ch.level}
-                            </div>
-                          ))}
+                          {member.characters.map(ch => {
+                            const award = xpAward(campaign.id);
+                            const base = parseInt(award.baseXP) || 0;
+                            const gain = base > 0 ? charXPGain(ch, base, award.applyModifier) : 0;
+                            const willLevel = gain > 0 && canLevelUpAfter(ch, gain);
+                            return (
+                              <div key={ch.id} style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{ color: 'var(--color-text)' }}>{ch.name}</span>
+                                {' · '}{ch.character_class} · Lv {ch.level}
+                                {' · '}{ch.xp.toLocaleString()} XP
+                                {gain > 0 && (
+                                  <span style={{ color: 'var(--color-gold)', fontSize: '0.7rem' }}>+{gain}</span>
+                                )}
+                                {willLevel && (
+                                  <span title="Can level up!" style={{ fontSize: '0.8rem' }}>⬆️</span>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
                   ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Award XP */}
+          <div style={{ borderTop: '1px solid var(--color-border)' }}>
+            <button
+              onClick={() => patchXP(campaign.id, { showPanel: !xpAward(campaign.id).showPanel })}
+              style={{
+                width: '100%', padding: '0.625rem 1rem',
+                backgroundColor: 'var(--color-bg)', border: 'none',
+                color: 'var(--color-primary)', fontSize: '0.8rem',
+                cursor: 'pointer', textAlign: 'left', minHeight: '40px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}
+            >
+              <span>✨ Award XP</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                {xpAward(campaign.id).lastAwardAt != null ? `Last: ${xpAward(campaign.id).lastAwardAt} XP` : ''}
+                {' '}{xpAward(campaign.id).showPanel ? '▲' : '▼'}
+              </span>
+            </button>
+
+            {xpAward(campaign.id).showPanel && (
+              <div style={{ padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    value={xpAward(campaign.id).baseXP}
+                    onChange={e => patchXP(campaign.id, { baseXP: e.target.value, error: '' })}
+                    placeholder="Base XP (e.g. 300)"
+                    style={{
+                      flex: 1, padding: '0.5rem 0.75rem', borderRadius: '6px',
+                      border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
+                      color: 'var(--color-text)', fontSize: '0.875rem', minHeight: '40px',
+                    }}
+                  />
+                  <button
+                    onClick={() => handleAwardXP(campaign)}
+                    disabled={xpAward(campaign.id).awarding}
+                    style={{
+                      padding: '0.5rem 1rem', borderRadius: '6px',
+                      backgroundColor: xpAward(campaign.id).awarding ? 'var(--color-border)' : 'var(--color-primary)',
+                      color: '#fff', border: 'none', fontSize: '0.875rem',
+                      cursor: xpAward(campaign.id).awarding ? 'not-allowed' : 'pointer',
+                      minHeight: '40px', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {xpAward(campaign.id).awarding ? 'Awarding…' : 'Award to All'}
+                  </button>
+                </div>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={xpAward(campaign.id).applyModifier}
+                    onChange={e => patchXP(campaign.id, { applyModifier: e.target.checked })}
+                  />
+                  Apply XP modifier (based on prime abilities)
+                </label>
+
+                {xpAward(campaign.id).error && (
+                  <div style={{ color: 'var(--color-danger)', fontSize: '0.8rem' }}>
+                    {xpAward(campaign.id).error}
+                  </div>
+                )}
+
+                {parseInt(xpAward(campaign.id).baseXP) > 0 && campaign.members.some(m => m.characters.length > 0) && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)', paddingTop: '0.5rem' }}>
+                    {campaign.members.flatMap(m => m.characters).map(ch => {
+                      const gain = charXPGain(ch, parseInt(xpAward(campaign.id).baseXP) || 0, xpAward(campaign.id).applyModifier);
+                      const willLevel = canLevelUpAfter(ch, gain);
+                      const primes = getPrimeAbilities(ch.character_class);
+                      const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 10);
+                      const modPct = xpAward(campaign.id).applyModifier ? getXPModifier(scores) : 0;
+                      return (
+                        <div key={ch.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0' }}>
+                          <span>
+                            {ch.name}
+                            {willLevel && <span title="Level up eligible!"> ⬆️</span>}
+                          </span>
+                          <span style={{ color: 'var(--color-gold)' }}>
+                            +{gain} XP{modPct !== 0 ? ` (${modPct > 0 ? '+' : ''}${modPct}%)` : ''}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}

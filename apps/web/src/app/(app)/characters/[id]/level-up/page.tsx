@@ -311,9 +311,9 @@ function HPRollStep({
   onHpGain,
 }: {
   character: Character;
-  onContinue: (gain: number) => void;
+  onContinue: (gain: number, rawRoll: number) => void;
   onHpGain: (gain: number) => void;
-}) {
+}){
   const hitDie = CLASS_HD[character.characterClass] ?? 6;
   const conMod = getAbilityModifier(character.abilityScores.con);
 
@@ -383,7 +383,7 @@ function HPRollStep({
 
       <button
         disabled={!done}
-        onClick={() => total !== null && onContinue(total)}
+        onClick={() => total !== null && roll !== null && onContinue(total, roll)}
         style={{
           width: '100%', padding: '0.875rem',
           backgroundColor: done ? 'var(--color-primary)' : 'var(--color-border)',
@@ -563,6 +563,7 @@ export default function LevelUpPage() {
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<LevelUpStep>('check');
   const [hpGain, setHpGain] = useState(0);
+  const [hpRoll, setHpRoll] = useState(0);
   const [saving, setSaving] = useState(false);
   const [celebrated, setCelebrated] = useState(false);
 
@@ -618,6 +619,15 @@ export default function LevelUpPage() {
       hp_max: character.hpMax + hpGain,
       hp_current: character.hpCurrent + hpGain,
     }).eq('id', id);
+
+    await supabase.from('level_up_logs').insert({
+      character_id: id,
+      from_level: character.level,
+      to_level: newLevel,
+      hp_roll: hpRoll,
+      hp_roll_final: hpGain,
+      changes: features.map(f => ({ field: f.name, oldValue: '', newValue: f.description })),
+    });
 
     setCelebrated(true);
     setTimeout(() => {
@@ -736,8 +746,9 @@ export default function LevelUpPage() {
           <HPRollStep
             character={character}
             onHpGain={setHpGain}
-            onContinue={(gain) => {
+            onContinue={(gain, rawRoll) => {
               setHpGain(gain);
+              setHpRoll(rawRoll);
               setStep('features');
             }}
           />
