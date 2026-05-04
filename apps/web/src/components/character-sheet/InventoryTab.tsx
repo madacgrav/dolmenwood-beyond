@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { calculateSpeed } from '@dolmenwood/rules-engine';
 
@@ -13,31 +13,107 @@ interface DBInventoryItem {
   notes?: string;
 }
 
-interface Props { characterId: string; }
+interface Props {
+  characterId: string;
+  ownerId: string;
+}
 
 const ITEM_TYPES = ['weapon', 'armour', 'gear', 'consumable', 'other'] as const;
 type ItemType = typeof ITEM_TYPES[number];
 
-export function InventoryTab({ characterId }: Props) {
+export function InventoryTab({ characterId, ownerId }: Props) {
   const supabase = createClient();
   const [items, setItems] = useState<DBInventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItem, setNewItem] = useState({ item_name: '', item_type: 'gear' as ItemType, quantity: 1, weight_coins: 0 });
   const [coins, setCoins] = useState({ gp: 0, sp: 0, cp: 0 });
+  const [bankBalance, setBankBalance] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositDesc, setDepositDesc] = useState('');
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [depositError, setDepositError] = useState('');
+
+  const isOwner = currentUserId === ownerId;
+
+  const fetchBankBalance = useCallback(async () => {
+    const { data } = await supabase
+      .from('bank_ledger')
+      .select('amount_gp')
+      .eq('character_id', characterId);
+    const total = (data ?? []).reduce((sum: number, r: { amount_gp: number }) => sum + r.amount_gp, 0);
+    setBankBalance(total);
+  }, [characterId, supabase]);
 
   useEffect(() => {
-    async function fetchItems() {
-      const { data } = await supabase
-        .from('character_inventory')
-        .select('*')
-        .eq('character_id', characterId)
-        .order('item_type');
-      setItems((data ?? []) as DBInventoryItem[]);
+    async function fetchAll() {
+      const [{ data: { user } }, { data: items }, { data: charData }] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.from('character_inventory').select('*').eq('character_id', characterId).order('item_type'),
+        supabase.from('characters').select('coins_gp, coins_sp, coins_cp').eq('id', characterId).single(),
+      ]);
+      setCurrentUserId(user?.id ?? null);
+      setItems((items ?? []) as DBInventoryItem[]);
+      if (charData) {
+        const row = charData as Record<string, unknown>;
+        setCoins({
+          gp: (row.coins_gp as number) ?? 0,
+          sp: (row.coins_sp as number) ?? 0,
+          cp: (row.coins_cp as number) ?? 0,
+        });
+      }
       setLoading(false);
     }
-    fetchItems();
-  }, [characterId, supabase]);
+    fetchAll();
+    fetchBankBalance();
+  }, [characterId, supabase, fetchBankBalance]);
+
+  async function saveCoins(updated: { gp: number; sp: number; cp: number }) {
+    await supabase.from('characters').update({
+      coins_gp: updated.gp,
+      coins_sp: updated.sp,
+      coins_cp: updated.cp,
+    }).eq('id', characterId);
+  }
+
+  function handleCoinChange(coin: 'gp' | 'sp' | 'cp', value: string) {
+    const n = Math.max(0, parseInt(value) || 0);
+    const updated = { ...coins, [coin]: n };
+    setCoins(updated);
+    saveCoins(updated);
+  }
+
+  async function handleDeposit() {
+    const amount = parseInt(depositAmount);
+    if (!amount || amount <= 0) { setDepositError('Enter a positive amount.'); return; }
+    if (amount > coins.gp) { setDepositError(`You only have ${coins.gp} gp on hand.`); return; }
+    setDepositLoading(true);
+    setDepositError('');
+
+    const newGp = coins.gp - amount;
+    const [{ error: ledgerErr }, { error: coinErr }] = await Promise.all([
+      supabase.from('bank_ledger').insert({
+        character_id: characterId,
+        amount_gp: amount,
+        description: depositDesc.trim() || 'Deposit',
+        performed_by: currentUserId,
+      }),
+      supabase.from('characters').update({ coins_gp: newGp }).eq('id', characterId),
+    ]);
+
+    if (ledgerErr || coinErr) {
+      setDepositError((ledgerErr ?? coinErr)!.message);
+    } else {
+      setCoins(c => ({ ...c, gp: newGp }));
+      await fetchBankBalance();
+      setShowDeposit(false);
+      setDepositAmount('');
+      setDepositDesc('');
+    }
+    setDepositLoading(false);
+  }
 
   const totalWeight = items.reduce((sum, item) => sum + (item.weight_coins * item.quantity), 0);
   const speed = calculateSpeed(totalWeight);
@@ -85,7 +161,7 @@ export function InventoryTab({ characterId }: Props) {
       {/* Coins */}
       <section>
         <h3 style={{ margin: '0 0 0.75rem', fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Coins
+          Coins on Hand
         </h3>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           {(['gp', 'sp', 'cp'] as const).map(coin => (
@@ -95,11 +171,91 @@ export function InventoryTab({ characterId }: Props) {
                 type="number"
                 min={0}
                 value={coins[coin]}
-                onChange={e => setCoins(prev => ({ ...prev, [coin]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                onChange={e => handleCoinChange(coin, e.target.value)}
+                disabled={!isOwner}
                 style={{ width: '100%', textAlign: 'center', backgroundColor: 'transparent', border: 'none', color: 'var(--color-text)', fontSize: '1.1rem', fontWeight: '700', minHeight: '36px' }}
               />
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Bank Balance */}
+      <section>
+        <div style={{
+          backgroundColor: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          borderRadius: '10px',
+          padding: '0.875rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.25rem' }}>🏦</span>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>In the Bank</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: '700', color: bankBalance > 0 ? 'var(--color-gold)' : 'var(--color-text-muted)' }}>
+                  {bankBalance} gp
+                </div>
+              </div>
+            </div>
+            {isOwner && (
+              <button
+                onClick={() => { setShowDeposit(d => !d); setDepositError(''); setDepositAmount(''); setDepositDesc(''); }}
+                style={{
+                  padding: '0.4rem 0.875rem',
+                  backgroundColor: 'var(--color-bg)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: '8px', cursor: 'pointer',
+                  fontSize: '0.8rem', fontWeight: '600',
+                  color: 'var(--color-primary)', minHeight: '36px',
+                }}
+              >
+                {showDeposit ? 'Cancel' : '⬆ Deposit'}
+              </button>
+            )}
+          </div>
+
+          {showDeposit && (
+            <div style={{ marginTop: '0.875rem', display: 'flex', flexDirection: 'column', gap: '0.625rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.875rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Amount (gp)</label>
+                  <input
+                    type="number" min={1} max={coins.gp}
+                    value={depositAmount}
+                    onChange={e => setDepositAmount(e.target.value)}
+                    placeholder="0"
+                    style={{ width: '100%', padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '40px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ flex: 2 }}>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Note (optional)</label>
+                  <input
+                    type="text"
+                    value={depositDesc}
+                    onChange={e => setDepositDesc(e.target.value)}
+                    placeholder="e.g. Storing quest reward"
+                    style={{ width: '100%', padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '40px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+              {depositError && (
+                <div style={{ fontSize: '0.78rem', color: 'var(--color-danger)' }}>{depositError}</div>
+              )}
+              <button
+                onClick={handleDeposit}
+                disabled={depositLoading || !depositAmount}
+                style={{
+                  padding: '0.5rem', borderRadius: '8px', border: 'none',
+                  backgroundColor: 'var(--color-primary)', color: 'white',
+                  fontWeight: '600', fontSize: '0.875rem', cursor: 'pointer',
+                  opacity: depositLoading || !depositAmount ? 0.55 : 1, minHeight: '40px',
+                }}
+              >
+                {depositLoading ? 'Depositing…' : `Deposit ${depositAmount || '0'} gp →`}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -122,13 +278,15 @@ export function InventoryTab({ characterId }: Props) {
               </div>
               <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--color-bg)', borderRadius: '4px', padding: '2px 6px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>×{item.quantity}</span>
               <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--color-bg)', borderRadius: '4px', padding: '2px 6px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{item.weight_coins * item.quantity}¢</span>
-              <button
-                onClick={() => deleteItem(item.id)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '1rem', padding: '0.25rem', minHeight: '36px', minWidth: '36px' }}
-                aria-label={`Delete ${item.item_name}`}
-              >
-                ✕
-              </button>
+              {isOwner && (
+                <button
+                  onClick={() => deleteItem(item.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '1rem', padding: '0.25rem', minHeight: '36px', minWidth: '36px' }}
+                  aria-label={`Delete ${item.item_name}`}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -189,21 +347,24 @@ export function InventoryTab({ characterId }: Props) {
         )}
       </section>
 
-      {/* FAB */}
-      <button
-        onClick={() => setShowAddForm(o => !o)}
-        style={{
-          position: 'fixed', bottom: '96px', right: '1.25rem',
-          width: '56px', height: '56px', borderRadius: '50%',
-          backgroundColor: 'var(--color-primary)', color: 'white',
-          border: 'none', cursor: 'pointer',
-          fontSize: '1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.25)', zIndex: 40,
-        }}
-        aria-label="Add inventory item"
-      >
-        ⊕
-      </button>
+      {/* FAB — only for owner */}
+      {isOwner && (
+        <button
+          onClick={() => setShowAddForm(o => !o)}
+          style={{
+            position: 'fixed', bottom: '96px', right: '1.25rem',
+            width: '56px', height: '56px', borderRadius: '50%',
+            backgroundColor: 'var(--color-primary)', color: 'white',
+            border: 'none', cursor: 'pointer',
+            fontSize: '1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.25)', zIndex: 40,
+          }}
+          aria-label="Add inventory item"
+        >
+          ⊕
+        </button>
+      )}
     </div>
   );
 }
+
