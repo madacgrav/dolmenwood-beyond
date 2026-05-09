@@ -148,7 +148,7 @@ export default function CharacterSheetPage() {
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
         {activeTab === 'stats' && <StatsTab character={character} editMode={editMode} onUpdate={handleUpdate} />}
-        {activeTab === 'combat' && <CombatTab character={character} />}
+        {activeTab === 'combat' && <CombatTab character={character} characterId={id} />}
         {activeTab === 'inventory' && <InventoryTab characterId={id} ownerId={character.ownerId} />}
         {activeTab === 'magic' && <MagicTab character={character} characterId={id} />}
         {activeTab === 'notes' && <NotesTab character={character} onUpdate={handleUpdate} />}
