@@ -10,132 +10,21 @@ import {
   getAttackBonus,
   getSaveTargets,
   getSpellSlots,
-  getClassLevel,
   getHitDie,
   isSpellcaster,
+  getXPThresholdForNextLevel,
+  getLevelUpChanges,
 } from '@dolmenwood/rules-engine';
+import type { LevelUpChange } from '@dolmenwood/rules-engine';
 
 // ── types ────────────────────────────────────────────────────────────────────
 
 type LevelUpStep = 'check' | 'hp-roll' | 'features' | 'confirm';
 
-interface ClassFeature {
-  name: string;
-  description: string;
-}
-
-// ── constants ─────────────────────────────────────────────────────────────────
-
-const CLASS_HD: Record<string, number> = {
-  Fighter: 8,
-  Knight: 8,
-  Cleric: 6,
-  Friar: 6,
-  Magician: 4,
-  Enchanter: 4,
-  Thief: 4,
-  Bard: 6,
-  Hunter: 6,
-};
-
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function formatMod(n: number): string {
   return n >= 0 ? `+${n}` : `${n}`;
-}
-
-function getNewFeatures(
-  className: string,
-  currentLevel: number,
-  newLevel: number,
-): ClassFeature[] {
-  const features: ClassFeature[] = [];
-  const oldLevel = currentLevel;
-
-  const oldSaves = getSaveTargets(className, oldLevel);
-  const newSaves = getSaveTargets(className, newLevel);
-  const oldAttack = getAttackBonus(className, oldLevel);
-  const newAttack = getAttackBonus(className, newLevel);
-
-  if (newAttack > oldAttack) {
-    features.push({
-      name: 'Attack Bonus Improves',
-      description: `Your attack bonus rises to +${newAttack} (was +${oldAttack}).`,
-    });
-  }
-
-  if (oldSaves && newSaves) {
-    const savesImproved =
-      newSaves.doom < oldSaves.doom ||
-      newSaves.ray < oldSaves.ray ||
-      newSaves.hold < oldSaves.hold ||
-      newSaves.blast < oldSaves.blast ||
-      newSaves.spell < oldSaves.spell;
-    if (savesImproved) {
-      features.push({
-        name: 'Saving Throws Improve',
-        description: `Doom ${newSaves.doom}, Ray ${newSaves.ray}, Hold ${newSaves.hold}, Blast ${newSaves.blast}, Spell ${newSaves.spell}.`,
-      });
-    }
-  }
-
-  if (isSpellcaster(className)) {
-    const oldSlots = getSpellSlots(className, oldLevel);
-    const newSlots = getSpellSlots(className, newLevel);
-    if (newSlots) {
-      if ('glamours' in newSlots) {
-        const oldG = oldSlots && 'glamours' in oldSlots ? oldSlots.glamours : 0;
-        const newG = newSlots.glamours as number;
-        if (newG > oldG) {
-          features.push({
-            name: 'Glamours Known',
-            description: `You now know ${newG} glamours (was ${oldG}).`,
-          });
-        }
-      } else {
-        const gained: string[] = [];
-        for (let rank = 1; rank <= 6; rank++) {
-          const oldVal = oldSlots ? ((oldSlots as Record<string | number, number>)[rank] ?? 0) : 0;
-          const newVal = (newSlots as Record<string | number, number>)[rank] ?? 0;
-          if (newVal > oldVal) {
-            gained.push(`Rank ${rank}: ${newVal} (was ${oldVal})`);
-          }
-        }
-        if (gained.length > 0) {
-          features.push({
-            name: 'Spell Slots Expand',
-            description: gained.join('; ') + '.',
-          });
-        }
-      }
-    }
-  }
-
-  // Class-specific extra features from advancement data
-  const oldData = getClassLevel(className, oldLevel) as Record<string, unknown> | null;
-  const newData = getClassLevel(className, newLevel) as Record<string, unknown> | null;
-
-  if (oldData && newData) {
-    const oldTalents = oldData.combatTalents as number | undefined;
-    const newTalents = newData.combatTalents as number | undefined;
-    if (newTalents !== undefined && oldTalents !== undefined && newTalents > oldTalents) {
-      features.push({
-        name: 'Combat Talent',
-        description: `You earn a new Combat Talent (total: ${newTalents}).`,
-      });
-    }
-
-    const oldAC = oldData.acBonus as number | undefined;
-    const newAC = newData.acBonus as number | undefined;
-    if (newAC !== undefined && oldAC !== undefined && newAC > oldAC) {
-      features.push({
-        name: 'Unarmed AC Bonus Improves',
-        description: `Your unarmoured AC bonus increases to +${newAC} (was +${oldAC}).`,
-      });
-    }
-  }
-
-  return features;
 }
 
 // ── step components ───────────────────────────────────────────────────────────
@@ -148,6 +37,8 @@ function CheckStep({
   onAdvance: () => void;
 }) {
   const newLevel = character.level + 1;
+  const threshold = getXPThresholdForNextLevel(character.characterClass, character.level);
+  const canAdvance = threshold > 0 && character.xp >= threshold;
   const oldAttack = getAttackBonus(character.characterClass, character.level);
   const newAttack = getAttackBonus(character.characterClass, newLevel);
   const oldSaves = getSaveTargets(character.characterClass, character.level);
@@ -205,7 +96,10 @@ function CheckStep({
       </div>
 
       <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: 0 }}>
-        You have <strong style={{ color: 'var(--color-gold)' }}>{character.xp.toLocaleString()} XP</strong> — enough to reach level {newLevel}!
+        You have <strong style={{ color: 'var(--color-gold)' }}>{character.xp.toLocaleString()} XP</strong>
+        {canAdvance
+          ? ` — enough to reach level ${newLevel}!`
+          : ` — need ${threshold.toLocaleString()} XP to reach level ${newLevel}.`}
       </p>
 
       {/* Stats comparison */}
@@ -290,13 +184,17 @@ function CheckStep({
 
       <button
         onClick={onAdvance}
+        disabled={!canAdvance}
         style={{
           width: '100%', padding: '0.875rem',
-          backgroundColor: 'var(--color-gold)',
-          color: 'white', border: 'none', borderRadius: '10px',
+          backgroundColor: canAdvance ? 'var(--color-gold)' : 'var(--color-border)',
+          color: canAdvance ? 'white' : 'var(--color-text-muted)',
+          border: 'none', borderRadius: '10px',
           fontFamily: 'var(--font-display), Georgia, serif',
           fontSize: '1rem', fontWeight: '700',
-          cursor: 'pointer', letterSpacing: '0.05em',
+          cursor: canAdvance ? 'pointer' : 'not-allowed',
+          letterSpacing: '0.05em',
+          minHeight: '44px',
         }}
       >
         Advance! ⬆
@@ -314,7 +212,7 @@ function HPRollStep({
   onContinue: (gain: number, rawRoll: number) => void;
   onHpGain: (gain: number) => void;
 }){
-  const hitDie = CLASS_HD[character.characterClass] ?? 6;
+  const hitDie = parseInt(getHitDie(character.characterClass).slice(1), 10);
   const conMod = getAbilityModifier(character.abilityScores.con);
 
   const [roll, setRoll] = useState<number | null>(null);
@@ -322,20 +220,21 @@ function HPRollStep({
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    let innerTimer: ReturnType<typeof setTimeout>;
     const timer = setTimeout(() => {
       const rolled = Math.floor(Math.random() * hitDie) + 1;
       setRoll(rolled);
       setRolling(true);
 
       // After animation (~800ms), mark done
-      setTimeout(() => {
+      innerTimer = setTimeout(() => {
         setRolling(false);
         const gain = Math.max(1, rolled + conMod);
         onHpGain(gain);
         setDone(true);
       }, 800);
     }, 500);
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); clearTimeout(innerTimer!); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = roll !== null ? Math.max(1, roll + conMod) : null;
@@ -393,6 +292,7 @@ function HPRollStep({
           fontSize: '1rem', fontWeight: '700',
           cursor: done ? 'pointer' : 'not-allowed',
           transition: 'background-color 0.3s',
+          minHeight: '44px',
         }}
       >
         Continue →
@@ -406,10 +306,10 @@ function FeaturesStep({
   newLevel,
   onContinue,
 }: {
-  features: ClassFeature[];
+  features: LevelUpChange[];
   newLevel: number;
   onContinue: () => void;
-}) {
+}){
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <h3 style={{
@@ -463,6 +363,7 @@ function FeaturesStep({
           color: 'white', border: 'none', borderRadius: '10px',
           fontFamily: 'var(--font-display), Georgia, serif',
           fontSize: '1rem', fontWeight: '700', cursor: 'pointer',
+          minHeight: '44px',
         }}
       >
         Continue →
@@ -480,10 +381,10 @@ function ConfirmStep({
 }: {
   character: Character;
   hpGain: number;
-  features: ClassFeature[];
+  features: LevelUpChange[];
   saving: boolean;
   onConfirm: () => void;
-}) {
+}){
   const newLevel = character.level + 1;
 
   return (
@@ -536,6 +437,7 @@ function ConfirmStep({
           fontSize: '1rem', fontWeight: '700',
           cursor: saving ? 'not-allowed' : 'pointer',
           transition: 'background-color 0.2s',
+          minHeight: '44px',
         }}
       >
         {saving ? 'Saving…' : '🏆 Complete Level Up'}
@@ -566,6 +468,7 @@ export default function LevelUpPage() {
   const [hpRoll, setHpRoll] = useState(0);
   const [saving, setSaving] = useState(false);
   const [celebrated, setCelebrated] = useState(false);
+  const [confirmError, setConfirmError] = useState('');
 
   const fetchCharacter = useCallback(async () => {
     const { data, error } = await supabase
@@ -579,7 +482,14 @@ export default function LevelUpPage() {
       return;
     }
 
+    // Ownership guard: only the character owner may access the level-up wizard.
+    const { data: { user } } = await supabase.auth.getUser();
     const row = data as Record<string, unknown>;
+    if (!user || row.owner_id !== user.id) {
+      router.push(`/characters/${id}`);
+      return;
+    }
+
     const mapped: Character = {
       id: row.id as string,
       ownerId: row.owner_id as string,
@@ -612,32 +522,48 @@ export default function LevelUpPage() {
   async function handleConfirm() {
     if (!character) return;
     setSaving(true);
+    setConfirmError('');
     const newLevel = character.level + 1;
 
-    await supabase.from('characters').update({
-      level: newLevel,
-      hp_max: character.hpMax + hpGain,
-      hp_current: character.hpCurrent + hpGain,
-    }).eq('id', id);
+    try {
+      const { error: charError } = await supabase.from('characters').update({
+        level: newLevel,
+        hp_max: character.hpMax + hpGain,
+        hp_current: character.hpCurrent + hpGain,
+      }).eq('id', id);
 
-    await supabase.from('level_up_logs').insert({
-      character_id: id,
-      from_level: character.level,
-      to_level: newLevel,
-      hp_roll: hpRoll,
-      hp_roll_final: hpGain,
-      changes: features.map(f => ({ field: f.name, oldValue: '', newValue: f.description })),
-    });
+      if (charError) {
+        setConfirmError(charError.message);
+        return;
+      }
 
-    setCelebrated(true);
-    setTimeout(() => {
-      router.push(`/characters/${id}`);
-    }, 1800);
+      const { error: logError } = await supabase.from('level_up_logs').insert({
+        character_id: id,
+        from_level: character.level,
+        to_level: newLevel,
+        hp_roll: hpRoll,
+        hp_roll_final: hpGain,
+        changes: features.map(f => ({ field: f.name, oldValue: '', newValue: f.description })),
+      });
+
+      if (logError) {
+        // Level-up succeeded but log write failed — proceed to celebration
+        // but log the error for debugging.
+        console.warn('Level-up log failed to save:', logError.message);
+      }
+
+      setCelebrated(true);
+      setTimeout(() => {
+        router.push(`/characters/${id}`);
+      }, 1800);
+    } finally {
+      setSaving(false);
+    }
   }
 
   const stepIndex = STEPS.indexOf(step);
   const newLevel = character ? character.level + 1 : 0;
-  const features = character ? getNewFeatures(character.characterClass, character.level, newLevel) : [];
+  const features = character ? getLevelUpChanges(character.characterClass, character.level, newLevel) : [];
 
   if (loading) {
     return (
@@ -761,13 +687,28 @@ export default function LevelUpPage() {
           />
         )}
         {step === 'confirm' && (
-          <ConfirmStep
-            character={character}
-            hpGain={hpGain}
-            features={features}
-            saving={saving}
-            onConfirm={handleConfirm}
-          />
+          <>
+            {confirmError && (
+              <div style={{
+                margin: '0 0 0.75rem',
+                padding: '0.75rem 1rem',
+                backgroundColor: 'color-mix(in srgb, var(--color-danger) 15%, var(--color-bg))',
+                borderRadius: '8px',
+                border: '1px solid var(--color-danger)',
+                color: 'var(--color-danger)',
+                fontSize: '0.875rem',
+              }}>
+                ⚠️ {confirmError}
+              </div>
+            )}
+            <ConfirmStep
+              character={character}
+              hpGain={hpGain}
+              features={features}
+              saving={saving}
+              onConfirm={handleConfirm}
+            />
+          </>
         )}
       </div>
     </div>

@@ -283,6 +283,7 @@
         "description": "+10% bonus to all XP earned (in addition to Prime Ability XP bonus)."
       }
     ],
+    "xpBonusPct": 10,
     "skills": [],
     "classRestrictions": {
       "common": [

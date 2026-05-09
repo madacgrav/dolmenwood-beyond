@@ -12,6 +12,7 @@ export interface KindredData {
   nativeLanguages: string[];
   traits: KindredTrait[];
   acBonus?: string;
+  xpBonusPct?: number;
   classRestrictions: {
     common?: string[];
     rare?: string[];
@@ -31,11 +32,7 @@ export function getKindredData(kindred: string): KindredData | null {
 }
 
 export function getKindredXPBonus(kindred: string): number {
-  const traits = getKindredTraits(kindred);
-  const spirited = traits.find(t => t.description.includes('XP earned'));
-  if (!spirited) return 0;
-  const match = spirited.description.match(/\+(\d+)%/);
-  return match ? parseInt(match[1]!, 10) : 0;
+  return getKindredData(kindred)?.xpBonusPct ?? 0;
 }
 
 export function getKindredACBonus(kindred: string): number {

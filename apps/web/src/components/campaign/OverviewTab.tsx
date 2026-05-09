@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
-  getXPModifier,
-  getPrimeAbilities,
   getXPThresholdForNextLevel,
+  getPrimeAbilities,
+  getXPModifier,
   getKindredXPBonus,
+  applyXPModifiers,
+  canLevelUpAfterGain,
 } from '@dolmenwood/rules-engine';
 
 interface Props {
@@ -53,24 +55,15 @@ function defaultXPAward(): XPAwardState {
   return { showPanel: false, baseXP: '', applyModifier: true, awarding: false, error: '', lastAwardAt: null };
 }
 
-function charXPGain(ch: MemberCharacter, base: number, applyMod: boolean): number {
-  if (!applyMod || base <= 0) return base;
-  const primes = getPrimeAbilities(ch.character_class);
-  const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 10);
-  const abilityMod = getXPModifier(scores);
-  const kindredBonus = getKindredXPBonus(ch.kindred);
-  return Math.round(base * (1 + (abilityMod + kindredBonus) / 100));
-}
-
 function canLevelUpAfter(ch: MemberCharacter, gain: number): boolean {
   const threshold = getXPThresholdForNextLevel(ch.character_class, ch.level);
-  return threshold > 0 && ch.xp + gain >= threshold;
+  return canLevelUpAfterGain(ch.xp, gain, threshold);
 }
 
 // ─── Referee View ─────────────────────────────────────────────────────────────
 
-function RefereView({ userId }: { userId: string }) {
-  const supabase = createClient();
+function RefereeView({ userId }: { userId: string }) {
+  const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -102,16 +95,10 @@ function RefereView({ userId }: { userId: string }) {
 
     const campaignIds = rawCampaigns.map((c: { id: string }) => c.id);
 
-    const [{ data: rawMembers }, { data: rawChars }] = await Promise.all([
-      supabase
-        .from('campaign_members')
-        .select('campaign_id, account_id, joined_at, accounts(display_name)')
-        .in('campaign_id', campaignIds),
-      supabase
-        .from('characters')
-        .select('id, name, character_class, level, xp, ability_scores, kindred, owner_id')
-        .order('name'),
-    ]);
+    const { data: rawMembers } = await supabase
+      .from('campaign_members')
+      .select('campaign_id, account_id, joined_at, accounts(display_name)')
+      .in('campaign_id', campaignIds);
 
     const members = (rawMembers ?? []) as unknown as Array<{
       campaign_id: string;
@@ -119,6 +106,16 @@ function RefereView({ userId }: { userId: string }) {
       joined_at: string;
       accounts: { display_name: string } | null;
     }>;
+    const memberAccountIds = [...new Set(members.map(m => m.account_id))];
+
+    const { data: rawChars } = memberAccountIds.length > 0
+      ? await supabase
+          .from('characters')
+          .select('id, name, character_class, level, xp, ability_scores, kindred, owner_id')
+          .in('owner_id', memberAccountIds)
+          .order('name')
+      : { data: [] };
+
     const chars = (rawChars ?? []) as Array<MemberCharacter & { owner_id: string }>;
 
     setCampaigns(
@@ -192,17 +189,20 @@ function RefereView({ userId }: { userId: string }) {
 
     const updates = await Promise.all(
       allChars.map(ch => {
-        const gain = charXPGain(ch, base, state.applyModifier);
-        return supabase
-          .from('characters')
-          .update({ xp: ch.xp + gain })
-          .eq('id', ch.id);
+        const gain = state.applyModifier
+          ? applyXPModifiers(base, ch.character_class, ch.ability_scores, ch.kindred)
+          : base;
+        return supabase.rpc('award_xp', { p_character_id: ch.id, p_gain: gain });
       })
     );
 
-    const failed = updates.find(r => r.error);
-    if (failed?.error) {
-      patchXP(campaign.id, { awarding: false, error: failed.error.message });
+    const failed = updates.filter(r => r.error);
+    if (failed.length > 0) {
+      await loadCampaigns();
+      patchXP(campaign.id, {
+        awarding: false,
+        error: `${failed.length}/${updates.length} award(s) failed: ${failed[0]!.error!.message}`,
+      });
       return;
     }
 
@@ -393,7 +393,9 @@ function RefereView({ userId }: { userId: string }) {
                           {member.characters.map(ch => {
                             const award = xpAward(campaign.id);
                             const base = parseInt(award.baseXP.trim(), 10) || 0;
-                            const gain = base > 0 ? charXPGain(ch, base, award.applyModifier) : 0;
+                            const gain = base > 0
+                              ? (award.applyModifier ? applyXPModifiers(base, ch.character_class, ch.ability_scores, ch.kindred) : base)
+                              : 0;
                             const willLevel = gain > 0 && canLevelUpAfter(ch, gain);
                             return (
                               <div key={ch.id} style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -484,12 +486,15 @@ function RefereView({ userId }: { userId: string }) {
 
                 {parseInt(xpAward(campaign.id).baseXP.trim(), 10) > 0 && campaign.members.some(m => m.characters.length > 0) && (
                   <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)', paddingTop: '0.5rem' }}>
-                    {campaign.members.flatMap(m => m.characters).map(ch => {
-                      const gain = charXPGain(ch, parseInt(xpAward(campaign.id).baseXP.trim(), 10) || 0, xpAward(campaign.id).applyModifier);
-                      const willLevel = canLevelUpAfter(ch, gain);
+                     {campaign.members.flatMap(m => m.characters).map(ch => {
                       const applyMod = xpAward(campaign.id).applyModifier;
+                      const baseVal = parseInt(xpAward(campaign.id).baseXP.trim(), 10) || 0;
+                      const gain = applyMod
+                        ? applyXPModifiers(baseVal, ch.character_class, ch.ability_scores, ch.kindred)
+                        : baseVal;
+                      const willLevel = canLevelUpAfter(ch, gain);
                       const primes = getPrimeAbilities(ch.character_class);
-                      const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 10);
+                       const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 10);
                       const abilityMod = applyMod ? getXPModifier(scores) : 0;
                       const kindredBonus = applyMod ? getKindredXPBonus(ch.kindred) : 0;
                       const totalMod = abilityMod + kindredBonus;
@@ -752,6 +757,6 @@ function PlayerView({ userId }: { userId: string }) {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export function OverviewTab({ isReferee, userId }: Props) {
-  if (isReferee) return <RefereView userId={userId} />;
+  if (isReferee) return <RefereeView userId={userId} />;
   return <PlayerView userId={userId} />;
 }

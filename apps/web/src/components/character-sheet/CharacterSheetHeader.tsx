@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Character } from '@dolmenwood/types';
-import { getXPThresholdForNextLevel, getPrimeAbilities, getXPModifier, getKindredXPBonus } from '@dolmenwood/rules-engine';
+import { getXPThresholdForNextLevel, getPrimeAbilities, getXPModifier, getKindredXPBonus, applyXPModifiers } from '@dolmenwood/rules-engine';
 
 type CharacterWithNotes = Character & { notes?: string };
 
@@ -44,8 +44,8 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
   function commitXPInput() {
     const val = parseInt(xpInputVal, 10);
     if (!isNaN(val) && val !== 0) {
-      const gain = val > 0 && totalXpMod !== 0
-        ? Math.round(val * (1 + totalXpMod / 100))
+      const gain = val > 0
+        ? applyXPModifiers(val, character.characterClass, character.abilityScores as unknown as Record<string, number>, character.kindred)
         : val;
       onUpdate({ xp: Math.max(0, character.xp + gain) });
     }
@@ -54,7 +54,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
   }
 
   const primes = getPrimeAbilities(character.characterClass);
-  const primeScores = primes.map(p => character.abilityScores[p.toLowerCase() as keyof typeof character.abilityScores]);
+  const primeScores = primes.map(p => character.abilityScores[p.toLowerCase() as keyof typeof character.abilityScores] ?? 0);
   const xpMod = getXPModifier(primeScores);
   const kindredXpBonus = getKindredXPBonus(character.kindred);
   const totalXpMod = xpMod + kindredXpBonus;
@@ -150,7 +150,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
                     padding: '0.25rem 0.625rem', borderRadius: '6px', border: '1px solid var(--color-border)',
                     backgroundColor: d < 0 ? 'color-mix(in srgb, var(--color-danger) 15%, var(--color-bg))' : 'color-mix(in srgb, var(--color-primary) 15%, var(--color-bg))',
                     color: d < 0 ? 'var(--color-danger)' : 'var(--color-primary)',
-                    cursor: 'pointer', fontSize: '0.85rem', fontWeight: '700', minHeight: '36px',
+                    cursor: 'pointer', fontSize: '0.85rem', fontWeight: '700', minHeight: '44px',
                   }}
                 >
                   {d > 0 ? `+${d}` : d}
@@ -165,12 +165,12 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
                 style={{
                   width: '70px', padding: '0.25rem 0.5rem', borderRadius: '6px',
                   border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
-                  color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '36px',
+                  color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '44px',
                 }}
               />
               <button
                 onClick={commitHpInput}
-                style={{ padding: '0.25rem 0.625rem', borderRadius: '6px', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', minHeight: '36px' }}
+                style={{ padding: '0.25rem 0.625rem', borderRadius: '6px', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', minHeight: '44px' }}
               >
                 ✓
               </button>
@@ -221,12 +221,12 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
                     style={{
                       width: '90px', padding: '0.25rem 0.5rem', borderRadius: '6px',
                       border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
-                      color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '36px',
+                      color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '44px',
                     }}
                   />
                   <button
                     onClick={commitXPInput}
-                    style={{ padding: '0.25rem 0.75rem', borderRadius: '6px', backgroundColor: 'var(--color-gold)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '700', minHeight: '36px' }}
+                    style={{ padding: '0.25rem 0.75rem', borderRadius: '6px', backgroundColor: 'var(--color-gold)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '700', minHeight: '44px' }}
                   >
                     {isNegative ? '−XP' : '+XP'}
                   </button>
@@ -256,7 +256,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
                 fontWeight: '700',
                 fontSize: '0.85rem',
                 cursor: 'pointer',
-                minHeight: '40px',
+                minHeight: '44px',
                 animation: 'levelUpPulse 1.5s ease-in-out infinite',
               }}
             >
