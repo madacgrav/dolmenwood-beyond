@@ -174,9 +174,16 @@ function RefereView({ userId }: { userId: string }) {
   }
 
   async function handleAwardXP(campaign: CampaignData) {
+    // Belt-and-suspenders: only the referee who owns this campaign may award XP.
+    // The DB also enforces this via RLS + referee_id scoping in loadCampaigns.
+    if (!campaigns.some(c => c.id === campaign.id)) {
+      patchXP(campaign.id, { error: 'Unauthorized: you do not own this campaign.' });
+      return;
+    }
+
     const state = xpAward(campaign.id);
-    const base = parseInt(state.baseXP);
-    if (!base || base <= 0) { patchXP(campaign.id, { error: 'Enter a positive XP amount.' }); return; }
+    const base = parseInt(state.baseXP.trim(), 10);
+    if (Number.isNaN(base) || base <= 0) { patchXP(campaign.id, { error: 'Enter a positive XP amount.' }); return; }
 
     const allChars = campaign.members.flatMap(m => m.characters);
     if (allChars.length === 0) { patchXP(campaign.id, { error: 'No characters to award XP to.' }); return; }
@@ -340,8 +347,7 @@ function RefereView({ userId }: { userId: string }) {
                   border: '1px solid var(--color-border)',
                   backgroundColor: copiedId === campaign.id ? 'color-mix(in srgb, var(--color-primary) 15%, transparent)' : 'transparent',
                   color: copiedId === campaign.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                  fontSize: '0.8rem', cursor: 'pointer', minHeight: '40px',
-                  transition: 'all 0.15s ease',
+                  fontSize: '0.8rem', cursor: 'pointer', minHeight: '44px',
                 }}
               >
                 {copiedId === campaign.id ? '✓ Copied!' : '📋 Copy'}
@@ -357,7 +363,7 @@ function RefereView({ userId }: { userId: string }) {
                 width: '100%', padding: '0.625rem 1rem',
                 backgroundColor: 'var(--color-bg)', border: 'none',
                 color: 'var(--color-text-muted)', fontSize: '0.8rem',
-                cursor: 'pointer', textAlign: 'left', minHeight: '40px',
+                cursor: 'pointer', textAlign: 'left', minHeight: '44px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}
             >
@@ -386,7 +392,7 @@ function RefereView({ userId }: { userId: string }) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                           {member.characters.map(ch => {
                             const award = xpAward(campaign.id);
-                            const base = parseInt(award.baseXP) || 0;
+                            const base = parseInt(award.baseXP.trim(), 10) || 0;
                             const gain = base > 0 ? charXPGain(ch, base, award.applyModifier) : 0;
                             const willLevel = gain > 0 && canLevelUpAfter(ch, gain);
                             return (
@@ -420,7 +426,7 @@ function RefereView({ userId }: { userId: string }) {
                 width: '100%', padding: '0.625rem 1rem',
                 backgroundColor: 'var(--color-bg)', border: 'none',
                 color: 'var(--color-primary)', fontSize: '0.8rem',
-                cursor: 'pointer', textAlign: 'left', minHeight: '40px',
+                cursor: 'pointer', textAlign: 'left', minHeight: '44px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}
             >
@@ -443,7 +449,7 @@ function RefereView({ userId }: { userId: string }) {
                     style={{
                       flex: 1, padding: '0.5rem 0.75rem', borderRadius: '6px',
                       border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
-                      color: 'var(--color-text)', fontSize: '0.875rem', minHeight: '40px',
+                      color: 'var(--color-text)', fontSize: '0.875rem', minHeight: '44px',
                     }}
                   />
                   <button
@@ -454,7 +460,7 @@ function RefereView({ userId }: { userId: string }) {
                       backgroundColor: xpAward(campaign.id).awarding ? 'var(--color-border)' : 'var(--color-primary)',
                       color: '#fff', border: 'none', fontSize: '0.875rem',
                       cursor: xpAward(campaign.id).awarding ? 'not-allowed' : 'pointer',
-                      minHeight: '40px', whiteSpace: 'nowrap',
+                      minHeight: '44px', whiteSpace: 'nowrap',
                     }}
                   >
                     {xpAward(campaign.id).awarding ? 'Awarding…' : 'Award to All'}
@@ -476,10 +482,10 @@ function RefereView({ userId }: { userId: string }) {
                   </div>
                 )}
 
-                {parseInt(xpAward(campaign.id).baseXP) > 0 && campaign.members.some(m => m.characters.length > 0) && (
+                {parseInt(xpAward(campaign.id).baseXP.trim(), 10) > 0 && campaign.members.some(m => m.characters.length > 0) && (
                   <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)', paddingTop: '0.5rem' }}>
                     {campaign.members.flatMap(m => m.characters).map(ch => {
-                      const gain = charXPGain(ch, parseInt(xpAward(campaign.id).baseXP) || 0, xpAward(campaign.id).applyModifier);
+                      const gain = charXPGain(ch, parseInt(xpAward(campaign.id).baseXP.trim(), 10) || 0, xpAward(campaign.id).applyModifier);
                       const willLevel = canLevelUpAfter(ch, gain);
                       const applyMod = xpAward(campaign.id).applyModifier;
                       const primes = getPrimeAbilities(ch.character_class);
