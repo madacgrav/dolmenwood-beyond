@@ -100,7 +100,8 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
 
   function rollSkill(skill: SkillEntry) {
     const roll = rollDie(6);
-    setSkillRolls(prev => ({ ...prev, [skill.name]: { roll, pass: roll <= skill.target } }));
+    // Dolmenwood skills: roll d6, succeed if result >= target number
+    setSkillRolls(prev => ({ ...prev, [skill.name]: { roll, pass: roll >= skill.target } }));
   }
 
   useEffect(() => {
@@ -246,7 +247,7 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.9rem', color: 'var(--color-text)' }}>{skill.name}</div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                  {skill.target}-in-6 {skill.isUniversal ? '· Universal' : '· Class'}
+                  {7 - skill.target}-in-6 (need {skill.target}+) {skill.isUniversal ? '· Universal' : '· Class'}
                 </div>
               </div>
               {skillRolls[skill.name] && (

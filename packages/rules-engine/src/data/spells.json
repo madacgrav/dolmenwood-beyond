@@ -12,8 +12,7 @@
     "rank2": ["Bless", "Charm Animal", "Find Traps", "Hold Person", "Know Alignment", "Resist Fire", "Silence 15' Radius", "Snake Charm"],
     "rank3": ["Continual Light", "Cure Disease", "Growth of Animals", "Locate Object", "Remove Curse", "Striking"],
     "rank4": ["Create Water", "Cure Serious Wounds", "Dispel Magic", "Neutralize Poison", "Protection from Evil 10' Radius", "Speak with Plants"],
-    "rank5": ["Commune", "Create Food", "Dispel Evil", "Insect Plague", "Quest", "Raise Dead"],
-    "rank6": ["Animate Objects", "Blade Barrier", "Find the Path", "Heal", "Speak with Monsters", "Word of Recall"]
+    "rank5": ["Commune", "Create Food", "Dispel Evil", "Insect Plague", "Quest", "Raise Dead"]
   },
   "Friar": {
     "rank1": ["Cure Light Wounds", "Detect Evil", "Detect Magic", "Light", "Protection from Evil", "Purify Food and Water", "Remove Fear", "Resist Cold"],

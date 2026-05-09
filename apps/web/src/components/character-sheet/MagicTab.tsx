@@ -112,8 +112,43 @@ export function MagicTab({ character, characterId }: Props) {
           slots_used: 0,
         }));
       if (inserts.length > 0) {
-        const { data: newSlots } = await supabase.from('spell_slots').insert(inserts).select();
-        slots = (newSlots ?? []) as DBSpellSlot[];
+        const { data: newSlots, error: insertError } = await supabase
+          .from('spell_slots').insert(inserts).select();
+        if (insertError) {
+          // Another tab won the race (23505 duplicate key) — fetch what's already there
+          const { data: existingSlots } = await supabase
+            .from('spell_slots').select('*')
+            .eq('character_id', characterId).order('spell_rank');
+          slots = (existingSlots ?? []) as DBSpellSlot[];
+        } else {
+          slots = (newSlots ?? []) as DBSpellSlot[];
+        }
+      }
+    } else if (slots.length > 0 && spellcaster && !isGlamour && slotsData) {
+      // Re-sync slots_total after level-up: update any rank whose total has changed
+      const updates = slots
+        .filter(s => {
+          const expected = (slotsData as Record<string, number>)[String(s.spell_rank)] ?? 0;
+          return s.slots_total !== expected;
+        })
+        .map(s => ({
+          id: s.id,
+          slots_total: (slotsData as Record<string, number>)[String(s.spell_rank)] ?? 0,
+          // Clamp slots_used to the new total
+          slots_used: Math.min(s.slots_used, (slotsData as Record<string, number>)[String(s.spell_rank)] ?? 0),
+        }));
+      if (updates.length > 0) {
+        await Promise.all(
+          updates.map(u =>
+            supabase.from('spell_slots')
+              .update({ slots_total: u.slots_total, slots_used: u.slots_used })
+              .eq('id', u.id)
+          )
+        );
+        slots = slots.map(s => {
+          const upd = updates.find(u => u.id === s.id);
+          return upd ? { ...s, slots_total: upd.slots_total, slots_used: upd.slots_used } : s;
+        });
       }
     }
 
@@ -150,7 +185,7 @@ export function MagicTab({ character, characterId }: Props) {
   }, [slotsData, isGlamour]);
 
   // ── Slot circles ─────────────────────────────────────────────────────────────
-  async function toggleSlot(slot: DBSpellSlot, index: number, isUsed: boolean) {
+  async function toggleSlot(slot: DBSpellSlot, isUsed: boolean) {
     const newUsed = isUsed
       ? Math.max(0, slot.slots_used - 1)
       : Math.min(slot.slots_total, slot.slots_used + 1);
@@ -239,8 +274,8 @@ export function MagicTab({ character, characterId }: Props) {
 
   // ── Spell lists for dropdowns ────────────────────────────────────────────────
   const glamourSpells: SpellEntry[] = useMemo(
-    () => getSpellsForClass('Enchanter'),
-    []
+    () => getSpellsForClass(character.characterClass),
+    [character.characterClass]
   );
 
   const prepSpells: SpellEntry[] = useMemo(
@@ -332,7 +367,7 @@ export function MagicTab({ character, characterId }: Props) {
                     {circles.map((used, i) => (
                       <button
                         key={i}
-                        onClick={() => toggleSlot(slot, i, used)}
+                        onClick={() => toggleSlot(slot, used)}
                         style={{
                           background: 'none', border: 'none', cursor: 'pointer', padding: 0,
                           fontSize: '1.35rem', color: used ? 'var(--color-gold)' : 'var(--color-border)',

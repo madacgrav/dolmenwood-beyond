@@ -109,20 +109,23 @@ export default async function AdminPage() {
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/sign-in');
 
   const { data, error } = await supabase.rpc('get_admin_data');
 
   if (error || !data) {
+    const isAccessDenied = error?.message?.toLowerCase().includes('access denied');
     return (
       <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🛡️</div>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{isAccessDenied ? '🛡️' : '⚠️'}</div>
           <h1 style={{ fontFamily: 'var(--font-display), Georgia, serif', color: 'var(--color-danger)', margin: '0 0 0.5rem' }}>
-            Access Denied
+            {isAccessDenied ? 'Access Denied' : 'Error Loading Dashboard'}
           </h1>
           <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-            You do not have administrator access.
+            {isAccessDenied
+              ? 'You do not have administrator access.'
+              : `An error occurred: ${error?.message ?? 'Unknown error. Please try again.'}`}
           </p>
         </div>
       </div>

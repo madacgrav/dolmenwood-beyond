@@ -496,7 +496,7 @@ function RefereeView({ userId }: { userId: string }) {
                         : baseVal;
                       const willLevel = canLevelUpAfter(ch, gain);
                       const primes = getPrimeAbilities(ch.character_class);
-                       const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 10);
+                       const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 0);
                       const abilityMod = applyMod ? getXPModifier(scores) : 0;
                       const kindredBonus = applyMod ? getKindredXPBonus(ch.kindred) : 0;
                       const totalMod = abilityMod + kindredBonus;
@@ -567,33 +567,43 @@ function PlayerView({ userId }: { userId: string }) {
 
     const campaignIds = memberships.map((m: { campaign_id: string }) => m.campaign_id);
 
-    const [{ data: rawCampaigns }, { data: rawMembers }, { data: rawChars }] = await Promise.all([
+    const [{ data: rawCampaigns }, ...partyResults] = await Promise.all([
       supabase.from('campaigns').select('id, name, invite_code, created_at').in('id', campaignIds),
-      supabase
-        .from('campaign_members')
-        .select('campaign_id, account_id, joined_at, accounts(display_name)')
-        .in('campaign_id', campaignIds),
-      supabase.from('characters').select('id, name, character_class, level, xp, ability_scores, kindred, hp_current, hp_max, owner_id').order('name'),
+      // Use SECURITY DEFINER RPC so players can see other members' characters
+      ...campaignIds.map((id: string) =>
+        supabase.rpc('get_campaign_party_data', { p_campaign_id: id })
+      ),
     ]);
 
-    const members = (rawMembers ?? []) as unknown as Array<{
-      campaign_id: string;
-      account_id: string;
-      joined_at: string;
-      accounts: { display_name: string } | null;
-    }>;
-    const chars = (rawChars ?? []) as Array<MemberCharacter & { owner_id: string }>;
-
     setCampaigns(
-      (rawCampaigns ?? []).map((c: { id: string; name: string; invite_code: string; created_at: string }) => {
-        const campaignMembers = members
-          .filter(m => m.campaign_id === c.id)
-          .map(m => ({
-            account_id: m.account_id,
-            display_name: m.accounts?.display_name ?? 'Unknown',
-            joined_at: m.joined_at,
-            characters: chars.filter(ch => ch.owner_id === m.account_id),
-          }));
+      (rawCampaigns ?? []).map((c: { id: string; name: string; invite_code: string; created_at: string }, idx: number) => {
+        const partyData = partyResults[idx]?.data as Array<{
+          account_id: string;
+          display_name: string;
+          characters: Array<{
+            id: string; name: string; character_class: string; level: number;
+            kindred: string; hp_current: number; hp_max: number; xp: number;
+          }> | null;
+        }> | null;
+
+        const campaignMembers = (partyData ?? []).map(m => ({
+          account_id: m.account_id,
+          display_name: m.display_name ?? 'Unknown',
+          joined_at: '',
+          characters: (m.characters ?? []).map(ch => ({
+            id: ch.id,
+            name: ch.name,
+            character_class: ch.character_class,
+            level: ch.level,
+            kindred: ch.kindred,
+            hp_current: ch.hp_current,
+            hp_max: ch.hp_max,
+            xp: ch.xp,
+            ability_scores: {} as Record<string, number>,
+            owner_id: m.account_id,
+          })),
+        }));
+
         return { ...c, members: campaignMembers, showMembers: true };
       })
     );
