@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ALL_KINDREDS, getKindredACBonus, getKindredLanguages, getKindredTraits, getKindredData, isClassAllowedForKindred } from '../kindreds';
+import { ALL_KINDREDS, getKindredACBonus, getKindredLanguages, getKindredTraits, getKindredData, isClassAllowedForKindred, getKindredXPBonus } from '../kindreds';
 
 describe('Kindreds', () => {
   it('covers all 6 kindreds', () => {
@@ -29,5 +29,35 @@ describe('Kindreds', () => {
 
   it('isClassAllowedForKindred returns true for unknown kindred', () => {
     expect(isClassAllowedForKindred('Unknown', 'Fighter')).toBe(true);
+  });
+
+  describe('getKindredXPBonus', () => {
+    it('returns 10 for Human (Spirited trait)', () => {
+      expect(getKindredXPBonus('Human')).toBe(10);
+    });
+
+    it('returns 0 for Breggle', () => {
+      expect(getKindredXPBonus('Breggle')).toBe(0);
+    });
+
+    it('returns 0 for Elf', () => {
+      expect(getKindredXPBonus('Elf')).toBe(0);
+    });
+
+    it('returns 0 for Grimalkin', () => {
+      expect(getKindredXPBonus('Grimalkin')).toBe(0);
+    });
+
+    it('returns 0 for Mossling', () => {
+      expect(getKindredXPBonus('Mossling')).toBe(0);
+    });
+
+    it('returns 0 for Woodgrue', () => {
+      expect(getKindredXPBonus('Woodgrue')).toBe(0);
+    });
+
+    it('returns 0 for unknown kindred', () => {
+      expect(getKindredXPBonus('Unknown')).toBe(0);
+    });
   });
 });

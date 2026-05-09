@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Character } from '@dolmenwood/types';
-import { getXPThresholdForNextLevel, getPrimeAbilities, getXPModifier } from '@dolmenwood/rules-engine';
+import { getXPThresholdForNextLevel, getPrimeAbilities, getXPModifier, getKindredXPBonus, applyXPModifiers } from '@dolmenwood/rules-engine';
 
 type CharacterWithNotes = Character & { notes?: string };
 
@@ -43,14 +43,21 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
 
   function commitXPInput() {
     const val = parseInt(xpInputVal, 10);
-    if (!isNaN(val) && val > 0) onUpdate({ xp: character.xp + val });
+    if (!isNaN(val) && val !== 0) {
+      const gain = val > 0
+        ? applyXPModifiers(val, character.characterClass, character.abilityScores as unknown as Record<string, number>, character.kindred)
+        : val;
+      onUpdate({ xp: Math.max(0, character.xp + gain) });
+    }
     setXpInputVal('');
     setXpEditOpen(false);
   }
 
   const primes = getPrimeAbilities(character.characterClass);
-  const primeScores = primes.map(p => character.abilityScores[p.toLowerCase() as keyof typeof character.abilityScores]);
+  const primeScores = primes.map(p => character.abilityScores[p.toLowerCase() as keyof typeof character.abilityScores] ?? 0);
   const xpMod = getXPModifier(primeScores);
+  const kindredXpBonus = getKindredXPBonus(character.kindred);
+  const totalXpMod = xpMod + kindredXpBonus;
 
   return (
     <div style={{
@@ -143,7 +150,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
                     padding: '0.25rem 0.625rem', borderRadius: '6px', border: '1px solid var(--color-border)',
                     backgroundColor: d < 0 ? 'color-mix(in srgb, var(--color-danger) 15%, var(--color-bg))' : 'color-mix(in srgb, var(--color-primary) 15%, var(--color-bg))',
                     color: d < 0 ? 'var(--color-danger)' : 'var(--color-primary)',
-                    cursor: 'pointer', fontSize: '0.85rem', fontWeight: '700', minHeight: '36px',
+                    cursor: 'pointer', fontSize: '0.85rem', fontWeight: '700', minHeight: '44px',
                   }}
                 >
                   {d > 0 ? `+${d}` : d}
@@ -158,12 +165,12 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
                 style={{
                   width: '70px', padding: '0.25rem 0.5rem', borderRadius: '6px',
                   border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
-                  color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '36px',
+                  color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '44px',
                 }}
               />
               <button
                 onClick={commitHpInput}
-                style={{ padding: '0.25rem 0.625rem', borderRadius: '6px', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', minHeight: '36px' }}
+                style={{ padding: '0.25rem 0.625rem', borderRadius: '6px', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', minHeight: '44px' }}
               >
                 ✓
               </button>
@@ -179,9 +186,9 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
               <span style={{ color: 'var(--color-gold)', fontWeight: '600' }}>
                 ✨ {character.xp.toLocaleString()} XP {nextLevelXP > 0 ? `/ ${nextLevelXP.toLocaleString()}` : '(max level)'}
               </span>
-              {xpMod !== 0 && (
-                <span style={{ color: xpMod > 0 ? 'var(--color-primary)' : 'var(--color-danger)', fontSize: '0.65rem' }}>
-                  {xpMod > 0 ? `+${xpMod}%` : `${xpMod}%`} XP mod
+              {totalXpMod !== 0 && (
+                <span style={{ color: totalXpMod > 0 ? 'var(--color-primary)' : 'var(--color-danger)', fontSize: '0.65rem' }}>
+                  {totalXpMod > 0 ? `+${totalXpMod}%` : `${totalXpMod}%`} XP mod
                 </span>
               )}
             </div>
@@ -191,29 +198,48 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
           </div>
 
           {/* XP edit */}
-          {xpEditOpen && (
-            <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', marginTop: '0.5rem' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Add XP:</span>
-              <input
-                type="number"
-                placeholder="e.g. 250"
-                value={xpInputVal}
-                onChange={e => setXpInputVal(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && commitXPInput()}
-                style={{
-                  width: '90px', padding: '0.25rem 0.5rem', borderRadius: '6px',
-                  border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
-                  color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '36px',
-                }}
-              />
-              <button
-                onClick={commitXPInput}
-                style={{ padding: '0.25rem 0.75rem', borderRadius: '6px', backgroundColor: 'var(--color-gold)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '700', minHeight: '36px' }}
-              >
-                +XP
-              </button>
-            </div>
-          )}
+          {xpEditOpen && (() => {
+            const inputVal = parseInt(xpInputVal, 10);
+            const isPositive = !isNaN(inputVal) && inputVal > 0;
+            const isNegative = !isNaN(inputVal) && inputVal < 0;
+            const previewGain = isPositive && totalXpMod !== 0
+              ? Math.round(inputVal * (1 + totalXpMod / 100))
+              : inputVal || 0;
+            const showPreview = !isNaN(inputVal) && inputVal !== 0 && isPositive && totalXpMod !== 0;
+            return (
+              <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                    {isNegative ? 'Correct XP:' : 'Add XP:'}
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="e.g. 250"
+                    value={xpInputVal}
+                    onChange={e => setXpInputVal(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && commitXPInput()}
+                    style={{
+                      width: '90px', padding: '0.25rem 0.5rem', borderRadius: '6px',
+                      border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
+                      color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '44px',
+                    }}
+                  />
+                  <button
+                    onClick={commitXPInput}
+                    style={{ padding: '0.25rem 0.75rem', borderRadius: '6px', backgroundColor: 'var(--color-gold)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '700', minHeight: '44px' }}
+                  >
+                    {isNegative ? '−XP' : '+XP'}
+                  </button>
+                </div>
+                {showPreview && (
+                  <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', paddingLeft: '0.25rem' }}>
+                    {inputVal} base → <span style={{ color: 'var(--color-gold)' }}>+{previewGain} actual</span>
+                    {' '}({totalXpMod > 0 ? '+' : ''}{totalXpMod}% mod)
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Level Up button */}
           {nextLevelXP > 0 && character.xp >= nextLevelXP && (
@@ -230,7 +256,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
                 fontWeight: '700',
                 fontSize: '0.85rem',
                 cursor: 'pointer',
-                minHeight: '40px',
+                minHeight: '44px',
                 animation: 'levelUpPulse 1.5s ease-in-out infinite',
               }}
             >

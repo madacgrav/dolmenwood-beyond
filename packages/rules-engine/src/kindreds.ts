@@ -12,6 +12,7 @@ export interface KindredData {
   nativeLanguages: string[];
   traits: KindredTrait[];
   acBonus?: string;
+  xpBonusPct?: number;
   classRestrictions: {
     common?: string[];
     rare?: string[];
@@ -28,6 +29,10 @@ export interface KindredData {
 
 export function getKindredData(kindred: string): KindredData | null {
   return (kindredData as unknown as Record<string, KindredData>)[kindred] ?? null;
+}
+
+export function getKindredXPBonus(kindred: string): number {
+  return getKindredData(kindred)?.xpBonusPct ?? 0;
 }
 
 export function getKindredACBonus(kindred: string): number {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAttackBonus, getSaveTargets, getXPThreshold, getHitDie, getPrimeAbilities, getXPThresholdForNextLevel, ALL_CLASSES } from '../advancement';
+import { getAttackBonus, getSaveTargets, getXPThreshold, getHitDie, getPrimeAbilities, getXPThresholdForNextLevel, ALL_CLASSES, getLevelUpChanges } from '../advancement';
 
 describe('Class Advancement', () => {
   it('covers all 9 classes', () => {
@@ -40,8 +40,89 @@ describe('Class Advancement', () => {
     expect(getXPThresholdForNextLevel('Fighter', 1)).toBeGreaterThan(getXPThreshold('Fighter', 1));
   });
 
+  it('getXPThresholdForNextLevel returns 0 for a character at max level (15)', () => {
+    // Level 16 doesn't exist — threshold returns 0, which is the max-level sentinel
+    expect(getXPThresholdForNextLevel('Fighter', 15)).toBe(0);
+  });
+
   it('returns null for unknown class', () => {
     expect(getSaveTargets('Unknown', 1)).toBeNull();
     expect(getAttackBonus('Unknown', 1)).toBe(0);
+  });
+});
+
+describe('getLevelUpChanges', () => {
+  it('detects attack bonus increase for Fighter (pinned: level 2→3 gains +2)', () => {
+    // Fighter attack bonus: level 2 = +1, level 3 = +2
+    const changes = getLevelUpChanges('Fighter', 2, 3);
+    const ab = changes.find(c => c.name === 'Attack Bonus Improves');
+    expect(ab).toBeDefined();
+    expect(ab!.description).toContain('+2');
+  });
+
+  it('detects saving throw improvement for Fighter', () => {
+    let foundSaveImprovement = false;
+    for (let lvl = 1; lvl <= 9; lvl++) {
+      const changes = getLevelUpChanges('Fighter', lvl, lvl + 1);
+      if (changes.some(c => c.name === 'Saving Throws Improve')) {
+        foundSaveImprovement = true;
+        break;
+      }
+    }
+    expect(foundSaveImprovement).toBe(true);
+  });
+
+  it('returns empty array for unknown class', () => {
+    const changes = getLevelUpChanges('Unknown', 1, 2);
+    expect(changes).toEqual([]);
+  });
+
+  it('returns LevelUpChange objects with name and description', () => {
+    // Fighter 1→2 should have some changes
+    const changes = getLevelUpChanges('Fighter', 1, 2);
+    changes.forEach(c => {
+      expect(c).toHaveProperty('name');
+      expect(c).toHaveProperty('description');
+      expect(typeof c.name).toBe('string');
+      expect(typeof c.description).toBe('string');
+    });
+  });
+
+  it('detects spell slot expansion for Magician (pinned: level 1→2 gains rank-1 slots)', () => {
+    const changes = getLevelUpChanges('Magician', 1, 2);
+    const slot = changes.find(c => c.name === 'Spell Slots Expand');
+    expect(slot).toBeDefined();
+    expect(slot!.description).toContain('Rank 1');
+  });
+
+  it('detects glamour increase for Enchanter', () => {
+    // Enchanter uses glamours (not spell slots)
+    let foundGlamour = false;
+    for (let lvl = 1; lvl <= 9; lvl++) {
+      const changes = getLevelUpChanges('Enchanter', lvl, lvl + 1);
+      if (changes.some(c => c.name === 'Glamours Known')) {
+        foundGlamour = true;
+        break;
+      }
+    }
+    expect(foundGlamour).toBe(true);
+  });
+
+  it('detects acBonus increase for Friar', () => {
+    // Find a Friar level where the unarmed AC bonus improves
+    let foundAcBonus = false;
+    for (let lvl = 1; lvl <= 9; lvl++) {
+      const changes = getLevelUpChanges('Friar', lvl, lvl + 1);
+      if (changes.some(c => c.name === 'Unarmed AC Bonus Improves')) {
+        foundAcBonus = true;
+        break;
+      }
+    }
+    expect(foundAcBonus).toBe(true);
+  });
+
+  it('returns empty array when nothing changes between levels (Fighter 10→11)', () => {
+    const changes = getLevelUpChanges('Fighter', 10, 11);
+    expect(changes).toEqual([]);
   });
 });

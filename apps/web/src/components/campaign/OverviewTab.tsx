@@ -1,7 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import {
+  getXPThresholdForNextLevel,
+  getPrimeAbilities,
+  getXPModifier,
+  getKindredXPBonus,
+  applyXPModifiers,
+  canLevelUpAfterGain,
+} from '@dolmenwood/rules-engine';
 
 interface Props {
   isReferee: boolean;
@@ -13,6 +21,9 @@ interface MemberCharacter {
   name: string;
   character_class: string;
   level: number;
+  xp: number;
+  ability_scores: Record<string, number>;
+  kindred: string;
 }
 
 interface Member {
@@ -31,10 +42,28 @@ interface CampaignData {
   showMembers: boolean;
 }
 
+interface XPAwardState {
+  showPanel: boolean;
+  baseXP: string;
+  applyModifier: boolean;
+  awarding: boolean;
+  error: string;
+  lastAwardAt: number | null;
+}
+
+function defaultXPAward(): XPAwardState {
+  return { showPanel: false, baseXP: '', applyModifier: true, awarding: false, error: '', lastAwardAt: null };
+}
+
+function canLevelUpAfter(ch: MemberCharacter, gain: number): boolean {
+  const threshold = getXPThresholdForNextLevel(ch.character_class, ch.level);
+  return canLevelUpAfterGain(ch.xp, gain, threshold);
+}
+
 // ─── Referee View ─────────────────────────────────────────────────────────────
 
-function RefereView({ userId }: { userId: string }) {
-  const supabase = createClient();
+function RefereeView({ userId }: { userId: string }) {
+  const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -42,6 +71,14 @@ function RefereView({ userId }: { userId: string }) {
   const [createError, setCreateError] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [xpAwards, setXpAwards] = useState<Record<string, XPAwardState>>({});
+
+  function xpAward(id: string): XPAwardState {
+    return xpAwards[id] ?? defaultXPAward();
+  }
+  function patchXP(id: string, patch: Partial<XPAwardState>) {
+    setXpAwards(prev => ({ ...prev, [id]: { ...(prev[id] ?? defaultXPAward()), ...patch } }));
+  }
 
   const loadCampaigns = useCallback(async () => {
     const { data: rawCampaigns } = await supabase
@@ -58,16 +95,10 @@ function RefereView({ userId }: { userId: string }) {
 
     const campaignIds = rawCampaigns.map((c: { id: string }) => c.id);
 
-    const [{ data: rawMembers }, { data: rawChars }] = await Promise.all([
-      supabase
-        .from('campaign_members')
-        .select('campaign_id, account_id, joined_at, accounts(display_name)')
-        .in('campaign_id', campaignIds),
-      supabase
-        .from('characters')
-        .select('id, name, character_class, level, owner_id')
-        .order('name'),
-    ]);
+    const { data: rawMembers } = await supabase
+      .from('campaign_members')
+      .select('campaign_id, account_id, joined_at, accounts(display_name)')
+      .in('campaign_id', campaignIds);
 
     const members = (rawMembers ?? []) as unknown as Array<{
       campaign_id: string;
@@ -75,6 +106,16 @@ function RefereView({ userId }: { userId: string }) {
       joined_at: string;
       accounts: { display_name: string } | null;
     }>;
+    const memberAccountIds = [...new Set(members.map(m => m.account_id))];
+
+    const { data: rawChars } = memberAccountIds.length > 0
+      ? await supabase
+          .from('characters')
+          .select('id, name, character_class, level, xp, ability_scores, kindred, owner_id')
+          .in('owner_id', memberAccountIds)
+          .order('name')
+      : { data: [] };
+
     const chars = (rawChars ?? []) as Array<MemberCharacter & { owner_id: string }>;
 
     setCampaigns(
@@ -127,6 +168,46 @@ function RefereView({ userId }: { userId: string }) {
 
   function toggleMembers(id: string) {
     setCampaigns(prev => prev.map(c => c.id === id ? { ...c, showMembers: !c.showMembers } : c));
+  }
+
+  async function handleAwardXP(campaign: CampaignData) {
+    // Belt-and-suspenders: only the referee who owns this campaign may award XP.
+    // The DB also enforces this via RLS + referee_id scoping in loadCampaigns.
+    if (!campaigns.some(c => c.id === campaign.id)) {
+      patchXP(campaign.id, { error: 'Unauthorized: you do not own this campaign.' });
+      return;
+    }
+
+    const state = xpAward(campaign.id);
+    const base = parseInt(state.baseXP.trim(), 10);
+    if (Number.isNaN(base) || base <= 0) { patchXP(campaign.id, { error: 'Enter a positive XP amount.' }); return; }
+
+    const allChars = campaign.members.flatMap(m => m.characters);
+    if (allChars.length === 0) { patchXP(campaign.id, { error: 'No characters to award XP to.' }); return; }
+
+    patchXP(campaign.id, { awarding: true, error: '' });
+
+    const updates = await Promise.all(
+      allChars.map(ch => {
+        const gain = state.applyModifier
+          ? applyXPModifiers(base, ch.character_class, ch.ability_scores, ch.kindred)
+          : base;
+        return supabase.rpc('award_xp', { p_character_id: ch.id, p_gain: gain });
+      })
+    );
+
+    const failed = updates.filter(r => r.error);
+    if (failed.length > 0) {
+      await loadCampaigns();
+      patchXP(campaign.id, {
+        awarding: false,
+        error: `${failed.length}/${updates.length} award(s) failed: ${failed[0]!.error!.message}`,
+      });
+      return;
+    }
+
+    patchXP(campaign.id, { awarding: false, lastAwardAt: base, baseXP: '' });
+    await loadCampaigns();
   }
 
   if (loading) {
@@ -266,8 +347,7 @@ function RefereView({ userId }: { userId: string }) {
                   border: '1px solid var(--color-border)',
                   backgroundColor: copiedId === campaign.id ? 'color-mix(in srgb, var(--color-primary) 15%, transparent)' : 'transparent',
                   color: copiedId === campaign.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                  fontSize: '0.8rem', cursor: 'pointer', minHeight: '40px',
-                  transition: 'all 0.15s ease',
+                  fontSize: '0.8rem', cursor: 'pointer', minHeight: '44px',
                 }}
               >
                 {copiedId === campaign.id ? '✓ Copied!' : '📋 Copy'}
@@ -283,7 +363,7 @@ function RefereView({ userId }: { userId: string }) {
                 width: '100%', padding: '0.625rem 1rem',
                 backgroundColor: 'var(--color-bg)', border: 'none',
                 color: 'var(--color-text-muted)', fontSize: '0.8rem',
-                cursor: 'pointer', textAlign: 'left', minHeight: '40px',
+                cursor: 'pointer', textAlign: 'left', minHeight: '44px',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}
             >
@@ -310,16 +390,130 @@ function RefereView({ userId }: { userId: string }) {
                         <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>No characters yet</div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                          {member.characters.map(ch => (
-                            <div key={ch.id} style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                              <span style={{ color: 'var(--color-text)' }}>{ch.name}</span>
-                              {' · '}{ch.character_class} · Lv {ch.level}
-                            </div>
-                          ))}
+                          {member.characters.map(ch => {
+                            const award = xpAward(campaign.id);
+                            const base = parseInt(award.baseXP.trim(), 10) || 0;
+                            const gain = base > 0
+                              ? (award.applyModifier ? applyXPModifiers(base, ch.character_class, ch.ability_scores, ch.kindred) : base)
+                              : 0;
+                            const willLevel = gain > 0 && canLevelUpAfter(ch, gain);
+                            return (
+                              <div key={ch.id} style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{ color: 'var(--color-text)' }}>{ch.name}</span>
+                                {' · '}{ch.character_class} · Lv {ch.level}
+                                {' · '}{ch.xp.toLocaleString()} XP
+                                {gain > 0 && (
+                                  <span style={{ color: 'var(--color-gold)', fontSize: '0.7rem' }}>+{gain}</span>
+                                )}
+                                {willLevel && (
+                                  <span title="Can level up!" style={{ fontSize: '0.8rem' }}>⬆️</span>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
                   ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Award XP */}
+          <div style={{ borderTop: '1px solid var(--color-border)' }}>
+            <button
+              onClick={() => patchXP(campaign.id, { showPanel: !xpAward(campaign.id).showPanel })}
+              style={{
+                width: '100%', padding: '0.625rem 1rem',
+                backgroundColor: 'var(--color-bg)', border: 'none',
+                color: 'var(--color-primary)', fontSize: '0.8rem',
+                cursor: 'pointer', textAlign: 'left', minHeight: '44px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}
+            >
+              <span>✨ Award XP</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                {xpAward(campaign.id).lastAwardAt != null ? `Last: ${xpAward(campaign.id).lastAwardAt} XP` : ''}
+                {' '}{xpAward(campaign.id).showPanel ? '▲' : '▼'}
+              </span>
+            </button>
+
+            {xpAward(campaign.id).showPanel && (
+              <div style={{ padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    value={xpAward(campaign.id).baseXP}
+                    onChange={e => patchXP(campaign.id, { baseXP: e.target.value, error: '' })}
+                    placeholder="Base XP (e.g. 300)"
+                    style={{
+                      flex: 1, padding: '0.5rem 0.75rem', borderRadius: '6px',
+                      border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
+                      color: 'var(--color-text)', fontSize: '0.875rem', minHeight: '44px',
+                    }}
+                  />
+                  <button
+                    onClick={() => handleAwardXP(campaign)}
+                    disabled={xpAward(campaign.id).awarding}
+                    style={{
+                      padding: '0.5rem 1rem', borderRadius: '6px',
+                      backgroundColor: xpAward(campaign.id).awarding ? 'var(--color-border)' : 'var(--color-primary)',
+                      color: '#fff', border: 'none', fontSize: '0.875rem',
+                      cursor: xpAward(campaign.id).awarding ? 'not-allowed' : 'pointer',
+                      minHeight: '44px', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {xpAward(campaign.id).awarding ? 'Awarding…' : 'Award to All'}
+                  </button>
+                </div>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={xpAward(campaign.id).applyModifier}
+                    onChange={e => patchXP(campaign.id, { applyModifier: e.target.checked })}
+                  />
+                  Apply XP modifier (based on prime abilities)
+                </label>
+
+                {xpAward(campaign.id).error && (
+                  <div style={{ color: 'var(--color-danger)', fontSize: '0.8rem' }}>
+                    {xpAward(campaign.id).error}
+                  </div>
+                )}
+
+                {parseInt(xpAward(campaign.id).baseXP.trim(), 10) > 0 && campaign.members.some(m => m.characters.length > 0) && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', borderTop: '1px solid var(--color-border)', paddingTop: '0.5rem' }}>
+                     {campaign.members.flatMap(m => m.characters).map(ch => {
+                      const applyMod = xpAward(campaign.id).applyModifier;
+                      const baseVal = parseInt(xpAward(campaign.id).baseXP.trim(), 10) || 0;
+                      const gain = applyMod
+                        ? applyXPModifiers(baseVal, ch.character_class, ch.ability_scores, ch.kindred)
+                        : baseVal;
+                      const willLevel = canLevelUpAfter(ch, gain);
+                      const primes = getPrimeAbilities(ch.character_class);
+                       const scores = primes.map(p => ch.ability_scores[p.toLowerCase()] ?? 10);
+                      const abilityMod = applyMod ? getXPModifier(scores) : 0;
+                      const kindredBonus = applyMod ? getKindredXPBonus(ch.kindred) : 0;
+                      const totalMod = abilityMod + kindredBonus;
+                      const modLabel = totalMod !== 0
+                        ? ` (${totalMod > 0 ? '+' : ''}${totalMod}%${kindredBonus > 0 ? ` incl. +${kindredBonus}% ${ch.kindred}` : ''})`
+                        : '';
+                      return (
+                        <div key={ch.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.2rem 0' }}>
+                          <span>
+                            {ch.name}
+                            {willLevel && <span title="Level up eligible!"> ⬆️</span>}
+                          </span>
+                          <span style={{ color: 'var(--color-gold)' }}>
+                            +{gain} XP{modLabel}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             )}
@@ -348,7 +542,7 @@ function RefereView({ userId }: { userId: string }) {
 // ─── Player View ──────────────────────────────────────────────────────────────
 
 function PlayerView({ userId }: { userId: string }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteCode, setInviteCode] = useState('');
@@ -377,7 +571,7 @@ function PlayerView({ userId }: { userId: string }) {
         .from('campaign_members')
         .select('campaign_id, account_id, joined_at, accounts(display_name)')
         .in('campaign_id', campaignIds),
-      supabase.from('characters').select('id, name, character_class, level, owner_id').order('name'),
+      supabase.from('characters').select('id, name, character_class, level, xp, ability_scores, kindred, owner_id').order('name'),
     ]);
 
     const members = (rawMembers ?? []) as unknown as Array<{
@@ -563,6 +757,6 @@ function PlayerView({ userId }: { userId: string }) {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export function OverviewTab({ isReferee, userId }: Props) {
-  if (isReferee) return <RefereView userId={userId} />;
+  if (isReferee) return <RefereeView userId={userId} />;
   return <PlayerView userId={userId} />;
 }
