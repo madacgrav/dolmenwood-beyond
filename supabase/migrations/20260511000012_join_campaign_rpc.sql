@@ -1,4 +1,7 @@
-create or replace function public.join_campaign(p_invite_code text)
+-- Drop first so we can change the return type (uuid → json)
+drop function if exists public.join_campaign(text);
+
+create function public.join_campaign(p_invite_code text)
 returns json
 language plpgsql
 security definer
