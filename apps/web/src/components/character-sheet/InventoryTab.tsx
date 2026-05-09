@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { calculateSpeed } from '@dolmenwood/rules-engine';
 
@@ -11,6 +11,20 @@ interface DBInventoryItem {
   quantity: number;
   weight_coins: number;
   notes?: string;
+  location: 'equipped' | 'stowed' | 'tiny';
+  weapon_damage_dice?: string | null;
+  armor_ac_bonus?: number | null;
+}
+
+interface CatalogItem {
+  id: string;
+  name: string;
+  item_type: string;
+  weight: number;
+  cost_gp: number | null;
+  weapon_damage_dice: string | null;
+  armor_ac_bonus: number | null;
+  notes: string | null;
 }
 
 interface Props {
@@ -21,12 +35,31 @@ interface Props {
 const ITEM_TYPES = ['weapon', 'armour', 'gear', 'consumable', 'other'] as const;
 type ItemType = typeof ITEM_TYPES[number];
 
+const LOCATION_LABELS: Record<string, string> = {
+  equipped: '⚔️ Equipped',
+  stowed: '🎒 Stowed',
+  tiny: '🔮 Tiny',
+};
+
+const sectionHead: React.CSSProperties = {
+  margin: '0 0 0.75rem',
+  fontFamily: 'var(--font-display), Georgia, serif',
+  fontSize: '0.9rem',
+  color: 'var(--color-text-muted)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+};
+
 export function InventoryTab({ characterId, ownerId }: Props) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState<DBInventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newItem, setNewItem] = useState({ item_name: '', item_type: 'gear' as ItemType, quantity: 1, weight_coins: 0 });
+  const [addMode, setAddMode] = useState<'custom' | 'catalog'>('custom');
+  const [newItem, setNewItem] = useState({
+    item_name: '', item_type: 'gear' as ItemType, quantity: 1, weight_coins: 0,
+    location: 'stowed' as DBInventoryItem['location'], weapon_damage_dice: '', armor_ac_bonus: '',
+  });
   const [coins, setCoins] = useState({ gp: 0, sp: 0, cp: 0 });
   const [bankBalance, setBankBalance] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -35,6 +68,9 @@ export function InventoryTab({ characterId, ownerId }: Props) {
   const [depositDesc, setDepositDesc] = useState('');
   const [depositLoading, setDepositLoading] = useState(false);
   const [depositError, setDepositError] = useState('');
+  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([]);
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogLoading, setCatalogLoading] = useState(false);
 
   const isOwner = currentUserId === ownerId;
 
@@ -49,13 +85,25 @@ export function InventoryTab({ characterId, ownerId }: Props) {
 
   useEffect(() => {
     async function fetchAll() {
-      const [{ data: { user } }, { data: items }, { data: charData }] = await Promise.all([
+      const [{ data: { user } }, { data: invItems }, { data: charData }] = await Promise.all([
         supabase.auth.getUser(),
-        supabase.from('character_inventory').select('*').eq('character_id', characterId).order('item_type'),
+        supabase.from('character_inventory').select('*').eq('character_id', characterId).order('location').order('item_type'),
         supabase.from('characters').select('coins_gp, coins_sp, coins_cp').eq('id', characterId).single(),
       ]);
       setCurrentUserId(user?.id ?? null);
-      setItems((items ?? []) as DBInventoryItem[]);
+      const mapped = (invItems ?? []).map((i: Record<string, unknown>) => ({
+        id: i.id as string,
+        character_id: i.character_id as string,
+        item_name: i.item_name as string,
+        item_type: i.item_type as string,
+        quantity: i.quantity as number,
+        weight_coins: i.weight_coins as number,
+        notes: i.notes as string | undefined,
+        location: ((i.location as string) ?? 'stowed') as DBInventoryItem['location'],
+        weapon_damage_dice: i.weapon_damage_dice as string | null | undefined,
+        armor_ac_bonus: i.armor_ac_bonus as number | null | undefined,
+      }));
+      setItems(mapped);
       if (charData) {
         const row = charData as Record<string, unknown>;
         setCoins({
@@ -69,6 +117,17 @@ export function InventoryTab({ characterId, ownerId }: Props) {
     fetchAll();
     fetchBankBalance();
   }, [characterId, supabase, fetchBankBalance]);
+
+  useEffect(() => {
+    if (addMode !== 'catalog') return;
+    setCatalogLoading(true);
+    supabase.from('catalog_items').select('id, name, item_type, weight, cost_gp, weapon_damage_dice, armor_ac_bonus, notes')
+      .order('name')
+      .then(({ data }) => {
+        setCatalogItems((data ?? []) as CatalogItem[]);
+        setCatalogLoading(false);
+      });
+  }, [addMode, supabase]);
 
   async function saveCoins(updated: { gp: number; sp: number; cp: number }) {
     await supabase.from('characters').update({
@@ -115,18 +174,56 @@ export function InventoryTab({ characterId, ownerId }: Props) {
     setDepositLoading(false);
   }
 
-  const totalWeight = items.reduce((sum, item) => sum + (item.weight_coins * item.quantity), 0);
+  const totalWeight = items.reduce((sum, item) => {
+    if (item.location === 'tiny') return sum;
+    return sum + (item.weight_coins * item.quantity);
+  }, 0);
   const speed = calculateSpeed(totalWeight);
+  const speedColor = speed >= 40 ? 'var(--color-primary)' : speed >= 30 ? 'var(--color-text)' : speed >= 20 ? 'var(--color-gold)' : 'var(--color-danger)';
+  const maxWeight = 800;
+  const weightPct = Math.min(1, totalWeight / maxWeight);
+
+  function selectCatalogItem(cat: CatalogItem) {
+    const mappedType = cat.item_type === 'armor' ? 'armour' : cat.item_type as ItemType;
+    setNewItem({
+      item_name: cat.name,
+      item_type: ITEM_TYPES.includes(mappedType as ItemType) ? mappedType as ItemType : 'gear',
+      quantity: 1,
+      weight_coins: cat.weight,
+      location: cat.item_type === 'armor' || cat.item_type === 'weapon' ? 'equipped' : 'stowed',
+      weapon_damage_dice: cat.weapon_damage_dice ?? '',
+      armor_ac_bonus: cat.armor_ac_bonus != null ? String(cat.armor_ac_bonus) : '',
+    });
+    setAddMode('custom');
+  }
 
   async function addItem() {
     if (!newItem.item_name.trim()) return;
-    const payload = { ...newItem, character_id: characterId };
+    const payload: Record<string, unknown> = {
+      character_id: characterId,
+      item_name: newItem.item_name.trim(),
+      item_type: newItem.item_type,
+      quantity: newItem.quantity,
+      weight_coins: newItem.weight_coins,
+      location: newItem.location,
+    };
+    if (newItem.weapon_damage_dice.trim()) payload.weapon_damage_dice = newItem.weapon_damage_dice.trim();
+    const acBonus = parseInt(newItem.armor_ac_bonus);
+    if (!isNaN(acBonus)) payload.armor_ac_bonus = acBonus;
     const { data, error } = await supabase.from('character_inventory').insert(payload).select().single();
     if (!error && data) {
-      setItems(prev => [...prev, data as DBInventoryItem]);
-      setNewItem({ item_name: '', item_type: 'gear', quantity: 1, weight_coins: 0 });
+      const mapped = { ...(data as DBInventoryItem), location: (data as Record<string, unknown>).location as DBInventoryItem['location'] ?? 'stowed' };
+      setItems(prev => [...prev, mapped]);
+      setNewItem({ item_name: '', item_type: 'gear', quantity: 1, weight_coins: 0, location: 'stowed', weapon_damage_dice: '', armor_ac_bonus: '' });
       setShowAddForm(false);
     }
+  }
+
+  async function toggleLocation(item: DBInventoryItem) {
+    const cycle: DBInventoryItem['location'][] = ['stowed', 'equipped', 'tiny'];
+    const next = cycle[(cycle.indexOf(item.location) + 1) % cycle.length]!;
+    setItems(prev => prev.map(i => i.id === item.id ? { ...i, location: next } : i));
+    await supabase.from('character_inventory').update({ location: next }).eq('id', item.id);
   }
 
   async function deleteItem(id: string) {
@@ -144,25 +241,45 @@ export function InventoryTab({ characterId, ownerId }: Props) {
     );
   }
 
+  const filteredCatalog = catalogItems.filter(c =>
+    catalogSearch.length < 2 || c.name.toLowerCase().includes(catalogSearch.toLowerCase())
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      {/* Weight + Speed */}
-      <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.875rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Total Weight</div>
-          <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text)' }}>{totalWeight} coins</div>
+      {/* Encumbrance + Speed */}
+      <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.875rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.625rem' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Carried Weight (Equipped + Stowed)</div>
+            <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text)' }}>{totalWeight} / 800 coins</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Speed</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: speedColor }}>{speed}′</div>
+          </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Movement Speed</div>
-          <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-primary)' }}>{speed}′</div>
+        <div style={{ height: '8px', borderRadius: '4px', backgroundColor: 'var(--color-border)', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${weightPct * 100}%`,
+            backgroundColor: speedColor,
+            borderRadius: '4px',
+            transition: 'width 0.3s, background-color 0.3s',
+          }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.35rem', fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>
+          {[{ w: 400, s: 40 }, { w: 600, s: 30 }, { w: 800, s: 20 }].map(({ w, s }) => (
+            <span key={w} style={{ color: totalWeight >= w ? 'var(--color-danger)' : 'var(--color-text-muted)' }}>
+              {w}¢→{s}′
+            </span>
+          ))}
         </div>
       </div>
 
       {/* Coins */}
       <section>
-        <h3 style={{ margin: '0 0 0.75rem', fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Coins on Hand
-        </h3>
+        <h3 style={sectionHead}>Coins on Hand</h3>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           {(['gp', 'sp', 'cp'] as const).map(coin => (
             <div key={coin} style={{ flex: 1, backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
@@ -259,112 +376,219 @@ export function InventoryTab({ characterId, ownerId }: Props) {
         </div>
       </section>
 
-      {/* Item list */}
-      <section>
-        <h3 style={{ margin: '0 0 0.75rem', fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Equipment ({items.length})
-        </h3>
-        {items.length === 0 && !showAddForm && (
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '2rem 0' }}>
-            No equipment. Tap ⊕ to add items.
-          </p>
-        )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {items.map(item => (
-            <div key={item.id} style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0.625rem 0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--color-text)' }}>{item.item_name}</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{item.item_type}</div>
-              </div>
-              <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--color-bg)', borderRadius: '4px', padding: '2px 6px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>×{item.quantity}</span>
-              <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--color-bg)', borderRadius: '4px', padding: '2px 6px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>{item.weight_coins * item.quantity}¢</span>
-              {isOwner && (
-                <button
-                  onClick={() => deleteItem(item.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '1rem', padding: '0.25rem', minHeight: '36px', minWidth: '36px' }}
-                  aria-label={`Delete ${item.item_name}`}
-                >
-                  ✕
-                </button>
-              )}
+      {/* Item list — grouped by location */}
+      {(['equipped', 'stowed', 'tiny'] as const).map(loc => {
+        const locItems = items.filter(i => i.location === loc);
+        if (locItems.length === 0) return null;
+        return (
+          <section key={loc}>
+            <h3 style={sectionHead}>{LOCATION_LABELS[loc]} ({locItems.length})</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {locItems.map(item => (
+                <div key={item.id} style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0.625rem 0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.item_name}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                      {item.item_type}
+                      {item.weapon_damage_dice ? ` · ${item.weapon_damage_dice}` : ''}
+                      {item.armor_ac_bonus != null ? ` · AC ${item.armor_ac_bonus}` : ''}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--color-bg)', borderRadius: '4px', padding: '2px 6px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>×{item.quantity}</span>
+                  {loc !== 'tiny' && (
+                    <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--color-bg)', borderRadius: '4px', padding: '2px 6px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
+                      {item.weight_coins * item.quantity}¢
+                    </span>
+                  )}
+                  {isOwner && (
+                    <button
+                      onClick={() => toggleLocation(item)}
+                      title="Cycle location: stowed → equipped → tiny"
+                      style={{ background: 'none', border: '1px solid var(--color-border)', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '0.7rem', padding: '0.2rem 0.375rem', borderRadius: '4px', minHeight: '36px', whiteSpace: 'nowrap' }}
+                    >
+                      {item.location === 'equipped' ? '⚔️' : item.location === 'stowed' ? '🎒' : '🔮'}
+                    </button>
+                  )}
+                  {isOwner && (
+                    <button
+                      onClick={() => deleteItem(item.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '1rem', padding: '0.25rem', minHeight: '36px', minWidth: '36px' }}
+                      aria-label={`Delete ${item.item_name}`}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </section>
+        );
+      })}
 
-        {/* Add item form */}
-        {showAddForm && (
-          <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-primary)', borderRadius: '10px', padding: '1rem', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <h4 style={{ margin: 0, fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.9rem', color: 'var(--color-text)' }}>Add Item</h4>
-            <input
-              type="text"
-              placeholder="Item name"
-              value={newItem.item_name}
-              onChange={e => setNewItem(p => ({ ...p, item_name: e.target.value }))}
-              style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px' }}
-            />
-            <select
-              value={newItem.item_type}
-              onChange={e => setNewItem(p => ({ ...p, item_type: e.target.value as ItemType }))}
-              style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px' }}
+      {items.length === 0 && !showAddForm && (
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '2rem 0' }}>
+          No equipment yet. Tap ⊕ to add items.
+        </p>
+      )}
+
+      {/* Add item form */}
+      {showAddForm && (
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-primary)', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setAddMode('custom')}
+              style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: addMode === 'custom' ? 'var(--color-primary)' : 'var(--color-bg)', color: addMode === 'custom' ? 'white' : 'var(--color-text)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600', minHeight: '36px' }}
             >
-              {ITEM_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-            </select>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.25rem' }}>Quantity</label>
-                <input
-                  type="number" min={1}
-                  value={newItem.quantity}
-                  onChange={e => setNewItem(p => ({ ...p, quantity: Math.max(1, parseInt(e.target.value) || 1) }))}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px' }}
-                />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.25rem' }}>Weight (coins)</label>
-                <input
-                  type="number" min={0}
-                  value={newItem.weight_coins}
-                  onChange={e => setNewItem(p => ({ ...p, weight_coins: Math.max(0, parseInt(e.target.value) || 0) }))}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px' }}
-                />
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              ✍️ Custom
+            </button>
+            <button
+              onClick={() => setAddMode('catalog')}
+              style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: addMode === 'catalog' ? 'var(--color-primary)' : 'var(--color-bg)', color: addMode === 'catalog' ? 'white' : 'var(--color-text)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600', minHeight: '36px' }}
+            >
+              📖 Catalog
+            </button>
+          </div>
+
+          {addMode === 'catalog' ? (
+            <>
+              <input
+                type="search"
+                placeholder="Search equipment catalog…"
+                value={catalogSearch}
+                onChange={e => setCatalogSearch(e.target.value)}
+                autoFocus
+                style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px' }}
+              />
+              {catalogLoading ? (
+                <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '1rem', fontSize: '0.85rem' }}>Loading…</div>
+              ) : (
+                <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                  {filteredCatalog.slice(0, 40).map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => selectCatalogItem(cat)}
+                      style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '0.5rem 0.75rem', borderRadius: '8px',
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg)', cursor: 'pointer', textAlign: 'left', minHeight: '44px',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text)' }}>{cat.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+                          {cat.item_type}{cat.weapon_damage_dice ? ` · ${cat.weapon_damage_dice}` : ''}{cat.armor_ac_bonus != null ? ` · AC ${cat.armor_ac_bonus}` : ''}
+                          {cat.cost_gp != null ? ` · ${cat.cost_gp} gp` : ''}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', marginLeft: '0.5rem' }}>{cat.weight}¢</span>
+                    </button>
+                  ))}
+                  {filteredCatalog.length === 0 && (
+                    <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.85rem', padding: '1rem 0' }}>No items match "{catalogSearch}"</p>
+                  )}
+                </div>
+              )}
               <button
                 onClick={() => setShowAddForm(false)}
-                style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', cursor: 'pointer', fontSize: '0.9rem', minHeight: '44px' }}
+                style={{ padding: '0.625rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', cursor: 'pointer', fontSize: '0.9rem', minHeight: '44px' }}
               >
                 Cancel
               </button>
-              <button
-                onClick={addItem}
-                style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--color-primary)', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600', minHeight: '44px' }}
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
+            </>
+          ) : (
+            <>
+              <input
+                type="text"
+                placeholder="Item name"
+                value={newItem.item_name}
+                onChange={e => setNewItem(p => ({ ...p, item_name: e.target.value }))}
+                style={{ padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px' }}
+              />
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <select
+                  value={newItem.item_type}
+                  onChange={e => setNewItem(p => ({ ...p, item_type: e.target.value as ItemType }))}
+                  style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px' }}
+                >
+                  {ITEM_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                </select>
+                <select
+                  value={newItem.location}
+                  onChange={e => setNewItem(p => ({ ...p, location: e.target.value as DBInventoryItem['location'] }))}
+                  style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px' }}
+                >
+                  <option value="stowed">🎒 Stowed</option>
+                  <option value="equipped">⚔️ Equipped</option>
+                  <option value="tiny">🔮 Tiny</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Qty</label>
+                  <input type="number" min={1} value={newItem.quantity}
+                    onChange={e => setNewItem(p => ({ ...p, quantity: Math.max(1, parseInt(e.target.value) || 1) }))}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Weight (¢)</label>
+                  <input type="number" min={0} value={newItem.weight_coins}
+                    onChange={e => setNewItem(p => ({ ...p, weight_coins: Math.max(0, parseInt(e.target.value) || 0) }))}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+              {newItem.item_type === 'weapon' && (
+                <div>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Damage Dice (e.g. 1d8)</label>
+                  <input type="text" placeholder="1d6" value={newItem.weapon_damage_dice}
+                    onChange={e => setNewItem(p => ({ ...p, weapon_damage_dice: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              )}
+              {newItem.item_type === 'armour' && (
+                <div>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>AC Value (total, e.g. 14 for chainmail)</label>
+                  <input type="number" placeholder="12" value={newItem.armor_ac_bonus}
+                    onChange={e => setNewItem(p => ({ ...p, armor_ac_bonus: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px', boxSizing: 'border-box' }}
+                  />
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button onClick={() => setShowAddForm(false)}
+                  style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', cursor: 'pointer', fontSize: '0.9rem', minHeight: '44px' }}>
+                  Cancel
+                </button>
+                <button onClick={addItem}
+                  style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--color-primary)', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600', minHeight: '44px' }}>
+                  Add
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* FAB — only for owner */}
       {isOwner && (
         <button
-          onClick={() => setShowAddForm(o => !o)}
+          onClick={() => { setShowAddForm(o => !o); if (!showAddForm) setAddMode('custom'); }}
           style={{
             position: 'fixed', bottom: '96px', right: '1.25rem',
             width: '56px', height: '56px', borderRadius: '50%',
-            backgroundColor: 'var(--color-primary)', color: 'white',
+            backgroundColor: showAddForm ? 'var(--color-border)' : 'var(--color-primary)', color: 'white',
             border: 'none', cursor: 'pointer',
             fontSize: '1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 12px rgba(0,0,0,0.25)', zIndex: 40,
           }}
-          aria-label="Add inventory item"
+          aria-label={showAddForm ? 'Close add item' : 'Add inventory item'}
         >
-          ⊕
+          {showAddForm ? '✕' : '⊕'}
         </button>
       )}
     </div>
   );
 }
-
