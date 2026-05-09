@@ -142,7 +142,7 @@ jobs:
 
       - name: Push migrations
         run: |
-          supabase db push --db-url "${{ vars.SUPABASE_DB_URL }}"
+          supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 

@@ -5,7 +5,9 @@ import {
   getAbilityModifier, getPrimeAbilities, getSaveTargets,
   getAttackBonus, calculateAC, calculateSpeed,
   getMaxRetainers, getRetainerLoyaltyBase,
+  getAllSkills, rollDie,
 } from '@dolmenwood/rules-engine';
+import type { SkillEntry } from '@dolmenwood/rules-engine';
 import { createClient } from '@/lib/supabase/client';
 
 type CharacterWithNotes = Character & { notes?: string };
@@ -88,6 +90,19 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
     morale: 7, loyalty: loyaltyBase, wage_type: 'daily', wage_amount: 1,
   });
   const [expandedRetainer, setExpandedRetainer] = useState<string | null>(null);
+
+  // Skills
+  const skills = useMemo(
+    () => getAllSkills(character.characterClass, character.level, character.kindred),
+    [character.characterClass, character.level, character.kindred]
+  );
+  const [skillRolls, setSkillRolls] = useState<Record<string, { roll: number; pass: boolean } | undefined>>({});
+
+  function rollSkill(skill: SkillEntry) {
+    const roll = rollDie(6);
+    // Dolmenwood skills: roll d6, succeed if result >= target number
+    setSkillRolls(prev => ({ ...prev, [skill.name]: { roll, pass: roll >= skill.target } }));
+  }
 
   useEffect(() => {
     supabase.from('retainers')
@@ -218,6 +233,41 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
           <StatPill label="AC" value={ac} color="var(--color-primary)" />
           <StatPill label="Attack" value={formatMod(attackBonus)} color="var(--color-primary)" />
           <StatPill label="Speed" value={`${speed}′`} color="var(--color-text)" />
+        </div>
+      </section>
+
+      {/* Skills */}
+      <section>
+        <h3 style={{ margin: '0 0 0.75rem', fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Skills
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {skills.map(skill => (
+            <div key={skill.name} style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0.625rem 0.875rem', display: 'flex', alignItems: 'center', gap: '0.75rem', minHeight: '44px' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.9rem', color: 'var(--color-text)' }}>{skill.name}</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                  {7 - skill.target}-in-6 (need {skill.target}+) {skill.isUniversal ? '· Universal' : '· Class'}
+                </div>
+              </div>
+              {skillRolls[skill.name] && (
+                <span style={{
+                  padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700',
+                  backgroundColor: skillRolls[skill.name]!.pass ? '#1a4a1a' : '#4a1a1a',
+                  color: skillRolls[skill.name]!.pass ? '#4ade80' : '#f87171',
+                }}>
+                  {skillRolls[skill.name]!.roll} {skillRolls[skill.name]!.pass ? '✓' : '✗'}
+                </span>
+              )}
+              <button
+                onClick={() => rollSkill(skill)}
+                style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: '6px', cursor: 'pointer', color: 'var(--color-gold)', fontSize: '1.1rem', padding: '0.25rem 0.5rem', minHeight: '44px', minWidth: '44px' }}
+                aria-label={`Roll ${skill.name}`}
+              >
+                🎲
+              </button>
+            </div>
+          ))}
         </div>
       </section>
 

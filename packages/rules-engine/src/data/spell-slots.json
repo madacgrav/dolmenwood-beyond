@@ -1,5 +1,5 @@
 {
-  "_notes": "Cleric and Friar use Holy spells (5 ranks). Magician uses Arcane spells (6 ranks). Enchanter uses Glamours (counted in advancement table). Bard has no spell slots (uses Counter Charm/Enchantment abilities).",
+  "_notes": "Cleric and Friar use Holy spells (5 ranks). Magician uses Arcane spells (6 ranks). Bard uses limited Arcane spells (3 ranks, starts at level 2). Enchanter uses Glamours (counted in advancement table).",
   "Cleric": {
     "spellType": "Holy",
     "maxRank": 5,
@@ -394,6 +394,28 @@
         "rank5": 3,
         "rank6": 3
       }
+    ]
+  },
+  "Bard": {
+    "spellType": "Arcane (limited)",
+    "maxRank": 3,
+    "_notes": "Bards are partial spellcasters who learn arcane magic through song and lore. Spell progression begins at level 2.",
+    "slotsPerLevel": [
+      { "level": 1,  "rank1": 0, "rank2": 0, "rank3": 0 },
+      { "level": 2,  "rank1": 1, "rank2": 0, "rank3": 0 },
+      { "level": 3,  "rank1": 1, "rank2": 0, "rank3": 0 },
+      { "level": 4,  "rank1": 2, "rank2": 0, "rank3": 0 },
+      { "level": 5,  "rank1": 2, "rank2": 1, "rank3": 0 },
+      { "level": 6,  "rank1": 2, "rank2": 1, "rank3": 0 },
+      { "level": 7,  "rank1": 3, "rank2": 1, "rank3": 0 },
+      { "level": 8,  "rank1": 3, "rank2": 2, "rank3": 0 },
+      { "level": 9,  "rank1": 3, "rank2": 2, "rank3": 1 },
+      { "level": 10, "rank1": 3, "rank2": 2, "rank3": 1 },
+      { "level": 11, "rank1": 3, "rank2": 3, "rank3": 2 },
+      { "level": 12, "rank1": 3, "rank2": 3, "rank3": 2 },
+      { "level": 13, "rank1": 3, "rank2": 3, "rank3": 3 },
+      { "level": 14, "rank1": 4, "rank2": 3, "rank3": 3 },
+      { "level": 15, "rank1": 4, "rank2": 4, "rank3": 3 }
     ]
   },
   "Enchanter": {

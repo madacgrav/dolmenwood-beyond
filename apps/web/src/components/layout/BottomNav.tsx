@@ -3,15 +3,28 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const NAV_ITEMS = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: string;
+}
+
+const BASE_NAV_ITEMS: NavItem[] = [
   { href: '/characters', label: 'Characters', icon: '🏠' },
   { href: '/news', label: 'News', icon: '📜' },
   { href: '/campaign', label: 'Campaign', icon: '⚔️' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
-] as const;
+];
 
-export function BottomNav() {
+const ADMIN_NAV_ITEM: NavItem = { href: '/admin', label: 'Admin', icon: '🛡️' };
+
+interface Props {
+  isAdmin?: boolean;
+}
+
+export function BottomNav({ isAdmin = false }: Props) {
   const pathname = usePathname();
+  const navItems = isAdmin ? [...BASE_NAV_ITEMS, ADMIN_NAV_ITEM] : BASE_NAV_ITEMS;
 
   return (
     <nav
@@ -30,7 +43,7 @@ export function BottomNav() {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {NAV_ITEMS.map((item) => {
+      {navItems.map((item) => {
         const isActive = pathname.startsWith(item.href);
         return (
           <Link
@@ -41,7 +54,7 @@ export function BottomNav() {
               flexDirection: 'column',
               alignItems: 'center',
               gap: '4px',
-              minWidth: '60px',
+              minWidth: '44px',
               minHeight: '44px',
               color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
               textDecoration: 'none',
@@ -57,3 +70,4 @@ export function BottomNav() {
     </nav>
   );
 }
+
