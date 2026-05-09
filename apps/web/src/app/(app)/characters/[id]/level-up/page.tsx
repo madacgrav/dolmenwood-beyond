@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { Character, AbilityScores } from '@dolmenwood/types';
@@ -459,7 +459,7 @@ const STEP_LABELS: Record<LevelUpStep, string> = {
 export default function LevelUpPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
@@ -524,32 +524,21 @@ export default function LevelUpPage() {
     setSaving(true);
     setConfirmError('');
     const newLevel = character.level + 1;
+    const threshold = getXPThresholdForNextLevel(character.characterClass, character.level);
 
     try {
-      const { error: charError } = await supabase.from('characters').update({
-        level: newLevel,
-        hp_max: character.hpMax + hpGain,
-        hp_current: character.hpCurrent + hpGain,
-      }).eq('id', id);
-
-      if (charError) {
-        setConfirmError(charError.message);
-        return;
-      }
-
-      const { error: logError } = await supabase.from('level_up_logs').insert({
-        character_id: id,
-        from_level: character.level,
-        to_level: newLevel,
-        hp_roll: hpRoll,
-        hp_roll_final: hpGain,
-        changes: features.map(f => ({ field: f.name, oldValue: '', newValue: f.description })),
+      const { error } = await supabase.rpc('level_up', {
+        p_character_id:  id,
+        p_new_level:     newLevel,
+        p_hp_gain:       hpGain,
+        p_hp_roll:       hpRoll,
+        p_changes:       features.map(f => ({ field: f.name, oldValue: '', newValue: f.description })),
+        p_xp_threshold:  threshold,
       });
 
-      if (logError) {
-        // Level-up succeeded but log write failed — proceed to celebration
-        // but log the error for debugging.
-        console.warn('Level-up log failed to save:', logError.message);
+      if (error) {
+        setConfirmError(error.message);
+        return;
       }
 
       setCelebrated(true);

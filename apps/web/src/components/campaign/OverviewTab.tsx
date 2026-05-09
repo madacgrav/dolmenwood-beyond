@@ -542,7 +542,7 @@ function RefereeView({ userId }: { userId: string }) {
 // ─── Player View ──────────────────────────────────────────────────────────────
 
 function PlayerView({ userId }: { userId: string }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteCode, setInviteCode] = useState('');
@@ -571,7 +571,7 @@ function PlayerView({ userId }: { userId: string }) {
         .from('campaign_members')
         .select('campaign_id, account_id, joined_at, accounts(display_name)')
         .in('campaign_id', campaignIds),
-      supabase.from('characters').select('id, name, character_class, level, owner_id').order('name'),
+      supabase.from('characters').select('id, name, character_class, level, xp, ability_scores, kindred, owner_id').order('name'),
     ]);
 
     const members = (rawMembers ?? []) as unknown as Array<{

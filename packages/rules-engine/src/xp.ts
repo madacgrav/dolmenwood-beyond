@@ -19,7 +19,7 @@ export function applyXPModifiers(
 ): number {
   if (base <= 0) return base;
   const primes = getPrimeAbilities(className);
-  const scores = primes.map(p => abilityScores[p.toLowerCase()] ?? 10);
+  const scores = primes.map(p => abilityScores[p.toLowerCase()] ?? 0);
   const abilityMod = getXPModifier(scores);
   const kindredBonus = getKindredXPBonus(kindred);
   return Math.round(base * (1 + (abilityMod + kindredBonus) / 100));

@@ -62,7 +62,7 @@ describe('getXPModifier', () => {
 describe('applyXPModifiers', () => {
   const baseScores = { str: 15, dex: 14, con: 12, int: 13, wis: 13, cha: 10 };
 
-  it('returns base unchanged for non-Human with neutral modifier', () => {
+  it('returns base unchanged for non-Human with +5% ability modifier', () => {
     // Fighter primes: Str. Score 15 → +5% mod, Breggle kindred → 0% bonus
     // 100 * 1.05 = 105
     const result = applyXPModifiers(100, 'Fighter', { str: 15 }, 'Breggle');
@@ -91,11 +91,25 @@ describe('applyXPModifiers', () => {
     expect(result).toBe(80);
   });
 
-  it('uses ?? 10 fallback for missing prime ability key', () => {
-    // Fighter prime is Str; passing empty record → score defaults to 10 → 0% mod
-    // 100 * 1.00 = 100
+  it('applies -20% ability mod for missing prime ability key (fallback to 0)', () => {
+    // Fighter prime is Str; passing empty record → score defaults to 0 (≤5 tier) → -20% mod
+    // 100 * 0.80 = 80
     const result = applyXPModifiers(100, 'Fighter', {}, 'Breggle');
-    expect(result).toBe(100);
+    expect(result).toBe(80);
+  });
+
+  it('uses lowest prime for multi-prime class (Friar WIS+INT: lowest drives −20%)', () => {
+    // Friar primes: WIS, INT. WIS=15 (+5%), INT=5 (−20%). Lowest = −20%.
+    // Math.round(100 * 0.80) = 80
+    const result = applyXPModifiers(100, 'Friar', { wis: 15, int: 5 }, 'Breggle');
+    expect(result).toBe(80);
+  });
+
+  it('uses lowest prime for multi-prime class (Hunter CON+DEX: lowest is +5%)', () => {
+    // Hunter primes: CON, DEX. CON=16 (+10%), DEX=13 (+5%). Lowest = +5%.
+    // Math.round(200 * 1.05) = 210
+    const result = applyXPModifiers(200, 'Hunter', { con: 16, dex: 13 }, 'Breggle');
+    expect(result).toBe(210);
   });
 });
 
@@ -110,6 +124,11 @@ describe('canLevelUpAfterGain', () => {
 
   it('returns true when current XP + gain exceeds threshold', () => {
     expect(canLevelUpAfterGain(2000, 500, 2000)).toBe(true);
+  });
+
+  it('returns true when current XP + gain exactly equals threshold (zero gain edge case)', () => {
+    // Already at threshold with 0 additional gain
+    expect(canLevelUpAfterGain(2000, 0, 2000)).toBe(true);
   });
 
   it('returns false when threshold is 0 (max level)', () => {

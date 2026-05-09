@@ -27,6 +27,7 @@ begin
     join public.campaigns c         on c.id = cm.campaign_id
     where ch.id = p_character_id
       and c.referee_id = auth.uid()
+      and ch.owner_id  != auth.uid()      -- prevent self-award via own campaign
   ) then
     raise exception 'unauthorized: caller is not a referee for this character''s campaign';
   end if;
@@ -64,13 +65,16 @@ create policy "Players can view level up logs for their characters"
 create policy "Players can create level up logs for their characters"
   on public.level_up_logs for insert
   with check (
-    -- Must own the character
+    -- Must own the character (level check excluded — character is already at to_level when INSERT runs)
     exists (
       select 1 from public.characters
       where id = level_up_logs.character_id
         and owner_id = auth.uid()
-        and level = level_up_logs.from_level
     )
     -- Log must record exactly one level increment
     and level_up_logs.to_level = level_up_logs.from_level + 1
   );
+
+-- Restrict award_xp to authenticated users only (no anonymous access)
+revoke execute on function public.award_xp(uuid, integer) from public;
+grant  execute on function public.award_xp(uuid, integer) to authenticated;

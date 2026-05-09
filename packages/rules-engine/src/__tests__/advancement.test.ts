@@ -40,6 +40,11 @@ describe('Class Advancement', () => {
     expect(getXPThresholdForNextLevel('Fighter', 1)).toBeGreaterThan(getXPThreshold('Fighter', 1));
   });
 
+  it('getXPThresholdForNextLevel returns 0 for a character at max level (15)', () => {
+    // Level 16 doesn't exist — threshold returns 0, which is the max-level sentinel
+    expect(getXPThresholdForNextLevel('Fighter', 15)).toBe(0);
+  });
+
   it('returns null for unknown class', () => {
     expect(getSaveTargets('Unknown', 1)).toBeNull();
     expect(getAttackBonus('Unknown', 1)).toBe(0);
@@ -47,17 +52,12 @@ describe('Class Advancement', () => {
 });
 
 describe('getLevelUpChanges', () => {
-  it('detects attack bonus increase for Fighter', () => {
-    // Find a Fighter level where attack bonus increases
-    let foundAttackIncrease = false;
-    for (let lvl = 1; lvl <= 9; lvl++) {
-      const changes = getLevelUpChanges('Fighter', lvl, lvl + 1);
-      if (changes.some(c => c.name === 'Attack Bonus Improves')) {
-        foundAttackIncrease = true;
-        break;
-      }
-    }
-    expect(foundAttackIncrease).toBe(true);
+  it('detects attack bonus increase for Fighter (pinned: level 2→3 gains +2)', () => {
+    // Fighter attack bonus: level 2 = +1, level 3 = +2
+    const changes = getLevelUpChanges('Fighter', 2, 3);
+    const ab = changes.find(c => c.name === 'Attack Bonus Improves');
+    expect(ab).toBeDefined();
+    expect(ab!.description).toContain('+2');
   });
 
   it('detects saving throw improvement for Fighter', () => {
@@ -88,15 +88,41 @@ describe('getLevelUpChanges', () => {
     });
   });
 
-  it('detects spell slot expansion for Magician', () => {
-    let foundSpellSlot = false;
+  it('detects spell slot expansion for Magician (pinned: level 1→2 gains rank-1 slots)', () => {
+    const changes = getLevelUpChanges('Magician', 1, 2);
+    const slot = changes.find(c => c.name === 'Spell Slots Expand');
+    expect(slot).toBeDefined();
+    expect(slot!.description).toContain('Rank 1');
+  });
+
+  it('detects glamour increase for Enchanter', () => {
+    // Enchanter uses glamours (not spell slots)
+    let foundGlamour = false;
     for (let lvl = 1; lvl <= 9; lvl++) {
-      const changes = getLevelUpChanges('Magician', lvl, lvl + 1);
-      if (changes.some(c => c.name === 'Spell Slots Expand')) {
-        foundSpellSlot = true;
+      const changes = getLevelUpChanges('Enchanter', lvl, lvl + 1);
+      if (changes.some(c => c.name === 'Glamours Known')) {
+        foundGlamour = true;
         break;
       }
     }
-    expect(foundSpellSlot).toBe(true);
+    expect(foundGlamour).toBe(true);
+  });
+
+  it('detects acBonus increase for Friar', () => {
+    // Find a Friar level where the unarmed AC bonus improves
+    let foundAcBonus = false;
+    for (let lvl = 1; lvl <= 9; lvl++) {
+      const changes = getLevelUpChanges('Friar', lvl, lvl + 1);
+      if (changes.some(c => c.name === 'Unarmed AC Bonus Improves')) {
+        foundAcBonus = true;
+        break;
+      }
+    }
+    expect(foundAcBonus).toBe(true);
+  });
+
+  it('returns empty array when nothing changes between levels (Fighter 10→11)', () => {
+    const changes = getLevelUpChanges('Fighter', 10, 11);
+    expect(changes).toEqual([]);
   });
 });
