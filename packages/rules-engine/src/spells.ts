@@ -1,4 +1,36 @@
 import spellSlotData from './data/spell-slots.json';
+import spellData from './data/spells.json';
+
+// ─── Spell name lookup ────────────────────────────────────────────────────────
+
+export interface SpellEntry {
+  name: string;
+  rank: number | 'glamour';
+}
+
+/**
+ * Returns all spells available to a class, optionally filtered by rank.
+ * For Enchanter (glamour class) all spells are returned with rank 'glamour'.
+ */
+export function getSpellsForClass(className: string, rank?: number): SpellEntry[] {
+  const classSpells = (spellData as Record<string, Record<string, string[]>>)[className];
+  if (!classSpells) return [];
+
+  // Glamour classes store spells under a 'glamours' key
+  if (classSpells['glamours']) {
+    return classSpells['glamours'].map(name => ({ name, rank: 'glamour' as const }));
+  }
+
+  const results: SpellEntry[] = [];
+  for (const [key, spells] of Object.entries(classSpells)) {
+    const r = parseInt(key.replace('rank', ''), 10);
+    if (!isNaN(r) && (!rank || r === rank)) {
+      spells.forEach(name => results.push({ name, rank: r }));
+    }
+  }
+  return results;
+}
+
 
 export type SpellcastingClass = keyof typeof spellSlotData;
 

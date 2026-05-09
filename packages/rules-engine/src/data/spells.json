@@ -1,0 +1,32 @@
+{
+  "Magician": {
+    "rank1": ["Charm Person", "Detect Magic", "Floating Disc", "Hold Portal", "Light", "Magic Missile", "Protection from Evil", "Read Languages", "Read Magic", "Sleep", "Ventriloquism"],
+    "rank2": ["Continual Light", "Detect Evil", "Detect Invisible", "ESP", "Invisibility", "Knock", "Levitate", "Locate Object", "Mirror Image", "Phantasmal Force", "Web", "Wizard Lock"],
+    "rank3": ["Clairvoyance", "Dispel Magic", "Fly", "Hold Person", "Infravision", "Invisibility 10' Radius", "Lightning Bolt", "Protection from Evil 10' Radius", "Protection from Normal Missiles", "Rope Trick", "Slow", "Water Breathing"],
+    "rank4": ["Charm Monster", "Confusion", "Dimension Door", "Growth of Plants", "Hallucinatory Terrain", "Massmorph", "Plant Growth", "Polymorph Others", "Polymorph Self", "Remove Curse", "Wall of Fire", "Wizard Eye"],
+    "rank5": ["Animate Dead", "Cloudkill", "Conjure Elemental", "Contact Higher Plane", "Feeblemind", "Hold Monster", "Magic Jar", "Pass-Wall", "Telekinesis", "Teleport", "Transmute Rock to Mud", "Wall of Stone"],
+    "rank6": ["Anti-Magic Shell", "Control Weather", "Death Spell", "Disintegrate", "Geas", "Invisible Stalker", "Lower Water", "Move Earth", "Part Water", "Projected Image", "Reincarnation", "Stone to Flesh"]
+  },
+  "Cleric": {
+    "rank1": ["Cure Light Wounds", "Detect Evil", "Detect Magic", "Light", "Protection from Evil", "Purify Food and Water", "Remove Fear", "Resist Cold"],
+    "rank2": ["Bless", "Charm Animal", "Find Traps", "Hold Person", "Know Alignment", "Resist Fire", "Silence 15' Radius", "Snake Charm"],
+    "rank3": ["Continual Light", "Cure Disease", "Growth of Animals", "Locate Object", "Remove Curse", "Striking"],
+    "rank4": ["Create Water", "Cure Serious Wounds", "Dispel Magic", "Neutralize Poison", "Protection from Evil 10' Radius", "Speak with Plants"],
+    "rank5": ["Commune", "Create Food", "Dispel Evil", "Insect Plague", "Quest", "Raise Dead"],
+    "rank6": ["Animate Objects", "Blade Barrier", "Find the Path", "Heal", "Speak with Monsters", "Word of Recall"]
+  },
+  "Friar": {
+    "rank1": ["Cure Light Wounds", "Detect Evil", "Detect Magic", "Light", "Protection from Evil", "Purify Food and Water", "Remove Fear", "Resist Cold"],
+    "rank2": ["Bless", "Find Traps", "Hold Person", "Know Alignment", "Resist Fire", "Silence 15' Radius"],
+    "rank3": ["Continual Light", "Cure Disease", "Locate Object", "Remove Curse", "Striking"],
+    "rank4": ["Create Water", "Cure Serious Wounds", "Dispel Magic", "Neutralize Poison", "Protection from Evil 10' Radius"]
+  },
+  "Bard": {
+    "rank1": ["Charm Person", "Light", "Read Magic", "Sleep", "Ventriloquism"],
+    "rank2": ["Detect Invisible", "ESP", "Invisibility", "Knock", "Phantasmal Force"],
+    "rank3": ["Dispel Magic", "Fly", "Hold Person", "Lightning Bolt", "Slow"]
+  },
+  "Enchanter": {
+    "glamours": ["Alter Self", "Bewitchment", "Charm Animal", "Charm Monster", "Charm Person", "Confusion", "Disguise", "ESP", "Fascinate", "Forget", "Glamour", "Hold Person", "Hypnotic Pattern", "Illusion", "Induce Sleep", "Mass Charm", "Mass Suggestion", "Phantasmal Force", "Sleep", "Suggestion", "Veil", "Ventriloquism"]
+  }
+}

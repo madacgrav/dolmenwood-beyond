@@ -24,6 +24,8 @@ interface MemberCharacter {
   xp: number;
   ability_scores: Record<string, number>;
   kindred: string;
+  hp_current?: number;
+  hp_max?: number;
 }
 
 interface Member {
@@ -571,7 +573,7 @@ function PlayerView({ userId }: { userId: string }) {
         .from('campaign_members')
         .select('campaign_id, account_id, joined_at, accounts(display_name)')
         .in('campaign_id', campaignIds),
-      supabase.from('characters').select('id, name, character_class, level, xp, ability_scores, kindred, owner_id').order('name'),
+      supabase.from('characters').select('id, name, character_class, level, xp, ability_scores, kindred, hp_current, hp_max, owner_id').order('name'),
     ]);
 
     const members = (rawMembers ?? []) as unknown as Array<{
@@ -737,13 +739,39 @@ function PlayerView({ userId }: { userId: string }) {
               {member.characters.length === 0 ? (
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>No characters yet</div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                  {member.characters.map(ch => (
-                    <div key={ch.id} style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
-                      <span style={{ color: 'var(--color-text)' }}>{ch.name}</span>
-                      {' · '}{ch.character_class} · Lv {ch.level}
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {member.characters.map(ch => {
+                    const hpPct = (ch.hp_max ?? 0) > 0 ? Math.max(0, (ch.hp_current ?? 0) / ch.hp_max!) : 0;
+                    const hpColor = hpPct > 0.66 ? 'var(--color-primary)' : hpPct > 0.33 ? 'var(--color-gold)' : 'var(--color-danger)';
+                    return (
+                      <div key={ch.id} style={{ backgroundColor: 'var(--color-bg)', borderRadius: '8px', padding: '0.5rem 0.625rem', border: '1px solid var(--color-border)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</span>
+                            <span style={{ fontSize: '0.65rem', backgroundColor: 'var(--color-surface)', color: 'var(--color-text-muted)', padding: '0.1rem 0.35rem', borderRadius: '4px', border: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>
+                              {ch.character_class}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexShrink: 0 }}>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Lv {ch.level}</span>
+                            {(ch.hp_max ?? 0) > 0 && (
+                              <span style={{ fontSize: '0.72rem', color: hpColor, fontWeight: '600' }}>
+                                ❤️ {ch.hp_current}/{ch.hp_max}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginBottom: (ch.hp_max ?? 0) > 0 ? '0.375rem' : 0 }}>
+                          {ch.kindred}
+                        </div>
+                        {(ch.hp_max ?? 0) > 0 && (
+                          <div style={{ height: '4px', borderRadius: '2px', backgroundColor: 'var(--color-border)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${hpPct * 100}%`, backgroundColor: hpColor, borderRadius: '2px', transition: 'width 0.3s' }} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
