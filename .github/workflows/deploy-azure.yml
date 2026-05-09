@@ -149,7 +149,6 @@ jobs:
   deploy-app:
     name: Update App Service Image
     runs-on: ubuntu-latest
-    environment: production
     needs: [build-and-push, run-migrations, deploy-infra]
     steps:
       - name: Azure Login (OIDC)
