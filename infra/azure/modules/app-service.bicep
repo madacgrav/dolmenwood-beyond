@@ -127,7 +127,8 @@ resource existingAcr 'Microsoft.ContainerRegistry/registries@2023-07-01' existin
 }
 
 resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acrId, webApp.id, acrPullRoleId)
+  // 'acr-scoped' suffix differentiates from the previous RG-scoped assignment (same GUID inputs would conflict)
+  name: guid(acrId, webApp.id, acrPullRoleId, 'acr-scoped')
   scope: existingAcr
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleId)
