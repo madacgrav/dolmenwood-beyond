@@ -3,8 +3,28 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'supabase/**'
+      - '.github/workflows/ci.yml'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'turbo.json'
+      - 'eslint.config.mjs'
+      - 'tsconfig.base.json'
   push:
     branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'supabase/**'
+      - '.github/workflows/ci.yml'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'turbo.json'
+      - 'eslint.config.mjs'
+      - 'tsconfig.base.json'
   workflow_call:
     secrets:
       TURBO_TOKEN:

@@ -3,8 +3,21 @@ name: Deploy to Azure
 on:
   push:
     branches: [main]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'supabase/migrations/**'
+      - 'infra/**'
+      - '.github/workflows/deploy-azure.yml'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'turbo.json'
+      - 'docker-compose.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/deploy-azure.yml'
   workflow_dispatch:
 
 permissions:
