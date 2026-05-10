@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { Character } from '@dolmenwood/types';
-import { getAttackBonus, getSaveTargets, calculateAC, getHitDie, getAbilityModifier, rollDie } from '@dolmenwood/rules-engine';
+import { getAttackBonus, getSaveTargets, calculateAC, getHitDie, getAbilityModifier, rollDie, rollDamage, calcAmmoRecovery, type DieType } from '@dolmenwood/rules-engine';
 import { createClient } from '@/lib/supabase/client';
 
 interface Props {
@@ -43,8 +43,6 @@ interface DBMount {
 const MOUNT_TYPES = ['Horse', 'Mule', 'Dog', 'Pony', 'Other'] as const;
 type MountType = typeof MOUNT_TYPES[number];
 
-type DieType = 4 | 6 | 8 | 10 | 12 | 20 | 100;
-
 const RANGED_WEAPON_PATTERNS = /bow|crossbow|sling|dart|javelin|thrown/i;
 
 const CONDITIONS = ['Poisoned', 'Paralysed', 'Unconscious'] as const;
@@ -64,17 +62,6 @@ interface RollResult { roll: number; passed: boolean; target: number; }
 interface AttackResult { attackRoll: number; attackTotal: number; damageRoll: number; damageDice: string; }
 
 function formatMod(mod: number) { return mod >= 0 ? `+${mod}` : `${mod}`; }
-
-function rollDamage(notation: string): number {
-  const match = notation.match(/^(\d+)d(\d+)([+-]\d+)?$/i);
-  if (!match) return 0;
-  const count = parseInt(match[1] ?? '1', 10);
-  const sides = parseInt(match[2] ?? '6', 10);
-  const bonus = parseInt(match[3] ?? '0', 10);
-  let total = bonus;
-  for (let i = 0; i < count; i++) total += rollDie(sides as DieType);
-  return Math.max(1, total);
-}
 
 const sectionHead: React.CSSProperties = {
   margin: '0 0 0.75rem',
@@ -223,7 +210,7 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
   async function endBattle() {
     setBattleEnding(true);
     const shotsUsed = battleStartQty - battleCurrentQty;
-    const recovered = Math.floor(shotsUsed / 2);
+    const recovered = calcAmmoRecovery(shotsUsed);
     if (recovered > 0 && battleAmmoId) {
       const finalQty = battleCurrentQty + recovered;
       await supabase.from('character_inventory').update({ quantity: finalQty }).eq('id', battleAmmoId);
@@ -269,7 +256,7 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
     if (!newMount.name.trim()) return;
     setMountSaving(true);
     const payload: Record<string, unknown> = {
-      owner_id: character.ownerId,
+      owner_id: characterId,  // character UUID - matches RLS expectation
       owner_type: 'character',
       character_id: characterId,
       name: newMount.name.trim(),
@@ -440,7 +427,7 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
                     style={{
                       width: '100%', padding: '0.375rem', borderRadius: '6px', border: 'none',
                       backgroundColor: 'var(--color-bg)', color: 'var(--color-primary)',
-                      fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', minHeight: '36px',
+                      fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', minHeight: '44px',
                     }}
                   >
                     🎲 Roll d20
@@ -727,7 +714,7 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
                 padding: '0.25rem 0.75rem', borderRadius: '6px',
                 border: '1px solid var(--color-border)',
                 backgroundColor: 'transparent', color: 'var(--color-primary)',
-                fontSize: '0.8rem', cursor: 'pointer', minHeight: '36px',
+                fontSize: '0.8rem', cursor: 'pointer', minHeight: '44px',
               }}
             >
               {showAddMount ? 'Cancel' : '＋ Add Mount'}
@@ -817,7 +804,7 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
                                           : 'color-mix(in srgb, var(--color-primary) 12%, var(--color-bg))',
                                         color: d < 0 ? 'var(--color-danger)' : 'var(--color-primary)',
                                         fontSize: '0.75rem', fontWeight: '700',
-                                        cursor: 'pointer', minHeight: '32px',
+                                        cursor: 'pointer', minHeight: '44px',
                                       }}
                                     >
                                       {d > 0 ? `+${d}` : d}
@@ -844,7 +831,7 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
                           background: 'none', border: 'none', cursor: 'pointer',
                           color: 'var(--color-danger)', fontSize: '1rem',
                           padding: '0.25rem', borderRadius: '4px',
-                          minHeight: '32px', minWidth: '32px',
+                          minHeight: '44px', minWidth: '44px',
                           flexShrink: 0,
                         }}
                         aria-label={`Remove ${mount.name}`}

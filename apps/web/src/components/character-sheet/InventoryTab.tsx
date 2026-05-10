@@ -410,7 +410,7 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
                 value={coins[coin]}
                 onChange={e => handleCoinChange(coin, e.target.value)}
                 disabled={!isOwner}
-                style={{ width: '100%', textAlign: 'center', backgroundColor: 'transparent', border: 'none', color: 'var(--color-text)', fontSize: '1.1rem', fontWeight: '700', minHeight: '36px' }}
+                style={{ width: '100%', textAlign: 'center', backgroundColor: 'transparent', border: 'none', color: 'var(--color-text)', fontSize: '1.1rem', fontWeight: '700', minHeight: '44px' }}
               />
             </div>
           ))}
@@ -444,7 +444,7 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
                   border: '1px solid var(--color-border)',
                   borderRadius: '8px', cursor: 'pointer',
                   fontSize: '0.8rem', fontWeight: '600',
-                  color: 'var(--color-primary)', minHeight: '36px',
+                  color: 'var(--color-primary)', minHeight: '44px',
                 }}
               >
                 {showDeposit ? 'Cancel' : '⬆ Deposit'}
@@ -547,7 +547,7 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
                     <button
                       onClick={() => toggleLocation(item)}
                       title="Cycle location: stowed → equipped → tiny"
-                      style={{ background: 'none', border: '1px solid var(--color-border)', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '0.7rem', padding: '0.2rem 0.375rem', borderRadius: '4px', minHeight: '36px', whiteSpace: 'nowrap' }}
+                      style={{ background: 'none', border: '1px solid var(--color-border)', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '0.7rem', padding: '0.2rem 0.375rem', borderRadius: '4px', minHeight: '44px', whiteSpace: 'nowrap' }}
                     >
                       {item.location === 'equipped' ? '⚔️' : item.location === 'stowed' ? '🎒' : '🔮'}
                     </button>
@@ -555,7 +555,7 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
                   {isOwner && (
                     <button
                       onClick={() => deleteItem(item.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '1rem', padding: '0.25rem', minHeight: '36px', minWidth: '36px' }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', fontSize: '1rem', padding: '0.25rem', minHeight: '44px', minWidth: '44px' }}
                       aria-label={`Delete ${item.item_name}`}
                     >
                       ✕
@@ -891,7 +891,7 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
                       padding: '0.25rem 0.625rem', borderRadius: '6px',
                       border: '1px solid var(--color-danger)',
                       backgroundColor: 'transparent', color: 'var(--color-danger)',
-                      fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap', minHeight: '36px',
+                      fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap', minHeight: '44px',
                     }}
                   >
                     Proceed anyway

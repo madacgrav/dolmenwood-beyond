@@ -79,7 +79,7 @@ function SessionNotes({ character, onUpdate, readOnly }: { character: CharacterW
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <h3 style={{ margin: 0, fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Session Notes</h3>
         {!readOnly && (
-          <button onClick={() => setAdding(a => !a)} style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', minHeight: '32px' }}>
+          <button onClick={() => setAdding(a => !a)} style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', minHeight: '44px' }}>
             {adding ? 'Cancel' : '+ New Session'}
           </button>
         )}
@@ -94,7 +94,7 @@ function SessionNotes({ character, onUpdate, readOnly }: { character: CharacterW
             autoFocus
             style={{ width: '100%', minHeight: '120px', padding: '0.625rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.875rem', lineHeight: 1.6, resize: 'vertical', fontFamily: 'var(--font-body)', boxSizing: 'border-box', marginBottom: '0.5rem' }}
           />
-          <button onClick={handleAdd} style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem', minHeight: '36px' }}>
+          <button onClick={handleAdd} style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem', minHeight: '44px' }}>
             Save Session
           </button>
         </div>
@@ -111,7 +111,7 @@ function SessionNotes({ character, onUpdate, readOnly }: { character: CharacterW
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.375rem' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)', fontWeight: '600' }}>{note.date}</span>
                 {!readOnly && (
-                  <button onClick={() => handleDelete(note.id)} aria-label="Delete session note" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1rem', padding: '0', lineHeight: 1, minHeight: '24px', minWidth: '24px' }}>×</button>
+                  <button onClick={() => handleDelete(note.id)} aria-label="Delete session note" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1rem', padding: '0', lineHeight: 1, minHeight: '44px', minWidth: '44px' }}>×</button>
                 )}
               </div>
               <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{note.text}</p>
@@ -148,7 +148,7 @@ function PeopleOfNote({ character, onUpdate, readOnly }: { character: CharacterW
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <h3 style={{ margin: 0, fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>People of Note</h3>
         {!readOnly && (
-          <button onClick={() => setAdding(a => !a)} style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', minHeight: '32px' }}>
+          <button onClick={() => setAdding(a => !a)} style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', minHeight: '44px' }}>
             {adding ? 'Cancel' : '+ Add Person'}
           </button>
         )}
@@ -169,7 +169,7 @@ function PeopleOfNote({ character, onUpdate, readOnly }: { character: CharacterW
             placeholder="Notes about this person (optional)"
             style={{ width: '100%', minHeight: '80px', padding: '0.5rem 0.625rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.875rem', lineHeight: 1.5, resize: 'vertical', fontFamily: 'var(--font-body)', boxSizing: 'border-box', marginBottom: '0.5rem' }}
           />
-          <button onClick={handleAdd} style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem', minHeight: '36px' }}>
+          <button onClick={handleAdd} style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem', minHeight: '44px' }}>
             Save Person
           </button>
         </div>
@@ -186,7 +186,7 @@ function PeopleOfNote({ character, onUpdate, readOnly }: { character: CharacterW
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <span style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--color-text)' }}>{person.name}</span>
                 {!readOnly && (
-                  <button onClick={() => handleDelete(person.id)} aria-label={`Delete ${person.name}`} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1rem', padding: '0', lineHeight: 1, minHeight: '24px', minWidth: '24px' }}>×</button>
+                  <button onClick={() => handleDelete(person.id)} aria-label={`Delete ${person.name}`} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1rem', padding: '0', lineHeight: 1, minHeight: '44px', minWidth: '44px' }}>×</button>
                 )}
               </div>
               {person.note && <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{person.note}</p>}
