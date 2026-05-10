@@ -42,6 +42,7 @@ export function useCharacters() {
           hpMax: row.hp_max as number,
           portraitUrl: row.portrait_url as string | undefined,
           isActive: row.is_active as boolean,
+          extraLanguages: (row.extra_languages as string[] | undefined) ?? [],
           createdAt: row.created_at as string,
           updatedAt: row.updated_at as string,
         }));

@@ -55,6 +55,12 @@ export default function SettingsPage() {
   const [copied, setCopied] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [optionalRules, setOptionalRules] = useOptionalRules();
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     const savedTheme = (localStorage.getItem('dolmenwood-theme') as 'light' | 'dark' | 'system') ?? 'system';
@@ -124,6 +130,46 @@ export default function SettingsPage() {
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.push('/sign-in');
+  }
+
+  async function handleExportData() {
+    setExporting(true);
+    setExportError('');
+    try {
+      const { data: chars, error: cErr } = await supabase
+        .from('characters')
+        .select('*, character_inventory(*), spell_slots(*), spell_preparations(*)');
+      if (cErr) throw new Error(cErr.message);
+      const json = JSON.stringify({ exportedAt: new Date().toISOString(), characters: chars }, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dolmenwood-characters-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const { error } = await supabase.rpc('delete_my_account');
+      if (error) throw new Error(error.message);
+      // Sign out — ignore errors since the account is already deleted
+      await supabase.auth.signOut().catch(() => undefined);
+      router.push('/sign-in');
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Failed to delete account');
+      setDeleting(false);
+    }
   }
 
   async function handleChangePassword() {
@@ -288,8 +334,24 @@ export default function SettingsPage() {
         ))}
       </section>
 
+      {/* Data */}
+      <section style={sectionStyle}>
+        <h2 style={sectionHeaderStyle}>Data</h2>
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.875rem' }}>
+          Export all your character data as a JSON file.
+        </p>
+        <button
+          onClick={handleExportData}
+          disabled={exporting}
+          style={{ padding: '0.625rem 1.25rem', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', minHeight: '44px', opacity: exporting ? 0.7 : 1 }}
+        >
+          {exporting ? 'Exporting…' : '⬇ Export Characters (JSON)'}
+        </button>
+        {exportError && <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--color-danger)' }}>{exportError}</p>}
+      </section>
+
       {/* Sign Out */}
-      <section style={{ padding: '1.5rem 0' }}>
+      <section style={{ padding: '1.5rem 0 0.75rem' }}>
         <button
           onClick={handleSignOut}
           style={{ width: '100%', padding: '0.875rem', backgroundColor: 'color-mix(in srgb, var(--color-danger) 10%, transparent)', color: 'var(--color-danger)', border: `1px solid var(--color-danger)`, borderRadius: '8px', fontSize: '1rem', fontWeight: '600', cursor: 'pointer', minHeight: '44px' }}
@@ -297,6 +359,64 @@ export default function SettingsPage() {
           Sign Out
         </button>
       </section>
+
+      {/* Danger Zone */}
+      <section style={{ ...sectionStyle, borderColor: 'var(--color-danger)', marginBottom: '2rem' }}>
+        <h2 style={{ ...sectionHeaderStyle, color: 'var(--color-danger)' }}>Danger Zone</h2>
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.875rem' }}>
+          Permanently delete your account and all associated characters, inventory, and data. This cannot be undone.
+        </p>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          style={{ padding: '0.625rem 1.25rem', backgroundColor: 'transparent', color: 'var(--color-danger)', border: '1px solid var(--color-danger)', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '600', minHeight: '44px' }}
+        >
+          Delete Account
+        </button>
+      </section>
+
+      {/* Delete account confirmation modal */}
+      {showDeleteConfirm && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-danger)', borderRadius: '14px', padding: '1.5rem', maxWidth: '360px', width: '100%' }}>
+            <h3 style={{ margin: '0 0 0.75rem', fontFamily: 'var(--font-display), Georgia, serif', color: 'var(--color-danger)', fontSize: '1.1rem' }}>⚠ Delete Account?</h3>
+            <p style={{ margin: '0 0 0.5rem', fontSize: '0.9rem', color: 'var(--color-text)', lineHeight: 1.5 }}>
+              This will permanently delete:
+            </p>
+            <ul style={{ margin: '0 0 1rem 1.25rem', padding: 0, fontSize: '0.875rem', color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
+              <li>Your account and login</li>
+              <li>All your characters</li>
+              <li>All inventory, spells, and notes</li>
+              <li>All retainers and mounts</li>
+            </ul>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-danger)' }}>This cannot be undone.</p>
+            <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Type <strong style={{ color: 'var(--color-danger)' }}>DELETE</strong> to confirm:</p>
+            <input
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              disabled={deleting}
+              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-danger)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', marginBottom: '1rem', boxSizing: 'border-box', outline: 'none' }}
+            />
+            {deleteError && <p style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: 'var(--color-danger)' }}>⚠ {deleteError}</p>}
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); setDeleteConfirmText(''); }}
+                disabled={deleting}
+                style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', cursor: 'pointer', fontSize: '0.9rem', minHeight: '44px' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting || deleteConfirmText !== 'DELETE'}
+                style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--color-danger)', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '700', minHeight: '44px', opacity: (deleting || deleteConfirmText !== 'DELETE') ? 0.5 : 1 }}
+              >
+                {deleting ? 'Deleting…' : 'Delete Forever'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

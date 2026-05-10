@@ -78,6 +78,7 @@ export interface Character {
   hpMax: number;
   portraitUrl?: string;
   isActive: boolean;
+  extraLanguages?: string[];
   createdAt: string;
   updatedAt: string;
 }
