@@ -24,6 +24,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
   const [xpInputVal, setXpInputVal] = useState('');
   const [portraitUrl, setPortraitUrl] = useState<string | null>(character.portraitUrl ?? null);
   const [portraitUploading, setPortraitUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -62,15 +63,40 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
   async function handlePortraitSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setUploadError('Only JPEG, PNG, WebP, and GIF images are allowed.');
+      return;
+    }
+    if (file.size > MAX_SIZE_BYTES) {
+      setUploadError('Image must be smaller than 5 MB.');
+      return;
+    }
+    const extMap: Record<string, string> = {
+      'image/jpeg': 'jpg', 'image/png': 'png',
+      'image/webp': 'webp', 'image/gif': 'gif',
+    };
+    const ext = extMap[file.type] ?? 'jpg';
+
+    setUploadError('');
     setPortraitUploading(true);
     try {
-      const ext = file.name.split('.').pop() ?? 'jpg';
-      const path = `${character.id}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) {
+        setUploadError('Could not verify user session. Please sign in again.');
+        return;
+      }
+      const user = userData.user;
+      const path = `${user.id}/${character.id}/${Date.now()}.${ext}`;
+      const { error: storageError } = await supabase.storage
         .from('portraits')
         .upload(path, file, { upsert: true });
-      if (uploadError) {
-        console.error('Portrait upload failed:', uploadError.message);
+      if (storageError) {
+        console.error('Portrait upload failed:', storageError.message);
+        setUploadError('Upload failed: ' + storageError.message);
         return;
       }
       const { data: urlData } = supabase.storage.from('portraits').getPublicUrl(path);
@@ -140,7 +166,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
       </div>
 
       {/* Portrait + name row */}
-      <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start', position: 'relative' }}>
         {/* Tappable portrait with upload */}
         <button
           onClick={() => { if (!readOnly) fileInputRef.current?.click(); }}
@@ -202,6 +228,25 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
           style={{ display: 'none' }}
           onChange={handlePortraitSelect}
         />
+
+        {/* Upload error message */}
+        {uploadError && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: '0.25rem',
+            fontSize: '0.75rem',
+            color: 'var(--color-danger)',
+            backgroundColor: 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg))',
+            border: '1px solid var(--color-danger)',
+            borderRadius: '6px',
+            padding: '0.25rem 0.5rem',
+          }}>
+            {uploadError}
+          </div>
+        )}
 
         {/* Name + bars */}
         <div style={{ flex: 1, minWidth: 0 }}>
