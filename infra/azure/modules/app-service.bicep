@@ -119,17 +119,12 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
 }
 
 // Grant Web App managed identity "AcrPull" on the ACR
+// Note: scoped to resource group for idempotency — Azure rejects scope changes on existing role assignments.
 var acrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-var acrName = last(split(acrId, '/'))
-
-resource existingAcr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: acrName
-}
 
 resource acrPullAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  // 'acr-scoped' suffix differentiates from the previous RG-scoped assignment (same GUID inputs would conflict)
-  name: guid(acrId, webApp.id, acrPullRoleId, 'acr-scoped')
-  scope: existingAcr
+  name: guid(acrId, webApp.id, acrPullRoleId)
+  scope: resourceGroup()
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleId)
     principalId: webApp.identity.principalId
