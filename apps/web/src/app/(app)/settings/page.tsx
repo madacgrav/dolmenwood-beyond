@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useOptionalRules } from '@/hooks/use-optional-rules';
@@ -44,7 +44,7 @@ const inputStyle: React.CSSProperties = {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [account, setAccount] = useState<Account | null>(null);
   const [displayName, setDisplayName] = useState('');
