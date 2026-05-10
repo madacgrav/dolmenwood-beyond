@@ -10,7 +10,22 @@ Supabase-hosted PostgreSQL. Row Level Security (RLS) is enabled on **all** table
 |------|-------------|
 | `20260425000001_initial_schema.sql` | All 12 core tables + RLS policies + auth triggers |
 | `20260425000002_equipment_catalog.sql` | `catalog_items` table + 97 equipment items |
-| `20260425000003_invite_code_function.sql` | `generate_invite_code()` function |
+| `20260425000003_invite_code_function.sql` | `generate_invite_code()` function for campaigns |
+| `20260425000004_accounts_invite_code.sql` | Per-account invite code + `generate_account_invite_code()` function |
+| `20260425000005_fix_rls_recursion.sql` | Security-definer helper to break campaign/campaign_members RLS recursion |
+| `20260503000006_banking.sql` | Add `coins_gp`, `coins_sp`, `coins_cp` columns to `characters` |
+| `20260503000007_campaign_management.sql` | `is_account_in_my_campaign()` helper + RLS for accounts visibility |
+| `20260508000008_award_xp_rpc.sql` | `award_xp(character_id, gain)` security-definer RPC for referees |
+| `20260509000009_level_up_rpc.sql` | `level_up(character_id, new_level, hp_roll_final)` atomic level-up RPC |
+| `20260510000010_character_inventory_formal.sql` | Formal `character_inventory` table with location, weapon/armour stats, catalog linking |
+| `20260511000011_spell_slot_tracking.sql` | `spell_slots` table (per-rank slot tracking) |
+| `20260511000012_join_campaign_rpc.sql` | `join_campaign(invite_code)` security-definer RPC |
+| `20260511000013_admin_role.sql` | `is_admin` column on accounts + self-escalation prevention RLS |
+| `20260512000014_review_fixes.sql` | Security fixes: is_admin self-escalation, RLS tightening |
+| `20260512000015_notes_enhancements.sql` | Add `session_notes jsonb` + `people_of_note jsonb` to `characters` |
+| `20260512000016_portrait_storage.sql` | Supabase Storage `portraits` bucket + initial RLS policies |
+| `20260512000017_mounts_and_referee_rls.sql` | Add `character_id` column to `mounts`; referee read-only RLS on retainers, spell_slots |
+| `20260512000018_portrait_rls_fix.sql` | Replace portrait RLS with path-ownership enforcement (`{userId}/{charId}/...`) |
 
 ---
 
@@ -117,6 +132,11 @@ The central entity. One character per row.
 | `hp_max` | int | |
 | `portrait_url` | text | Optional, URL to uploaded image |
 | `notes` | text | Free-form character notes |
+| `coins_gp` | int | Carried gold pieces (default 0) |
+| `coins_sp` | int | Carried silver pieces (default 0) |
+| `coins_cp` | int | Carried copper pieces (default 0) |
+| `session_notes` | jsonb | Timestamped session note entries (default `[]`) |
+| `people_of_note` | jsonb | Named NPC notes (default `[]`) |
 | `is_active` | bool | Soft delete flag |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | |
@@ -135,9 +155,14 @@ Equipment and items carried by a character, retainer, or mount.
 | `id` | uuid PK | |
 | `character_id` | uuid | FK → `characters.id` |
 | `item_name` | text | |
-| `item_type` | text | `'weapon'` \| `'armour'` \| `'gear'` \| `'consumable'` \| `'other'` |
+| `item_type` | text | `'weapon'` \| `'armour'` \| `'gear'` \| `'consumable'` \| `'ammo'` \| `'other'` |
 | `quantity` | int | Default 1 |
 | `weight_coins` | int | Weight in coins (Dolmenwood unit) |
+| `location` | text | `'equipped'` \| `'stowed'` \| `'tiny'` (default `'stowed'`) |
+| `weapon_damage_dice` | text | Optional, e.g. `'1d8'` |
+| `weapon_attack_bonus` | int | Optional |
+| `armour_ac_bonus` | int | Optional |
+| `is_from_catalog` | bool | Whether sourced from `catalog_items` |
 | `notes` | text | Optional |
 | `created_at` | timestamptz | |
 
@@ -169,6 +194,22 @@ Tracks used/available spell slots per level per character.
 | `spell_rank` | int | 1–6 |
 | `slots_total` | int | Max slots at this rank |
 | `slots_used` | int | Used (expended) slots |
+
+---
+
+### `public.spell_slots`
+Tracks daily spell slot usage per rank per character.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `character_id` | uuid | FK → `characters.id` ON DELETE CASCADE |
+| `spell_rank` | int | 1–6 |
+| `slots_total` | int | Max slots at this rank |
+| `slots_used` | int | Used slots (checked ≥ 0) |
+
+**Unique**: `(character_id, spell_rank)`
+**RLS**: Inherited from character ownership.
 
 ---
 
@@ -265,6 +306,15 @@ Trigger on `auth.users` INSERT. Automatically creates an `accounts` row on Supab
 -- Fires on: AFTER INSERT ON auth.users
 -- Creates: public.accounts row with matching id + invite code
 ```
+
+### `join_campaign(p_invite_code text) → json`
+Security-definer RPC that joins the calling player to a campaign by invite code. Creates a `campaign_members` row and returns the campaign record.
+
+### `level_up(p_character_id uuid, p_new_level int, p_hp_roll_final int) → void`
+Security-definer RPC for atomic level-up. Validates character ownership, monotonic level progression, and XP threshold, then updates the character and inserts an audit log entry.
+
+### `award_xp(p_character_id uuid, p_gain int) → int`
+Security-definer RPC for referees. Validates the caller is a referee for a campaign the character belongs to, increments XP atomically, and returns the new XP total.
 
 ---
 

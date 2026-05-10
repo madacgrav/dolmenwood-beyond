@@ -5,7 +5,7 @@
 | Tool | Version | Notes |
 |------|---------|-------|
 | Node.js | 22.x | Use `.nvmrc` or `nvm use 22` |
-| pnpm | 10.x | `npm install -g pnpm@10` |
+| pnpm | 10.11.0 | `npm install -g pnpm@10.11.0` |
 | Docker Desktop | Latest | Required for local Supabase + Docker builds |
 | Supabase CLI | Latest | `npm install -g supabase` |
 | Azure CLI | Latest | Only needed for Azure deployments |
@@ -68,7 +68,11 @@ pnpm dev                              # starts Next.js dev server + watches pack
 # In a separate terminal, if you need Supabase
 npx supabase start                    # start local DB (if not already running)
 npx supabase db reset                 # re-apply all migrations from scratch
+```
 
+> **pnpm 10 note**: If you add new packages that require native build scripts (e.g., `esbuild`, `sharp`), run `pnpm approve-builds` or add the package to `pnpm.onlyBuiltDependencies` in `package.json`.
+
+```bash
 # Type checking
 pnpm typecheck                        # check all packages
 pnpm --filter @dolmenwood/web typecheck      # check web only

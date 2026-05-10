@@ -11,7 +11,7 @@ The application is deployed to **Azure App Service** as a Docker container. Infr
 | Resource | Name (prod) | Purpose |
 |----------|-------------|---------|
 | Resource Group | `dolmenwood-beyond-rg` | Container for all resources |
-| Container Registry | `dolmenwooodprodacr` | Stores Docker images |
+| Container Registry | `dolmenwoodprodacr` | Stores Docker images |
 | App Service Plan | `dolmenwood-prod-plan` | Linux B1 compute |
 | App Service | `dolmenwood-prod-web` | Hosts the container |
 | Key Vault | `dolmenwood-prod-kv` | Secrets storage |
@@ -141,6 +141,8 @@ docker build \
 
 The runner stage is minimal — only the `.next/standalone` output, public assets, and `dumb-init`. Target image size is under 300MB.
 
+> **pnpm version**: pnpm is pinned to `10.11.0` in both the `deps` and `builder` stages of the Dockerfile. This prevents pnpm behavior changes from breaking builds.
+
 ---
 
 ## Health Check
@@ -210,14 +212,14 @@ To roll back to a previous image:
 ```bash
 # List available tags in ACR
 az acr repository show-tags \
-  --name dolmenwooodprodacr \
+  --name dolmenwoodprodacr \
   --repository dolmenwood/web
 
 # Update App Service to a previous tag
 az webapp config container set \
   --resource-group dolmenwood-beyond-rg \
   --name dolmenwood-prod-web \
-  --docker-custom-image-name dolmenwooodprodacr.azurecr.io/dolmenwood/web:<previous-sha>
+  --docker-custom-image-name dolmenwoodprodacr.azurecr.io/dolmenwood/web:<previous-sha>
 ```
 
 ---
@@ -235,3 +237,13 @@ az keyvault secret set \
   --name supabase-anon-key \
   --value "new-secret-value"
 ```
+
+---
+
+## Known Deployment Limitations
+
+### Key Vault `softDeleteRetentionInDays` — Immutable
+Azure Key Vault's `softDeleteRetentionInDays` cannot be changed after the vault is created (currently 7 days). Changing it requires destroying and recreating the vault. Do not attempt to modify this value in `infra/azure/modules/key-vault.bicep`.
+
+### AcrPull Role Assignment Scope — Cannot Change
+The AcrPull role assignment for the App Service managed identity is scoped to the resource group (`resourceGroup()`). Azure does not allow changing the scope of an existing role assignment. Do not change the `scope` or `name` fields in `infra/azure/modules/app-service.bicep`'s `acrPullAssignment` resource — this will break deployments.

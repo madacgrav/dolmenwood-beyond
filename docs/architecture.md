@@ -54,7 +54,7 @@ dolmenwood-beyond/
 │   ├── rules-engine/          @dolmenwood/rules-engine
 │   │   Pure TypeScript implementation of all Dolmenwood RPG rules.
 │   │   No React, no Supabase — pure functions only.
-│   │   57 unit tests.
+│   │   145 unit tests.
 │   │
 │   ├── types/                 @dolmenwood/types
 │   │   Shared TypeScript interfaces used by both web and rules-engine.
@@ -125,6 +125,7 @@ Stateless pure functions. All game mechanics are implemented here and imported i
 ability-modifiers.ts    getAbilityModifier(score) → modifier
 ac.ts                   calculateAC(params) → total AC
 advancement.ts          getAttackBonus, getSaveTargets, getXPThresholdForNextLevel
+combat.ts               calcAmmoRecovery(shotsUsed), rollDamage(notation)
 dice.ts                 rollDie(sides), rollFromNotation('3d6')
 kindreds.ts             getKindredData, getKindredACBonus, getSuggestedClasses
 retainers.ts            Retainer morale/loyalty calculations
@@ -167,7 +168,7 @@ middleware.ts checks supabase.auth.getUser()
 ```
 
 **Public routes** (bypass auth middleware):
-- `/sign-in`, `/sign-up`, `/auth/callback`
+- `/sign-in`, `/sign-up`, `/forgot-password`, `/auth/callback`
 - `/_next/static/**`, `/_next/image/**`, `/favicon.ico`, `/icons/**`, `/manifest.json`
 
 ---
@@ -213,7 +214,7 @@ This allows both wizard paths to reuse the same components.
 ```
 Azure Resource Group: dolmenwood-beyond-rg
 │
-├── Azure Container Registry (dolmenwooodprodacr)
+├── Azure Container Registry (dolmenwoodprodacr)
 │   └── Docker image: dolmenwood/web:{tag}
 │
 ├── App Service Plan (dolmenwood-prod-plan) — Linux B1

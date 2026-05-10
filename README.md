@@ -6,11 +6,17 @@ A cross-platform PWA for managing characters in the [Dolmenwood](https://necroti
 
 - **Character creation** — guided 13-step wizard (auto with animated dice rolls, or manual entry)
 - **Character sheet** — 5 tabs: Stats, Combat, Inventory, Magic, Notes with inline HP/XP editing
-- **Level Up flow** — animated HP roll, new features preview, Supabase save
+- **Level-up flow** — animated HP roll, level diff preview, XP tracking, atomic Supabase RPC
+- **Retainer management** — hire retainers, track stats, promote to full character
+- **Mount management** — character mounts + campaign pack animals
+- **Campaign/party system** — create campaign, invite code, join campaign, referee read-only view
+- **Ammo tracking + battle view** — shot counter with end-of-battle recovery roll
+- **Portrait upload** — Supabase Storage with per-user path RLS
+- **Forgot password / password reset** — full email-based reset flow
+- **Optional rules settings** — sub-par ability re-roll, HP re-roll on level-up, coin weight toggle
 - **Rules engine** — all Dolmenwood mechanics (ability modifiers, AC, saves, speed, XP, spells) extracted from the Player's Book
 - **News feed** — optional WordPress blog integration with ISR caching
 - **PWA** — installable, offline-capable, service worker via next-pwa
-- **Settings** — profile, invite code, theme (light/dark/system), offline mode toggle
 - **Auth** — email/password + Google OAuth via Supabase
 
 ## Tech Stack
@@ -52,7 +58,7 @@ App: http://localhost:3000 · Supabase dashboard: http://localhost:54323
 ```
 apps/web/          Next.js 15 PWA
 packages/
-  rules-engine/    Dolmenwood game rules (pure TypeScript, 57 tests)
+  rules-engine/    Dolmenwood game rules (pure TypeScript, 145 tests)
   types/           Shared TypeScript interfaces
   ui/              Shared component stubs
 supabase/          Migrations + seed data
