@@ -1,9 +1,9 @@
 ---
-title: "V1 Is Done. Five Agents Checked the Work."
+title: "I Shipped V1 of My RPG App. Then Five AI Agents Found 12 Bugs in It."
 date: 2026-05-10
 author: Adam Graves
 status: draft
-tags: [nextjs, supabase, devlog, ai-agents, code-review, typescript]
+tags: [nextjs, supabase, devlog, ai-agents, azure, typescript]
 excerpt: >
   Thirteen features shipped. Five AI agents ran a full audit. Twelve real bugs found and fixed —
   including a Breggle race that had the wrong AC since day one. Here's how V1 actually got finished.
@@ -11,7 +11,7 @@ excerpt: >
 
 ![Polyhedral dice in dramatic lighting](./images/2026-05-10-dev-log-6-v1-complete-agent-reviews/hero.jpg)
 
-V1 started as a list of features on a PRD. It ended with five AI agents cross-examining the code, arguing about Breggle armour class, and discovering an export function that had been silently writing to a database table that doesn't exist.
+V1 started as a list of features on a PRD. It ended with five AI agents cross-examining the code, arguing about Breggle armour class, and discovering an export function that had been silently querying a table that doesn't exist.
 
 This post covers everything since [Dev Log #5](./2026-05-09-dev-log-5-feature-velocity-and-code-review.md): a nine-feature sprint, four final gap-fillers, a multi-agent review pipeline, and the fixes that came out of it.
 
@@ -19,7 +19,7 @@ This post covers everything since [Dev Log #5](./2026-05-09-dev-log-5-feature-ve
 
 ## The Final Sprint: Nine Features in One PR
 
-PR #9 landed thirteen features from the original PRD. Here's what shipped:
+PR #9 landed nine of the original PRD features. Here's what shipped:
 
 **Forgot Password** — the flow most apps ship first and we shipped last. Email → reset link → `/reset-password` → new password via `supabase.auth.updateUser()`. Works.
 
@@ -84,25 +84,19 @@ After PR #9 merged, I ran a gap analysis against the original PRD. Most of it wa
 
 ## The Five-Agent Review Pipeline
 
-With all features implemented, I ran five specialized review agents against the PR simultaneously:
+With all features implemented, I ran five specialized review agents against the PR simultaneously. Each is a separate GitHub Copilot Agent session with a role-specific system prompt — code reviewer, security auditor, DevOps engineer, QA engineer, and architect — all running concurrently against the same branch. Running them in parallel takes the same wall-clock time as running one, and each brings a completely different mental model to the same code.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                      PR #10 Branch                           │
-└─────────┬──────────┬──────────┬──────────┬──────────────────┘
-          │          │          │          │
-          ▼          ▼          ▼          ▼          ▼
-    code-review   Security   DevOps      QA        Developer
-                 Reviewer   Reviewer  Reviewer    Architect
-          │          │          │          │          │
-          └──────────┴──────────┴──────────┴──────────┘
-                               │
-                     Triage → Fix → Commit
-```
+| Agent | Focus |
+|-------|-------|
+| Code Reviewer | Data flow, error handling, correctness |
+| Security Reviewer | RLS, SECURITY DEFINER, auth guards, open redirects |
+| DevOps Reviewer | Docker, CI pipeline, Bicep IaC, deployment correctness |
+| QA Reviewer | Test coverage, game rules correctness, edge cases |
+| Developer Architect | Conventions, type system, state management patterns |
 
 ![Team reviewing code together](./images/2026-05-10-dev-log-6-v1-complete-agent-reviews/review-process.jpg)
 
-Each agent reviews from a different angle: data flow and error handling, security and RLS, deployment pipeline, test coverage and game rules, architecture and conventions. Running them in parallel takes the same wall-clock time as running one.
+Each agent delivers findings independently — no cross-contamination. I then triage, fix, and commit in a single pass.
 
 ---
 
@@ -138,9 +132,11 @@ Here are the findings that would have made it to production:
 
 ## What's Next
 
-V1 is merged. The five-agent review closed the loop. The prod app has thirteen features that work correctly, a migration stack that's solid, and a CI pipeline that doesn't deploy when you fix a typo in the docs.
+V1 is merged. The five-agent review caught what I would have missed. The prod app has thirteen features that work correctly, a migration stack that's solid, and a CI pipeline that doesn't deploy when you fix a typo in the docs.
 
-What comes after V1? The PRD has a v2 section — campaign-level features, dice roller integration, more referee tools. But first: PR #10 merges, and then we actually play the game.
+First: PR #10 merges, and then we actually play the game.
+
+The PRD has a v2 section — campaign-level features, dice roller integration, more referee tools. That's a problem for next sprint.
 
 ---
 
