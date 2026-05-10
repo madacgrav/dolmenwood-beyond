@@ -156,7 +156,7 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
     setPreparations((prepData ?? []) as DBPreparation[]);
     setSpells((spellData ?? []) as DBSpell[]);
     setLoading(false);
-  }, [supabase, characterId, spellcaster, isGlamour, slotsData]);
+  }, [supabase, characterId, spellcaster, isGlamour, slotsData, readOnly]);
 
   useEffect(() => {
     if (!spellcaster) { setLoading(false); return; }
