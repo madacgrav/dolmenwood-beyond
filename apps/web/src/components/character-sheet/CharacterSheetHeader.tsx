@@ -16,6 +16,7 @@ interface Props {
 
 export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpdate, onBack, readOnly = false }: Props) {
   const supabase = useMemo(() => createClient(), []);
+  const [showMenu, setShowMenu] = useState(false);
   const [hpEditOpen, setHpEditOpen] = useState(false);
   const [hpInputVal, setHpInputVal] = useState('');
   const [xpEditOpen, setXpEditOpen] = useState(false);
@@ -147,19 +148,57 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
             👁 Read-Only View
           </span>
         ) : (
-          <button
-            onClick={onToggleEdit}
-            style={{
-              background: editMode ? 'var(--color-primary)' : 'none',
-              border: editMode ? 'none' : '1px solid var(--color-border)',
-              borderRadius: '8px', cursor: 'pointer',
-              color: editMode ? 'white' : 'var(--color-text-muted)',
-              fontSize: '0.85rem', padding: '0.375rem 0.75rem',
-              minHeight: '44px', display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-            }}
-          >
-            {editMode ? '✓ Done' : '✏️ Edit'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', position: 'relative' }}>
+            <button
+              onClick={onToggleEdit}
+              style={{
+                background: editMode ? 'var(--color-primary)' : 'none',
+                border: editMode ? 'none' : '1px solid var(--color-border)',
+                borderRadius: '8px', cursor: 'pointer',
+                color: editMode ? 'white' : 'var(--color-text-muted)',
+                fontSize: '0.85rem', padding: '0.375rem 0.75rem',
+                minHeight: '44px', display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+              }}
+            >
+              {editMode ? '✓ Done' : '✏️ Edit'}
+            </button>
+            <button
+              onClick={() => setShowMenu(m => !m)}
+              aria-label="More options"
+              style={{
+                background: 'none', border: '1px solid var(--color-border)', borderRadius: '8px',
+                cursor: 'pointer', color: 'var(--color-text-muted)',
+                fontSize: '1.1rem', padding: '0.375rem 0.5rem',
+                minHeight: '44px', minWidth: '44px',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              ⋮
+            </button>
+            {showMenu && (
+              <>
+                <div onClick={() => setShowMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 98 }} />
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: '0.25rem',
+                  backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)',
+                  borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                  zIndex: 99, minWidth: '180px', overflow: 'hidden',
+                }}>
+                  <button
+                    onClick={() => { setShowMenu(false); router.push(`/characters/${character.id}/level-up-log`); }}
+                    style={{
+                      width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none',
+                      textAlign: 'left', cursor: 'pointer', color: 'var(--color-text)',
+                      fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      minHeight: '44px',
+                    }}
+                  >
+                    📜 Level Up History
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
 
