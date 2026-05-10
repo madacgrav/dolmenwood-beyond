@@ -1,0 +1,214 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.43.8.12551",
+      "templateHash": "11695797367653037789"
+    }
+  },
+  "parameters": {
+    "name": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the App Service (web app)"
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Tags to apply to resources"
+      }
+    },
+    "planName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the App Service Plan"
+      }
+    },
+    "planSku": {
+      "type": "object",
+      "defaultValue": {
+        "name": "B2",
+        "tier": "Basic",
+        "capacity": 1
+      },
+      "metadata": {
+        "description": "SKU for the App Service Plan"
+      }
+    },
+    "dockerImage": {
+      "type": "string",
+      "metadata": {
+        "description": "Docker image to deploy, e.g. myacr.azurecr.io/dolmenwood-web:latest"
+      }
+    },
+    "acrLoginServer": {
+      "type": "string",
+      "metadata": {
+        "description": "Login server of the ACR"
+      }
+    },
+    "acrId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource ID of the ACR for pull access"
+      }
+    },
+    "appInsightsConnectionString": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights connection string"
+      }
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "metadata": {
+        "description": "Key Vault URI"
+      }
+    },
+    "supabaseUrl": {
+      "type": "string",
+      "metadata": {
+        "description": "Supabase project URL (non-secret, injected as app setting)"
+      }
+    }
+  },
+  "variables": {
+    "acrPullRoleId": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
+    "acrName": "[last(split(parameters('acrId'), '/'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('planName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "linux",
+      "sku": "[parameters('planSku')]",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('name')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "app,linux,container",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('planName'))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "[format('DOCKER|{0}', parameters('dockerImage'))]",
+          "acrUseManagedIdentityCreds": true,
+          "alwaysOn": true,
+          "minTlsVersion": "1.2",
+          "http20Enabled": true,
+          "appSettings": [
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            },
+            {
+              "name": "DOCKER_REGISTRY_SERVER_URL",
+              "value": "[format('https://{0}', parameters('acrLoginServer'))]"
+            },
+            {
+              "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+              "value": "[parameters('appInsightsConnectionString')]"
+            },
+            {
+              "name": "NEXT_PUBLIC_SUPABASE_URL",
+              "value": "[parameters('supabaseUrl')]"
+            },
+            {
+              "name": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+              "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/supabase-anon-key/)', parameters('keyVaultUri'))]"
+            },
+            {
+              "name": "SUPABASE_SERVICE_ROLE_KEY",
+              "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/supabase-service-role-key/)', parameters('keyVaultUri'))]"
+            },
+            {
+              "name": "WORDPRESS_API_URL",
+              "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/wordpress-api-url/)', parameters('keyVaultUri'))]"
+            },
+            {
+              "name": "WORDPRESS_APP_PASSWORD",
+              "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/wordpress-app-password/)', parameters('keyVaultUri'))]"
+            },
+            {
+              "name": "WORDPRESS_USERNAME",
+              "value": "[format('@Microsoft.KeyVault(SecretUri={0}secrets/wordpress-username/)', parameters('keyVaultUri'))]"
+            },
+            {
+              "name": "NODE_ENV",
+              "value": "production"
+            },
+            {
+              "name": "PORT",
+              "value": "3000"
+            },
+            {
+              "name": "WEBSITES_PORT",
+              "value": "3000"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('planName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))]",
+      "name": "[guid(parameters('acrId'), resourceId('Microsoft.Web/sites', parameters('name')), variables('acrPullRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('acrPullRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "webAppId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Web/sites', parameters('name'))]"
+    },
+    "webAppName": {
+      "type": "string",
+      "value": "[parameters('name')]"
+    },
+    "webAppUrl": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01').defaultHostName)]"
+    },
+    "principalId": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Web/sites', parameters('name')), '2023-01-01', 'full').identity.principalId]"
+    },
+    "appServicePlanId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Web/serverfarms', parameters('planName'))]"
+    }
+  }
+}

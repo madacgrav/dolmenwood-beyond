@@ -82,6 +82,18 @@ export interface Character {
   updatedAt: string;
 }
 
+export interface SessionNote {
+  id: string;
+  date: string;
+  text: string;
+}
+
+export interface PersonOfNote {
+  id: string;
+  name: string;
+  note: string;
+}
+
 export interface CharacterCampaignData {
   characterId: string;
   campaignId: string;
@@ -209,3 +221,14 @@ export interface SkillTarget {
 export interface SpellSlotTable {
   [rank: number]: number;
 }
+
+/**
+ * Character extended with optional notes fields stored as JSONB columns.
+ * Used across the character sheet, view page, and sub-components so that
+ * a single canonical definition is shared rather than duplicated per file.
+ */
+export type CharacterWithNotes = Character & {
+  notes?: string;
+  sessionNotes?: SessionNote[];
+  peopleOfNote?: PersonOfNote[];
+};

@@ -14,6 +14,8 @@ import {
   isSpellcaster,
   getXPThresholdForNextLevel,
   getLevelUpChanges,
+  rollDie,
+  type DieType,
 } from '@dolmenwood/rules-engine';
 import type { LevelUpChange } from '@dolmenwood/rules-engine';
 
@@ -222,7 +224,7 @@ function HPRollStep({
   useEffect(() => {
     let innerTimer: ReturnType<typeof setTimeout>;
     const timer = setTimeout(() => {
-      const rolled = Math.floor(Math.random() * hitDie) + 1;
+      const rolled = rollDie(hitDie as DieType);
       setRoll(rolled);
       setRolling(true);
 

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import type { Character, AbilityScores } from '@dolmenwood/types';
+import type { AbilityScores, CharacterWithNotes, Kindred, CharacterClass } from '@dolmenwood/types';
 import {
   getAbilityModifier, getPrimeAbilities, getSaveTargets,
   getAttackBonus, calculateAC, calculateSpeed,
@@ -9,8 +9,6 @@ import {
 } from '@dolmenwood/rules-engine';
 import type { SkillEntry } from '@dolmenwood/rules-engine';
 import { createClient } from '@/lib/supabase/client';
-
-type CharacterWithNotes = Character & { notes?: string };
 
 interface DBRetainer {
   id: string;
@@ -32,6 +30,7 @@ interface Props {
   character: CharacterWithNotes;
   editMode: boolean;
   onUpdate: (updates: Partial<CharacterWithNotes>) => void;
+  readOnly?: boolean;
 }
 
 const ABILITY_KEYS: { key: keyof AbilityScores; abbr: string; label: string }[] = [
@@ -66,7 +65,10 @@ function StatPill({ label, value, color }: { label: string; value: string | numb
   );
 }
 
-export function StatsTab({ character, editMode, onUpdate }: Props) {
+const KINDREDS: Kindred[] = ['Human', 'Breggle', 'Elf', 'Grimalkin', 'Mossling', 'Woodgrue'];
+const CHARACTER_CLASSES: CharacterClass[] = ['Bard', 'Cleric', 'Enchanter', 'Fighter', 'Friar', 'Hunter', 'Knight', 'Magician', 'Thief'];
+
+export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const primes = getPrimeAbilities(character.characterClass);
   const saves = getSaveTargets(character.characterClass, character.level);
@@ -90,6 +92,10 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
     morale: 7, loyalty: loyaltyBase, wage_type: 'daily', wage_amount: 1,
   });
   const [expandedRetainer, setExpandedRetainer] = useState<string | null>(null);
+  const [promotingRetainer, setPromotingRetainer] = useState<string | null>(null);
+  const [promoteLoading, setPromoteLoading] = useState(false);
+  const [promoteSuccess, setPromoteSuccess] = useState<{ name: string; charId: string } | null>(null);
+  const [promoteError, setPromoteError] = useState<string>('');
 
   // Skills
   const skills = useMemo(
@@ -134,6 +140,45 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
     }
   }
 
+  async function promoteRetainer(r: DBRetainer) {
+    setPromoteLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: newChar, error: insertErr } = await supabase.from('characters').insert({
+        owner_id: user.id,
+        name: r.name,
+        kindred: r.kindred,
+        character_class: r.character_class,
+        level: r.level,
+        xp: 0,
+        alignment: 'neutral',
+        ability_scores: { str: 10, int: 10, wis: 10, dex: 10, con: 10, cha: 10 },
+        hp_current: r.hp_current,
+        hp_max: r.hp_max,
+        is_active: true,
+      }).select().single();
+      if (insertErr || !newChar) {
+        setPromoteError(insertErr?.message ?? 'Failed to promote retainer. Please try again.');
+        setPromoteLoading(false);
+        return;
+      }
+      await supabase.from('retainers').update({ is_promoted_to_pc: true }).eq('id', r.id);
+      setRetainers(prev => prev.filter(x => x.id !== r.id));
+      setPromotingRetainer(null);
+      setPromoteSuccess({ name: r.name, charId: (newChar as Record<string, string>).id! });
+      setTimeout(() => setPromoteSuccess(null), 6000);
+    } finally {
+      setPromoteLoading(false);
+    }
+  }
+
+  function handlePromoteClick(id: string) {
+    setExpandedRetainer(id);
+    setPromotingRetainer(id);
+    setPromoteError('');
+  }
+
   async function updateRetainerHP(id: string, delta: number) {
     const r = retainers.find(x => x.id === id);
     if (!r) return;
@@ -157,7 +202,7 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
     onUpdate({ abilityScores: editScores });
   }
 
-  const scores = editMode ? editScores : character.abilityScores;
+  const scores = (editMode && !readOnly) ? editScores : character.abilityScores;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -189,7 +234,7 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
                   <span style={{ position: 'absolute', top: 4, right: 6, fontSize: '0.6rem', color: 'var(--color-gold)', fontWeight: '700' }}>★</span>
                 )}
                 <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', fontWeight: '700', letterSpacing: '0.06em' }}>{abbr}</span>
-                {editMode ? (
+                {(editMode && !readOnly) ? (
                   <input
                     type="number"
                     min={3} max={18}
@@ -361,6 +406,7 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
                         ))}
                       </div>
                       {/* HP controls */}
+                      {!readOnly && (
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>HP:</span>
                         {[-1, 1].map(d => (
@@ -371,15 +417,24 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
                         ))}
                         <span style={{ fontSize: '0.85rem', fontWeight: '600', color: hpColor }}>{r.hp_current} / {r.hp_max}</span>
                       </div>
+                      )}
                       {/* Wage */}
                       <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
                         Wage: {r.wage_amount} gp/{r.wage_type === 'daily' ? 'day' : 'XP share'}
                         {' · '}Base Loyalty: {loyaltyBase}
                       </div>
-                      <button onClick={() => dismissRetainer(r.id)}
-                        style={{ padding: '0.375rem 0.875rem', borderRadius: '6px', border: '1px solid var(--color-danger)', backgroundColor: 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg))', color: 'var(--color-danger)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', minHeight: '36px' }}>
-                        Dismiss retainer
-                      </button>
+                      {!readOnly && (
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button onClick={() => handlePromoteClick(r.id)}
+                          style={{ padding: '0.375rem 0.875rem', borderRadius: '6px', border: '1px solid var(--color-gold)', backgroundColor: 'color-mix(in srgb, var(--color-gold) 10%, var(--color-bg))', color: 'var(--color-gold)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', minHeight: '36px' }}>
+                          ⭐ Promote to Character
+                        </button>
+                        <button onClick={() => dismissRetainer(r.id)}
+                          style={{ padding: '0.375rem 0.875rem', borderRadius: '6px', border: '1px solid var(--color-danger)', backgroundColor: 'color-mix(in srgb, var(--color-danger) 10%, var(--color-bg))', color: 'var(--color-danger)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600', minHeight: '36px' }}>
+                          Dismiss retainer
+                        </button>
+                      </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -395,7 +450,7 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
         )}
 
         {/* Add retainer form */}
-        {showAddRetainer && (
+        {!readOnly && showAddRetainer && (
           <div style={{ marginTop: '0.75rem', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-primary)', borderRadius: '10px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
             <h4 style={{ margin: 0, fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.875rem', color: 'var(--color-text)' }}>New Retainer</h4>
             <input type="text" placeholder="Name" value={newRetainer.name} onChange={e => setNewRetainer(p => ({ ...p, name: e.target.value }))}
@@ -405,14 +460,14 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
                 <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Kindred</label>
                 <select value={newRetainer.kindred} onChange={e => setNewRetainer(p => ({ ...p, kindred: e.target.value }))}
                   style={{ width: '100%', padding: '0.4rem 0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '40px' }}>
-                  {['Human', 'Breggle', 'Elf', 'Grimalkin', 'Mossling', 'Woodgrue'].map(k => <option key={k}>{k}</option>)}
+                  {KINDREDS.map(k => <option key={k}>{k}</option>)}
                 </select>
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Class</label>
                 <select value={newRetainer.character_class} onChange={e => setNewRetainer(p => ({ ...p, character_class: e.target.value }))}
                   style={{ width: '100%', padding: '0.4rem 0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '40px' }}>
-                  {['Fighter', 'Thief', 'Cleric', 'Magician', 'Bard', 'Enchanter', 'Friar', 'Hunter', 'Knight'].map(c => <option key={c}>{c}</option>)}
+                  {CHARACTER_CLASSES.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
             </div>
@@ -460,7 +515,7 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
           </div>
         )}
 
-        {retainers.length < maxRetainers && !showAddRetainer && (
+        {!readOnly && retainers.length < maxRetainers && !showAddRetainer && (
           <button
             onClick={() => setShowAddRetainer(true)}
             style={{ marginTop: '0.625rem', width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px dashed var(--color-border)', backgroundColor: 'transparent', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '0.85rem', minHeight: '44px' }}
@@ -469,6 +524,49 @@ export function StatsTab({ character, editMode, onUpdate }: Props) {
           </button>
         )}
       </section>
+
+      {/* Promote confirmation modal */}
+      {promotingRetainer && (() => {
+        const r = retainers.find(x => x.id === promotingRetainer);
+        if (!r) return null;
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+            <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '1.5rem', maxWidth: '360px', width: '100%' }}>
+              <h3 style={{ margin: '0 0 0.75rem', fontFamily: 'var(--font-display), Georgia, serif', color: 'var(--color-gold)', fontSize: '1.1rem' }}>⭐ Promote to Character</h3>
+              <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: 'var(--color-text)', lineHeight: 1.5 }}>
+                Promote <strong>{r.name}</strong> to a full player character? A new character sheet will be created with their current stats.
+              </p>
+              {promoteError && (
+                <p style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: 'var(--color-danger)', lineHeight: 1.4 }}>
+                  ⚠ {promoteError}
+                </p>
+              )}
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button onClick={() => setPromotingRetainer(null)} disabled={promoteLoading}
+                  style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', cursor: 'pointer', fontSize: '0.9rem', minHeight: '44px' }}>
+                  Cancel
+                </button>
+                <button onClick={() => promoteRetainer(r)} disabled={promoteLoading}
+                  style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--color-gold)', color: '#1a1a00', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '700', minHeight: '44px', opacity: promoteLoading ? 0.7 : 1 }}>
+                  {promoteLoading ? 'Promoting…' : 'Promote!'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Promote success toast */}
+      {promoteSuccess && (
+        <div style={{ position: 'fixed', bottom: '5.5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 200, backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-gold)', borderRadius: '10px', padding: '0.75rem 1.25rem', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', gap: '0.75rem', maxWidth: 'calc(100vw - 2rem)' }}>
+          <span style={{ fontSize: '1.25rem' }}>⭐</span>
+          <div>
+            <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-gold)' }}>{promoteSuccess.name} promoted!</div>
+            <a href={`/characters/${promoteSuccess.charId}`} style={{ fontSize: '0.8rem', color: 'var(--color-primary)', textDecoration: 'underline' }}>Open character sheet →</a>
+          </div>
+          <button onClick={() => setPromoteSuccess(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.25rem', padding: 0, lineHeight: 1, minHeight: '44px', minWidth: '44px' }}>×</button>
+        </div>
+      )}
     </div>
   );
 }

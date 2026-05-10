@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import type { Character, AbilityScores, SessionNote, PersonOfNote, CharacterWithNotes } from '@dolmenwood/types';
+import type { Character, AbilityScores, CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
 import { CombatTab } from '@/components/character-sheet/CombatTab';
@@ -12,29 +12,61 @@ import { NotesTab } from '@/components/character-sheet/NotesTab';
 
 type TabName = 'stats' | 'combat' | 'inventory' | 'magic' | 'notes';
 
-export default function CharacterSheetPage() {
+/**
+ * /characters/[id]/view — Read-only character sheet for referees.
+ *
+ * Access rules (enforced client-side; DB RLS enforces server-side):
+ *  - If the visitor owns the character → redirect to the normal editable sheet.
+ *  - If the visitor is the referee of a campaign the character belongs to → show read-only sheet.
+ *  - Otherwise → redirect to /characters.
+ */
+export default function CharacterViewPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const router = useRouter();
   const supabase = createClient();
+
   const [character, setCharacter] = useState<CharacterWithNotes | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('stats');
-  const [editMode, setEditMode] = useState(false);
 
   const fetchCharacter = useCallback(async () => {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.push('/sign-in'); return; }
+
+    // Fetch character (RLS ensures only authorised users see it)
     const { data, error } = await supabase
       .from('characters')
       .select('*')
       .eq('id', id)
       .single();
 
-    if (error || !data) {
+    if (error || !data) { router.push('/characters'); return; }
+
+    const row = data as Record<string, unknown>;
+
+    // Owner should use the editable sheet
+    if (row.owner_id === user.id) {
+      router.replace(`/characters/${id}`);
+      return;
+    }
+
+    // Verify referee access: the viewer must be the referee_id of a campaign
+    // that the character's owner belongs to (not just any campaign).
+    const { data: refAccess } = await supabase
+      .from('campaign_members')
+      .select('campaign_id, campaigns!inner(referee_id)')
+      .eq('account_id', row.owner_id as string)
+      .eq('campaigns.referee_id', user.id)
+      .limit(1);
+
+    if (!refAccess || refAccess.length === 0) {
       router.push('/characters');
       return;
     }
 
-    const row = data as Record<string, unknown>;
+    // Map DB row to typed Character
     const mapped: CharacterWithNotes = {
       id: row.id as string,
       ownerId: row.owner_id as string,
@@ -58,30 +90,13 @@ export default function CharacterSheetPage() {
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string,
       notes: row.notes as string | undefined,
-      sessionNotes: (row.session_notes as SessionNote[] | undefined) ?? [],
-      peopleOfNote: (row.people_of_note as PersonOfNote[] | undefined) ?? [],
     };
+
     setCharacter(mapped);
     setLoading(false);
   }, [id, supabase, router]);
 
   useEffect(() => { fetchCharacter(); }, [fetchCharacter]);
-
-  async function handleUpdate(updates: Partial<CharacterWithNotes>) {
-    if (!character) return;
-    setCharacter(prev => prev ? { ...prev, ...updates } : prev);
-    const dbUpdates: Record<string, unknown> = {};
-    if (updates.hpCurrent !== undefined) dbUpdates.hp_current = updates.hpCurrent;
-    if (updates.xp !== undefined) dbUpdates.xp = updates.xp;
-    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
-    if (updates.sessionNotes !== undefined) dbUpdates.session_notes = updates.sessionNotes;
-    if (updates.peopleOfNote !== undefined) dbUpdates.people_of_note = updates.peopleOfNote;
-    if (updates.abilityScores !== undefined) dbUpdates.ability_scores = updates.abilityScores;
-    if (updates.level !== undefined) dbUpdates.level = updates.level;
-    if (updates.hpMax !== undefined) dbUpdates.hp_max = updates.hpMax;
-    if (updates.name !== undefined) dbUpdates.name = updates.name;
-    await supabase.from('characters').update(dbUpdates).eq('id', character.id);
-  }
 
   if (loading) {
     return (
@@ -110,14 +125,18 @@ export default function CharacterSheetPage() {
     { id: 'notes', label: 'Notes' },
   ];
 
+  // No-op update function — read-only view never persists changes
+  const noopUpdate = async () => { /* read-only */ };
+
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh', paddingBottom: '5rem' }}>
       <CharacterSheetHeader
         character={character}
-        editMode={editMode}
-        onToggleEdit={() => setEditMode(e => !e)}
-        onUpdate={handleUpdate}
-        onBack={() => router.push('/characters')}
+        editMode={false}
+        onToggleEdit={() => { /* no-op */ }}
+        onUpdate={noopUpdate}
+        onBack={() => router.back()}
+        readOnly
       />
       <div style={{
         position: 'sticky', top: 0, zIndex: 10,
@@ -150,11 +169,11 @@ export default function CharacterSheetPage() {
       </div>
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
-        {activeTab === 'stats' && <StatsTab character={character} editMode={editMode} onUpdate={handleUpdate} />}
-        {activeTab === 'combat' && <CombatTab character={character} characterId={id} />}
-        {activeTab === 'inventory' && <InventoryTab characterId={id} ownerId={character.ownerId} />}
-        {activeTab === 'magic' && <MagicTab character={character} characterId={id} />}
-        {activeTab === 'notes' && <NotesTab character={character} onUpdate={handleUpdate} />}
+        {activeTab === 'stats' && <StatsTab character={character} editMode={false} onUpdate={noopUpdate} readOnly />}
+        {activeTab === 'combat' && <CombatTab character={character} characterId={id} readOnly />}
+        {activeTab === 'inventory' && <InventoryTab characterId={id} ownerId={character.ownerId} readOnly />}
+        {activeTab === 'magic' && <MagicTab character={character} characterId={id} readOnly />}
+        {activeTab === 'notes' && <NotesTab character={character} onUpdate={noopUpdate} readOnly />}
       </div>
     </div>
   );

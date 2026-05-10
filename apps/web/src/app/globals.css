@@ -81,6 +81,11 @@ html {
   50%       { opacity: 0.85; box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-gold) 0%, transparent); }
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* Ensure touch targets meet 44px minimum */
 button, [role="button"], a {
   min-height: var(--touch-target);

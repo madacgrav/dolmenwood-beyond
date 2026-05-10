@@ -26,3 +26,19 @@ export function rollFromNotation(notation: string): number {
   const { count, sides } = parseDiceNotation(notation);
   return rollMultiple(count, sides).reduce((a, b) => a + b, 0);
 }
+
+/**
+ * Parse and roll a dice notation string like "2d6+1".
+ */
+export function rollDamage(notation: string): number {
+  const match = notation.match(/^(\d+)d(\d+)([+-]\d+)?$/i);
+  if (!match) return 0;
+  const count = parseInt(match[1] ?? '1', 10);
+  const sides = parseInt(match[2] ?? '6', 10);
+  const modifier = parseInt(match[3] ?? '0', 10);
+  let total = modifier;
+  for (let i = 0; i < count; i++) {
+    total += Math.floor(Math.random() * sides) + 1;
+  }
+  return total;
+}

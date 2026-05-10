@@ -8,3 +8,4 @@ export * from './spells';
 export * from './skills';
 export * from './retainers';
 export * from './dice';
+export * from './combat';
