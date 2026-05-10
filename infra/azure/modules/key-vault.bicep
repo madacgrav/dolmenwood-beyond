@@ -25,7 +25,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     }
     enableRbacAuthorization: true
     enableSoftDelete: true
-    softDeleteRetentionInDays: 30
+    softDeleteRetentionInDays: 7  // Immutable after KV creation — do not change (see Known Issues in plan.md)
     publicNetworkAccess: 'Enabled'
   }
 }
