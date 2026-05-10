@@ -30,6 +30,7 @@ interface CatalogItem {
 interface Props {
   characterId: string;
   ownerId: string;
+  readOnly?: boolean;
 }
 
 const ITEM_TYPES = ['weapon', 'armour', 'gear', 'consumable', 'other'] as const;
@@ -50,7 +51,27 @@ const sectionHead: React.CSSProperties = {
   letterSpacing: '0.08em',
 };
 
-export function InventoryTab({ characterId, ownerId }: Props) {
+// Restock catalog — prices in SP (silver standard: 1 GP = 20 SP, 1 SP = 10 CP)
+interface RestockEntry {
+  name: string;
+  unit: number;    // quantity added per purchase
+  priceSp: number; // price in SP (fractional: 0.05 SP = 0.5 CP ≈ 1 cp)
+  category: string;
+}
+
+const RESTOCK_ITEMS: RestockEntry[] = [
+  { name: 'Arrows',               unit: 20, priceSp: 1,    category: 'ammo' },
+  { name: 'Crossbow Quarrels',    unit: 20, priceSp: 2,    category: 'ammo' },
+  { name: 'Sling Stones',         unit: 20, priceSp: 0.25, category: 'ammo' },
+  { name: 'Oil Flask',            unit: 1,  priceSp: 1,    category: 'gear' },
+  { name: 'Torch',                unit: 1,  priceSp: 0.05, category: 'gear' },
+  { name: 'Preserved Rations',    unit: 1,  priceSp: 1,    category: 'gear' },
+  { name: 'Waterskin Refill',     unit: 1,  priceSp: 0.05, category: 'gear' },
+  { name: 'Horse Feed (per day)', unit: 1,  priceSp: 0.25, category: 'gear' },
+  { name: 'Dog Feed (per day)',   unit: 1,  priceSp: 0.10, category: 'gear' },
+];
+
+export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState<DBInventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +93,14 @@ export function InventoryTab({ characterId, ownerId }: Props) {
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogLoading, setCatalogLoading] = useState(false);
 
-  const isOwner = currentUserId === ownerId;
+  // Restock state
+  const [showRestock, setShowRestock] = useState(false);
+  const [restockQtys, setRestockQtys] = useState<Record<string, number>>({});
+  const [restockLoading, setRestockLoading] = useState(false);
+  const [restockSuccess, setRestockSuccess] = useState(false);
+  const [restockError, setRestockError] = useState('');
+
+  const isOwner = !readOnly && currentUserId === ownerId;
 
   const fetchBankBalance = useCallback(async () => {
     const { data } = await supabase
@@ -231,6 +259,98 @@ export function InventoryTab({ characterId, ownerId }: Props) {
     await supabase.from('character_inventory').delete().eq('id', id);
   }
 
+  // Restock helpers
+  function restockTotalSp(): number {
+    return RESTOCK_ITEMS.reduce((sum, entry) => {
+      const qty = restockQtys[entry.name] ?? 0;
+      return sum + qty * entry.priceSp;
+    }, 0);
+  }
+
+  /** Total SP value of coins on hand (1 GP = 20 SP, 1 CP = 0.1 SP) */
+  function totalSpOnHand(c: { gp: number; sp: number; cp: number }): number {
+    return c.gp * 20 + c.sp + c.cp / 10;
+  }
+
+  /** Deduct amountSp from coin purse, returning updated coin counts */
+  function deductSp(
+    current: { gp: number; sp: number; cp: number },
+    amountSp: number,
+  ): { gp: number; sp: number; cp: number } {
+    // Work in CP to avoid floating-point drift
+    const totalCp = current.gp * 200 + current.sp * 10 + current.cp;
+    const costCp = Math.round(amountSp * 10);
+    const remainCp = Math.max(0, totalCp - costCp);
+    const gp = Math.floor(remainCp / 200);
+    const spRem = Math.floor((remainCp % 200) / 10);
+    const cp = remainCp % 10;
+    return { gp, sp: spRem, cp };
+  }
+
+  async function handleRestock(forceConfirm = false) {
+    const totalSp = restockTotalSp();
+    if (totalSp === 0) return;
+    const available = totalSpOnHand(coins);
+    if (totalSp > available && !forceConfirm) {
+      setRestockError('insufficient');
+      return;
+    }
+    setRestockLoading(true);
+    setRestockError('');
+    try {
+      for (const entry of RESTOCK_ITEMS) {
+        const qty = restockQtys[entry.name] ?? 0;
+        if (qty <= 0) continue;
+        const totalQty = qty * entry.unit;
+        const existing = items.find(
+          i => i.item_name.toLowerCase() === entry.name.toLowerCase(),
+        );
+        if (existing) {
+          const newQty = existing.quantity + totalQty;
+          await supabase.from('character_inventory').update({ quantity: newQty }).eq('id', existing.id);
+          setItems(prev => prev.map(i => i.id === existing.id ? { ...i, quantity: newQty } : i));
+        } else {
+          const payload = {
+            character_id: characterId,
+            item_name: entry.name,
+            item_type: entry.category === 'ammo' ? 'consumable' : 'gear',
+            quantity: totalQty,
+            weight_coins: 0,
+            location: 'stowed',
+          };
+          const { data, error } = await supabase
+            .from('character_inventory')
+            .insert(payload)
+            .select()
+            .single();
+          if (!error && data) {
+            setItems(prev => [
+              ...prev,
+              {
+                ...(data as DBInventoryItem),
+                location: ((data as Record<string, unknown>).location as DBInventoryItem['location']) ?? 'stowed',
+              },
+            ]);
+          }
+        }
+      }
+      if (totalSp > 0) {
+        const newCoins = deductSp(coins, totalSp);
+        await saveCoins(newCoins);
+        setCoins(newCoins);
+      }
+      setRestockQtys({});
+      setRestockSuccess(true);
+      setTimeout(() => {
+        setRestockSuccess(false);
+        setShowRestock(false);
+      }, 1500);
+    } catch {
+      setRestockError('error');
+    }
+    setRestockLoading(false);
+  }
+
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -375,6 +495,29 @@ export function InventoryTab({ characterId, ownerId }: Props) {
           )}
         </div>
       </section>
+
+      {/* Restock button + Item list */}
+      {isOwner && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-0.75rem' }}>
+          <button
+            onClick={() => {
+              setShowRestock(true);
+              setRestockError('');
+              setRestockSuccess(false);
+              setRestockQtys({});
+            }}
+            style={{
+              padding: '0.375rem 0.875rem', borderRadius: '8px',
+              border: '1px solid var(--color-border)',
+              backgroundColor: 'var(--color-surface)', color: 'var(--color-primary)',
+              fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer',
+              minHeight: '44px', display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+            }}
+          >
+            🛒 Restock
+          </button>
+        </div>
+      )}
 
       {/* Item list — grouped by location */}
       {(['equipped', 'stowed', 'tiny'] as const).map(loc => {
@@ -588,6 +731,212 @@ export function InventoryTab({ characterId, ownerId }: Props) {
         >
           {showAddForm ? '✕' : '⊕'}
         </button>
+      )}
+
+      {/* Restock bottom-sheet modal */}
+      {showRestock && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 50,
+            backgroundColor: 'rgba(0,0,0,0.55)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+          }}
+          onClick={e => { if (e.target === e.currentTarget) setShowRestock(false); }}
+        >
+          <div style={{
+            backgroundColor: 'var(--color-surface)',
+            borderTopLeftRadius: '20px', borderTopRightRadius: '20px',
+            border: '1px solid var(--color-border)',
+            maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+          }}>
+            {/* Sheet header */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '1rem 1.25rem 0.75rem',
+              borderBottom: '1px solid var(--color-border)',
+            }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: '1.1rem', fontWeight: '700', color: 'var(--color-text)' }}>
+                  🛒 Restock Supplies
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.125rem' }}>
+                  You have: {coins.gp} GP, {coins.sp} SP{coins.cp > 0 ? `, ${coins.cp} CP` : ''}
+                  {' '}≈ {totalSpOnHand(coins).toFixed(1)} SP total
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRestock(false)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--color-text-muted)', fontSize: '1.4rem',
+                  padding: '0.25rem', minHeight: '44px', minWidth: '44px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+                aria-label="Close restock"
+              >✕</button>
+            </div>
+
+            {/* Item rows */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '0.75rem 1.25rem' }}>
+              <div style={{
+                display: 'grid', gridTemplateColumns: '1fr auto auto auto',
+                gap: '0.5rem', alignItems: 'center',
+                paddingBottom: '0.5rem', borderBottom: '1px solid var(--color-border)',
+                marginBottom: '0.5rem',
+                fontSize: '0.65rem', color: 'var(--color-text-muted)',
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+              }}>
+                <span>Item</span>
+                <span style={{ textAlign: 'right' }}>Price</span>
+                <span style={{ textAlign: 'center', minWidth: '90px' }}>Qty</span>
+                <span style={{ textAlign: 'right', minWidth: '48px' }}>Total</span>
+              </div>
+
+              {RESTOCK_ITEMS.map(entry => {
+                const qty = restockQtys[entry.name] ?? 0;
+                const subtotal = qty * entry.priceSp;
+                const fmtSp = (sp: number) =>
+                  sp >= 1
+                    ? `${sp.toFixed(sp % 1 === 0 ? 0 : 1)} sp`
+                    : `${Math.round(sp * 10)} cp`;
+                return (
+                  <div key={entry.name} style={{
+                    display: 'grid', gridTemplateColumns: '1fr auto auto auto',
+                    gap: '0.5rem', alignItems: 'center',
+                    padding: '0.5rem 0',
+                    borderBottom: '1px solid color-mix(in srgb, var(--color-border) 50%, transparent)',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text)' }}>{entry.name}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>×{entry.unit} per purchase</div>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', textAlign: 'right' }}>
+                      {fmtSp(entry.priceSp)}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', minWidth: '90px', justifyContent: 'center' }}>
+                      <button
+                        onClick={() => setRestockQtys(q => ({ ...q, [entry.name]: Math.max(0, (q[entry.name] ?? 0) - 1) }))}
+                        disabled={qty <= 0}
+                        style={{
+                          width: '32px', height: '44px', borderRadius: '6px',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-bg)', color: 'var(--color-text)',
+                          fontSize: '1rem', cursor: 'pointer',
+                          opacity: qty <= 0 ? 0.35 : 1,
+                        }}
+                        aria-label={`Decrease ${entry.name}`}
+                      >−</button>
+                      <span style={{
+                        minWidth: '2ch', textAlign: 'center',
+                        fontSize: '1rem', fontWeight: '700',
+                        color: qty > 0 ? 'var(--color-text)' : 'var(--color-text-muted)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>{qty}</span>
+                      <button
+                        onClick={() => setRestockQtys(q => ({ ...q, [entry.name]: (q[entry.name] ?? 0) + 1 }))}
+                        style={{
+                          width: '32px', height: '44px', borderRadius: '6px',
+                          border: '1px solid var(--color-border)',
+                          backgroundColor: 'var(--color-bg)', color: 'var(--color-text)',
+                          fontSize: '1rem', cursor: 'pointer',
+                        }}
+                        aria-label={`Increase ${entry.name}`}
+                      >+</button>
+                    </div>
+                    <span style={{
+                      fontSize: '0.82rem', fontWeight: qty > 0 ? '700' : '400',
+                      color: qty > 0 ? 'var(--color-gold)' : 'var(--color-text-muted)',
+                      textAlign: 'right', minWidth: '48px', whiteSpace: 'nowrap',
+                    }}>
+                      {subtotal > 0 ? fmtSp(subtotal) : '—'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '0.875rem 1.25rem 1.25rem',
+              borderTop: '1px solid var(--color-border)',
+              display: 'flex', flexDirection: 'column', gap: '0.625rem',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>Total</span>
+                <span style={{
+                  fontSize: '1.1rem', fontWeight: '700',
+                  fontFamily: 'var(--font-display), Georgia, serif',
+                  color: restockTotalSp() > totalSpOnHand(coins) ? 'var(--color-danger)' : 'var(--color-gold)',
+                }}>
+                  {restockTotalSp() >= 1
+                    ? `${restockTotalSp().toFixed(restockTotalSp() % 1 === 0 ? 0 : 2)} sp`
+                    : restockTotalSp() > 0
+                      ? `${Math.round(restockTotalSp() * 10)} cp`
+                      : '0 sp'}
+                </span>
+              </div>
+
+              {restockError === 'insufficient' && (
+                <div style={{
+                  padding: '0.625rem', borderRadius: '8px',
+                  backgroundColor: 'color-mix(in srgb, var(--color-danger) 12%, var(--color-bg))',
+                  border: '1px solid var(--color-danger)',
+                  fontSize: '0.82rem', color: 'var(--color-danger)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem',
+                }}>
+                  <span>⚠️ Not enough coin ({totalSpOnHand(coins).toFixed(1)} sp available)</span>
+                  <button
+                    onClick={() => handleRestock(true)}
+                    style={{
+                      padding: '0.25rem 0.625rem', borderRadius: '6px',
+                      border: '1px solid var(--color-danger)',
+                      backgroundColor: 'transparent', color: 'var(--color-danger)',
+                      fontSize: '0.78rem', cursor: 'pointer', whiteSpace: 'nowrap', minHeight: '36px',
+                    }}
+                  >
+                    Proceed anyway
+                  </button>
+                </div>
+              )}
+
+              {restockError === 'error' && (
+                <div style={{ fontSize: '0.82rem', color: 'var(--color-danger)' }}>
+                  Something went wrong. Please try again.
+                </div>
+              )}
+
+              {restockSuccess ? (
+                <div style={{
+                  padding: '0.875rem', borderRadius: '10px', textAlign: 'center',
+                  backgroundColor: 'color-mix(in srgb, var(--color-primary) 15%, var(--color-bg))',
+                  color: 'var(--color-primary)', fontWeight: '700', fontSize: '1rem',
+                }}>
+                  ✓ Restocked!
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleRestock(false)}
+                  disabled={restockLoading || restockTotalSp() === 0}
+                  style={{
+                    padding: '0.875rem', borderRadius: '10px', border: 'none',
+                    backgroundColor: 'var(--color-primary)', color: 'white',
+                    fontWeight: '700', fontSize: '1rem', cursor: 'pointer',
+                    minHeight: '44px',
+                    opacity: restockLoading || restockTotalSp() === 0 ? 0.5 : 1,
+                  }}
+                >
+                  {restockLoading
+                    ? 'Restocking…'
+                    : `Restock (${
+                        restockTotalSp() >= 1
+                          ? `${restockTotalSp().toFixed(restockTotalSp() % 1 === 0 ? 0 : 2)} sp`
+                          : `${Math.round(restockTotalSp() * 10)} cp`
+                      })`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

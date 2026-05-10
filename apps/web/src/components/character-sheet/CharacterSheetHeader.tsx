@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Character } from '@dolmenwood/types';
 import { getXPThresholdForNextLevel, getPrimeAbilities, getXPModifier, getKindredXPBonus, applyXPModifiers } from '@dolmenwood/rules-engine';
+import { createClient } from '@/lib/supabase/client';
 
 type CharacterWithNotes = Character & { notes?: string };
 
@@ -10,15 +11,20 @@ interface Props {
   character: CharacterWithNotes;
   editMode: boolean;
   onToggleEdit: () => void;
-  onUpdate: (updates: Partial<CharacterWithNotes>) => void;
+  onUpdate: (updates: Partial<CharacterWithNotes>) => void | Promise<void>;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
-export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpdate, onBack }: Props) {
+export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpdate, onBack, readOnly = false }: Props) {
+  const supabase = useMemo(() => createClient(), []);
   const [hpEditOpen, setHpEditOpen] = useState(false);
   const [hpInputVal, setHpInputVal] = useState('');
   const [xpEditOpen, setXpEditOpen] = useState(false);
   const [xpInputVal, setXpInputVal] = useState('');
+  const [portraitUrl, setPortraitUrl] = useState<string | null>(character.portraitUrl ?? null);
+  const [portraitUploading, setPortraitUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const nextLevelXP = getXPThresholdForNextLevel(character.characterClass, character.level);
@@ -53,6 +59,31 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
     setXpEditOpen(false);
   }
 
+  async function handlePortraitSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPortraitUploading(true);
+    try {
+      const ext = file.name.split('.').pop() ?? 'jpg';
+      const path = `${character.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('portraits')
+        .upload(path, file, { upsert: true });
+      if (uploadError) {
+        console.error('Portrait upload failed:', uploadError.message);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('portraits').getPublicUrl(path);
+      const publicUrl = urlData.publicUrl;
+      await supabase.from('characters').update({ portrait_url: publicUrl }).eq('id', character.id);
+      setPortraitUrl(publicUrl);
+      await onUpdate({ portraitUrl: publicUrl });
+    } finally {
+      setPortraitUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
   const primes = getPrimeAbilities(character.characterClass);
   const primeScores = primes.map(p => character.abilityScores[p.toLowerCase() as keyof typeof character.abilityScores] ?? 0);
   const xpMod = getXPModifier(primeScores);
@@ -79,36 +110,98 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
         >
           ← Back
         </button>
-        <button
-          onClick={onToggleEdit}
-          style={{
-            background: editMode ? 'var(--color-primary)' : 'none',
-            border: editMode ? 'none' : '1px solid var(--color-border)',
-            borderRadius: '8px', cursor: 'pointer',
-            color: editMode ? 'white' : 'var(--color-text-muted)',
-            fontSize: '0.85rem', padding: '0.375rem 0.75rem',
-            minHeight: '44px', display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
-          }}
-        >
-          {editMode ? '✓ Done' : '✏️ Edit'}
-        </button>
+        {readOnly ? (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+            fontSize: '0.78rem', fontWeight: '600',
+            color: 'var(--color-text-muted)',
+            border: '1px solid var(--color-border)',
+            borderRadius: '8px',
+            padding: '0.375rem 0.75rem',
+            backgroundColor: 'var(--color-surface)',
+          }}>
+            👁 Read-Only View
+          </span>
+        ) : (
+          <button
+            onClick={onToggleEdit}
+            style={{
+              background: editMode ? 'var(--color-primary)' : 'none',
+              border: editMode ? 'none' : '1px solid var(--color-border)',
+              borderRadius: '8px', cursor: 'pointer',
+              color: editMode ? 'white' : 'var(--color-text-muted)',
+              fontSize: '0.85rem', padding: '0.375rem 0.75rem',
+              minHeight: '44px', display: 'inline-flex', alignItems: 'center', gap: '0.375rem',
+            }}
+          >
+            {editMode ? '✓ Done' : '✏️ Edit'}
+          </button>
+        )}
       </div>
 
       {/* Portrait + name row */}
       <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start' }}>
-        {/* Portrait */}
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%', flexShrink: 0,
-          backgroundColor: 'var(--color-primary)',
-          backgroundImage: character.portraitUrl ? `url(${character.portraitUrl})` : undefined,
-          backgroundSize: 'cover', backgroundPosition: 'center',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'white',
-          fontFamily: 'var(--font-display), Georgia, serif',
-          fontSize: '1.75rem', fontWeight: '700',
-        }}>
-          {!character.portraitUrl && initials}
-        </div>
+        {/* Tappable portrait with upload */}
+        <button
+          onClick={() => { if (!readOnly) fileInputRef.current?.click(); }}
+          disabled={portraitUploading || readOnly}
+          aria-label={readOnly ? 'Character portrait' : 'Upload portrait photo'}
+          style={{
+            position: 'relative',
+            width: 64, height: 64, borderRadius: '50%', flexShrink: 0,
+            backgroundColor: 'var(--color-primary)',
+            backgroundImage: portraitUrl ? `url(${portraitUrl})` : undefined,
+            backgroundSize: 'cover', backgroundPosition: 'center',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'white',
+            fontFamily: 'var(--font-display), Georgia, serif',
+            fontSize: '1.75rem', fontWeight: '700',
+            border: readOnly ? '2px solid transparent' : '2px solid var(--color-border)',
+            cursor: readOnly ? 'default' : 'pointer',
+            overflow: 'hidden',
+            padding: 0,
+          }}
+        >
+          {!portraitUrl && !portraitUploading && initials}
+          {portraitUploading && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.55)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '50%',
+            }}>
+              <svg
+                width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="white" strokeWidth="2.5" strokeLinecap="round"
+                style={{ animation: 'spin 0.8s linear infinite' }}
+              >
+                <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
+                <path d="M12 2 a10 10 0 0 1 10 10" />
+              </svg>
+            </div>
+          )}
+          {!portraitUrl && !portraitUploading && !readOnly && (
+            <div style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: '20px', height: '20px',
+              backgroundColor: 'var(--color-bg)',
+              borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '10px', border: '1px solid var(--color-border)',
+            }}>
+              📷
+            </div>
+          )}
+        </button>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handlePortraitSelect}
+        />
 
         {/* Name + bars */}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -125,14 +218,14 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
 
           {/* HP bar */}
           <div
-            style={{ cursor: 'pointer', marginBottom: '0.5rem' }}
-            onClick={() => { setHpEditOpen(o => !o); setXpEditOpen(false); }}
+            style={{ cursor: readOnly ? 'default' : 'pointer', marginBottom: '0.5rem' }}
+            onClick={() => { if (!readOnly) { setHpEditOpen(o => !o); setXpEditOpen(false); } }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '3px' }}>
               <span style={{ color: hpColor, fontWeight: '600' }}>
                 ❤️ {character.hpCurrent} / {character.hpMax} HP
               </span>
-              <span style={{ color: 'var(--color-text-muted)', fontSize: '0.7rem' }}>tap to edit</span>
+              {!readOnly && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.7rem' }}>tap to edit</span>}
             </div>
             <div style={{ height: '8px', borderRadius: '4px', backgroundColor: 'var(--color-border)', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${hpPct * 100}%`, backgroundColor: hpColor, borderRadius: '4px', transition: 'width 0.3s, background-color 0.3s' }} />
@@ -140,7 +233,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
           </div>
 
           {/* HP edit controls */}
-          {hpEditOpen && (
+          {!readOnly && hpEditOpen && (
             <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
               {([-5, -1, 1, 5] as const).map(d => (
                 <button
@@ -179,8 +272,8 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
 
           {/* XP bar */}
           <div
-            style={{ cursor: 'pointer' }}
-            onClick={() => { setXpEditOpen(o => !o); setHpEditOpen(false); }}
+            style={{ cursor: readOnly ? 'default' : 'pointer' }}
+            onClick={() => { if (!readOnly) { setXpEditOpen(o => !o); setHpEditOpen(false); } }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '3px' }}>
               <span style={{ color: 'var(--color-gold)', fontWeight: '600' }}>
@@ -198,7 +291,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
           </div>
 
           {/* XP edit */}
-          {xpEditOpen && (() => {
+          {!readOnly && xpEditOpen && (() => {
             const inputVal = parseInt(xpInputVal, 10);
             const isPositive = !isNaN(inputVal) && inputVal > 0;
             const isNegative = !isNaN(inputVal) && inputVal < 0;
@@ -242,7 +335,7 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
           })()}
 
           {/* Level Up button */}
-          {nextLevelXP > 0 && character.xp >= nextLevelXP && (
+          {!readOnly && nextLevelXP > 0 && character.xp >= nextLevelXP && (
             <button
               onClick={() => router.push(`/characters/${character.id}/level-up`)}
               style={{
