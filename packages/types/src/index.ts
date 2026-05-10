@@ -82,6 +82,18 @@ export interface Character {
   updatedAt: string;
 }
 
+export interface SessionNote {
+  id: string;
+  date: string;
+  text: string;
+}
+
+export interface PersonOfNote {
+  id: string;
+  name: string;
+  note: string;
+}
+
 export interface CharacterCampaignData {
   characterId: string;
   campaignId: string;

@@ -31,7 +31,7 @@ interface DBSpell {
   notes?: string;
 }
 
-interface Props { character: Character; characterId: string; }
+interface Props { character: Character; characterId: string; readOnly?: boolean; }
 
 const SECTION_HEADER: React.CSSProperties = {
   margin: '0 0 0.75rem',
@@ -59,7 +59,7 @@ const SELECT_STYLE: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-export function MagicTab({ character, characterId }: Props) {
+export function MagicTab({ character, characterId, readOnly }: Props) {
   const supabase = useMemo(() => createClient(), []);
 
   const spellcaster = isSpellcaster(character.characterClass);
@@ -102,7 +102,7 @@ export function MagicTab({ character, characterId }: Props) {
     let slots = (slotData ?? []) as DBSpellSlot[];
 
     // Auto-initialise spell_slots rows on first open for non-glamour casters
-    if (slots.length === 0 && spellcaster && !isGlamour && slotsData) {
+    if (slots.length === 0 && spellcaster && !isGlamour && slotsData && !readOnly) {
       const inserts = Object.entries(slotsData)
         .filter(([k]) => !isNaN(Number(k)) && ((slotsData as Record<string, number>)[k] ?? 0) > 0)
         .map(([rank, total]) => ({
@@ -124,7 +124,7 @@ export function MagicTab({ character, characterId }: Props) {
           slots = (newSlots ?? []) as DBSpellSlot[];
         }
       }
-    } else if (slots.length > 0 && spellcaster && !isGlamour && slotsData) {
+    } else if (slots.length > 0 && spellcaster && !isGlamour && slotsData && !readOnly) {
       // Re-sync slots_total after level-up: update any rank whose total has changed
       const updates = slots
         .filter(s => {
@@ -319,7 +319,7 @@ export function MagicTab({ character, characterId }: Props) {
           <h3 style={SECTION_HEADER}>
             {isGlamour ? 'Glamour Circles' : 'Spell Slots'}
           </h3>
-          {!isGlamour && (
+          {!isGlamour && !readOnly && (
             <button
               onClick={handleRest}
               style={{
@@ -367,9 +367,11 @@ export function MagicTab({ character, characterId }: Props) {
                     {circles.map((used, i) => (
                       <button
                         key={i}
-                        onClick={() => toggleSlot(slot, used)}
+                        onClick={() => !readOnly && toggleSlot(slot, used)}
+                        disabled={readOnly}
                         style={{
-                          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                          background: 'none', border: 'none',
+                          cursor: readOnly ? 'default' : 'pointer', padding: 0,
                           fontSize: '1.35rem', color: used ? 'var(--color-gold)' : 'var(--color-border)',
                           minHeight: '44px', minWidth: '28px',
                           lineHeight: 1,
@@ -400,7 +402,7 @@ export function MagicTab({ character, characterId }: Props) {
         <section>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
             <h3 style={SECTION_HEADER}>Today&apos;s Prepared Spells ({preparations.length})</h3>
-            {ranksWithFreeSlots.length > 0 && (
+            {ranksWithFreeSlots.length > 0 && !readOnly && (
               <button
                 onClick={() => {
                   setPrepRank(ranksWithFreeSlots[0]!);
@@ -420,7 +422,7 @@ export function MagicTab({ character, characterId }: Props) {
           </div>
 
           {/* Prepare form */}
-          {showPrepareForm && (
+          {!readOnly && showPrepareForm && (
             <div style={{
               backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-primary)',
               borderRadius: '10px', padding: '1rem', marginBottom: '0.75rem',
@@ -507,7 +509,7 @@ export function MagicTab({ character, characterId }: Props) {
                     Rank {prep.slot_rank} · {prep.is_cast ? 'Cast' : 'Prepared'}
                   </div>
                 </div>
-                {prep.is_cast ? (
+                {!readOnly && (prep.is_cast ? (
                   <button
                     onClick={() => restorePreparation(prep)}
                     title="Restore spell"
@@ -525,7 +527,7 @@ export function MagicTab({ character, characterId }: Props) {
                   >
                     ⚡
                   </button>
-                )}
+                ))}
               </div>
             ))}
           </div>
@@ -538,6 +540,7 @@ export function MagicTab({ character, characterId }: Props) {
           <h3 style={SECTION_HEADER}>
             {isGlamour ? 'Glamours Known' : 'Spell Book'} ({spells.length})
           </h3>
+          {!readOnly && (
           <button
             onClick={() => {
               setNewSpellRank(validRanks[0] ?? 1);
@@ -553,10 +556,11 @@ export function MagicTab({ character, characterId }: Props) {
           >
             + Add Spell
           </button>
+          )}
         </div>
 
         {/* Add spell form */}
-        {showAddSpellForm && (
+        {!readOnly && showAddSpellForm && (
           <div style={{
             backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-primary)',
             borderRadius: '10px', padding: '1rem', marginBottom: '0.75rem',
@@ -637,8 +641,9 @@ export function MagicTab({ character, characterId }: Props) {
               <input
                 type="checkbox"
                 checked={spell.is_memorized}
-                onChange={() => toggleMemorized(spell)}
-                style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--color-gold)' }}
+                onChange={() => !readOnly && toggleMemorized(spell)}
+                disabled={readOnly}
+                style={{ width: '20px', height: '20px', cursor: readOnly ? 'default' : 'pointer', accentColor: 'var(--color-gold)' }}
                 aria-label={`Toggle memorized: ${spell.spell_name}`}
               />
               <div style={{ flex: 1 }}>
@@ -654,6 +659,7 @@ export function MagicTab({ character, characterId }: Props) {
                   {spell.is_memorized && ' · Memorized'}
                 </div>
               </div>
+              {!readOnly && (
               <button
                 onClick={() => deleteSpell(spell.id)}
                 style={{
@@ -665,6 +671,7 @@ export function MagicTab({ character, characterId }: Props) {
               >
                 ✕
               </button>
+              )}
             </div>
           ))}
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
   getXPThresholdForNextLevel,
@@ -14,6 +15,19 @@ import {
 interface Props {
   isReferee: boolean;
   userId: string;
+}
+
+type PackAnimalType = 'Mule' | 'Donkey' | 'Pony' | 'Horse' | 'Ox' | 'Pack Dog';
+
+const PACK_ANIMAL_TYPES: PackAnimalType[] = ['Mule', 'Donkey', 'Pony', 'Horse', 'Ox', 'Pack Dog'];
+
+interface PackAnimal {
+  id: string;
+  name: string;
+  mount_type: PackAnimalType;
+  speed: number;
+  campaign_id: string;
+  owner_id: string;
 }
 
 interface MemberCharacter {
@@ -66,6 +80,7 @@ function canLevelUpAfter(ch: MemberCharacter, gain: number): boolean {
 
 function RefereeView({ userId }: { userId: string }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -74,6 +89,9 @@ function RefereeView({ userId }: { userId: string }) {
   const [createLoading, setCreateLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [xpAwards, setXpAwards] = useState<Record<string, XPAwardState>>({});
+  const [packAnimals, setPackAnimals] = useState<Record<string, PackAnimal[]>>({});
+  const [showAddAnimal, setShowAddAnimal] = useState<Record<string, boolean>>({});
+  const [newAnimal, setNewAnimal] = useState<Record<string, { name: string; mount_type: PackAnimalType; speed: number }>>({});
 
   function xpAward(id: string): XPAwardState {
     return xpAwards[id] ?? defaultXPAward();
@@ -210,6 +228,42 @@ function RefereeView({ userId }: { userId: string }) {
 
     patchXP(campaign.id, { awarding: false, lastAwardAt: base, baseXP: '' });
     await loadCampaigns();
+  }
+
+  function getAnimal(campaignId: string) {
+    return newAnimal[campaignId] ?? { name: '', mount_type: 'Mule' as PackAnimalType, speed: 30 };
+  }
+  function patchAnimal(campaignId: string, patch: Partial<{ name: string; mount_type: PackAnimalType; speed: number }>) {
+    setNewAnimal(prev => ({ ...prev, [campaignId]: { ...getAnimal(campaignId), ...patch } }));
+  }
+
+  async function addPackAnimal(campaignId: string) {
+    const animal = getAnimal(campaignId);
+    if (!animal.name.trim()) return;
+    const { data, error } = await supabase
+      .from('mounts')
+      .insert({
+        owner_id: userId,
+        owner_type: 'party',
+        campaign_id: campaignId,
+        name: animal.name.trim(),
+        mount_type: animal.mount_type,
+        speed: animal.speed,
+        has_full_stats: false,
+      })
+      .select('id, name, mount_type, speed, campaign_id, owner_id')
+      .single();
+    if (!error && data) {
+      setPackAnimals(prev => ({ ...prev, [campaignId]: [...(prev[campaignId] ?? []), data as PackAnimal] }));
+      setShowAddAnimal(prev => ({ ...prev, [campaignId]: false }));
+      patchAnimal(campaignId, { name: '', mount_type: 'Mule', speed: 30 });
+    }
+  }
+
+  async function deletePackAnimal(campaignId: string, animalId: string) {
+    if (!confirm('Remove this pack animal?')) return;
+    setPackAnimals(prev => ({ ...prev, [campaignId]: (prev[campaignId] ?? []).filter(a => a.id !== animalId) }));
+    await supabase.from('mounts').delete().eq('id', animalId);
   }
 
   if (loading) {
@@ -400,7 +454,19 @@ function RefereeView({ userId }: { userId: string }) {
                               : 0;
                             const willLevel = gain > 0 && canLevelUpAfter(ch, gain);
                             return (
-                              <div key={ch.id} style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <div
+                                key={ch.id}
+                                onClick={() => router.push(`/characters/${ch.id}/view`)}
+                                style={{
+                                  fontSize: '0.78rem', color: 'var(--color-text-muted)',
+                                  display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                  cursor: 'pointer', padding: '0.25rem 0.375rem',
+                                  borderRadius: '6px',
+                                  backgroundColor: 'var(--color-bg)',
+                                  border: '1px solid var(--color-border)',
+                                  marginTop: '0.2rem',
+                                }}
+                              >
                                 <span style={{ color: 'var(--color-text)' }}>{ch.name}</span>
                                 {' · '}{ch.character_class} · Lv {ch.level}
                                 {' · '}{ch.xp.toLocaleString()} XP
@@ -410,6 +476,7 @@ function RefereeView({ userId }: { userId: string }) {
                                 {willLevel && (
                                   <span title="Can level up!" style={{ fontSize: '0.8rem' }}>⬆️</span>
                                 )}
+                                <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>👁</span>
                               </div>
                             );
                           })}
@@ -520,6 +587,107 @@ function RefereeView({ userId }: { userId: string }) {
               </div>
             )}
           </div>
+
+          {/* Pack Animals section */}
+          <div style={{ borderTop: '1px solid var(--color-border)' }}>
+            <button
+              onClick={() => setShowAddAnimal(prev => ({ ...prev, [campaign.id]: !prev[campaign.id] }))}
+              style={{
+                width: '100%', padding: '0.625rem 1rem',
+                backgroundColor: 'var(--color-bg)', border: 'none',
+                color: 'var(--color-text-muted)', fontSize: '0.8rem',
+                cursor: 'pointer', textAlign: 'left', minHeight: '44px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}
+            >
+              <span>🐴 Pack Animals ({(packAnimals[campaign.id] ?? []).length})</span>
+              <span>＋</span>
+            </button>
+
+            {/* Existing pack animals */}
+            {(packAnimals[campaign.id] ?? []).length > 0 && (
+              <div style={{ padding: '0 1rem 0.625rem' }}>
+                {(packAnimals[campaign.id] ?? []).map(animal => (
+                  <div key={animal.id} style={{
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    padding: '0.375rem 0.5rem', fontSize: '0.8rem',
+                    backgroundColor: 'var(--color-bg)', borderRadius: '6px',
+                    border: '1px solid var(--color-border)', marginBottom: '0.3rem',
+                  }}>
+                    <span style={{ color: 'var(--color-text)', fontWeight: '600' }}>{animal.name}</span>
+                    <span style={{ color: 'var(--color-text-muted)' }}>·</span>
+                    <span style={{ color: 'var(--color-text-muted)' }}>{animal.mount_type}</span>
+                    <span style={{ color: 'var(--color-text-muted)' }}>·</span>
+                    <span style={{ color: 'var(--color-text-muted)' }}>{animal.speed} ft</span>
+                    <button
+                      onClick={() => deletePackAnimal(campaign.id, animal.id)}
+                      style={{
+                        marginLeft: 'auto', background: 'none', border: 'none',
+                        cursor: 'pointer', color: 'var(--color-danger)',
+                        fontSize: '0.85rem', padding: '0.125rem', minHeight: '28px', minWidth: '28px',
+                      }}
+                      aria-label={`Remove ${animal.name}`}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add pack animal form */}
+            {showAddAnimal[campaign.id] && (
+              <div style={{ padding: '0 1rem 0.875rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  placeholder="Animal name"
+                  value={getAnimal(campaign.id).name}
+                  onChange={e => patchAnimal(campaign.id, { name: e.target.value })}
+                  style={{
+                    padding: '0.4rem 0.625rem', borderRadius: '6px',
+                    border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
+                    color: 'var(--color-text)', fontSize: '0.875rem', minHeight: '40px',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: '0.375rem' }}>
+                  <select
+                    value={getAnimal(campaign.id).mount_type}
+                    onChange={e => patchAnimal(campaign.id, { mount_type: e.target.value as PackAnimalType })}
+                    style={{
+                      flex: 1, padding: '0.4rem 0.5rem', borderRadius: '6px',
+                      border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
+                      color: 'var(--color-text)', fontSize: '0.8rem', minHeight: '40px',
+                    }}
+                  >
+                    {PACK_ANIMAL_TYPES.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                  <input
+                    type="number" min={10} max={60} step={10}
+                    value={getAnimal(campaign.id).speed}
+                    onChange={e => patchAnimal(campaign.id, { speed: parseInt(e.target.value) || 30 })}
+                    style={{
+                      width: '70px', padding: '0.4rem 0.5rem', borderRadius: '6px',
+                      border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)',
+                      color: 'var(--color-text)', fontSize: '0.8rem', minHeight: '40px', boxSizing: 'border-box',
+                    }}
+                  />
+                  <button
+                    onClick={() => addPackAnimal(campaign.id)}
+                    disabled={!getAnimal(campaign.id).name.trim()}
+                    style={{
+                      padding: '0.4rem 0.875rem', borderRadius: '6px', border: 'none',
+                      backgroundColor: !getAnimal(campaign.id).name.trim() ? 'var(--color-border)' : 'var(--color-primary)',
+                      color: 'white', fontSize: '0.8rem', fontWeight: '600',
+                      cursor: !getAnimal(campaign.id).name.trim() ? 'not-allowed' : 'pointer',
+                      minHeight: '40px',
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       ))}
 
@@ -545,6 +713,7 @@ function RefereeView({ userId }: { userId: string }) {
 
 function PlayerView({ userId }: { userId: string }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteCode, setInviteCode] = useState('');
@@ -754,7 +923,15 @@ function PlayerView({ userId }: { userId: string }) {
                     const hpPct = (ch.hp_max ?? 0) > 0 ? Math.max(0, (ch.hp_current ?? 0) / ch.hp_max!) : 0;
                     const hpColor = hpPct > 0.66 ? 'var(--color-primary)' : hpPct > 0.33 ? 'var(--color-gold)' : 'var(--color-danger)';
                     return (
-                      <div key={ch.id} style={{ backgroundColor: 'var(--color-bg)', borderRadius: '8px', padding: '0.5rem 0.625rem', border: '1px solid var(--color-border)' }}>
+                      <div
+                        key={ch.id}
+                        onClick={() => { if (member.account_id === userId) router.push(`/characters/${ch.id}`); }}
+                        style={{
+                          backgroundColor: 'var(--color-bg)', borderRadius: '8px',
+                          padding: '0.5rem 0.625rem', border: '1px solid var(--color-border)',
+                          cursor: member.account_id === userId ? 'pointer' : 'default',
+                        }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flex: 1, minWidth: 0 }}>
                             <span style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</span>
