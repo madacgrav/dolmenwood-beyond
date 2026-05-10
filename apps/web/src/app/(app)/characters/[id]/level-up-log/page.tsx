@@ -12,11 +12,11 @@ interface LevelUpEntry {
   hp_roll: number;
   hp_roll_final: number;
   changes: { field: string; oldValue: unknown; newValue: unknown }[];
-  created_at: string;
+  timestamp: string;
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function formatChange(c: { field: string; oldValue: unknown; newValue: unknown }) {
@@ -36,24 +36,33 @@ export default function LevelUpLogPage() {
   const params = useParams();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
-  const id = params.id as string;
+  const rawId = params.id;
+  const id = Array.isArray(rawId) ? (rawId[0] ?? '') : (rawId ?? '');
 
   const [entries, setEntries] = useState<LevelUpEntry[]>([]);
   const [characterName, setCharacterName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     async function load() {
-      const [{ data: char }, { data: log }] = await Promise.all([
-        supabase.from('characters').select('name').eq('id', id).single(),
-        supabase.from('level_up_log')
-          .select('*')
-          .eq('character_id', id)
-          .order('created_at', { ascending: false }),
-      ]);
-      setCharacterName((char as { name: string } | null)?.name ?? '');
-      setEntries((log ?? []) as LevelUpEntry[]);
-      setLoading(false);
+      try {
+        const [{ data: char, error: charErr }, { data: log, error: logErr }] = await Promise.all([
+          supabase.from('characters').select('name').eq('id', id).single(),
+          supabase.from('level_up_logs')
+            .select('*')
+            .eq('character_id', id)
+            .order('timestamp', { ascending: false }),
+        ]);
+        if (charErr) throw new Error(charErr.message);
+        if (logErr) throw new Error(logErr.message);
+        setCharacterName((char as { name: string } | null)?.name ?? '');
+        setEntries((log ?? []) as LevelUpEntry[]);
+      } catch (e) {
+        setLoadError(e instanceof Error ? e.message : 'Failed to load level-up history');
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [id, supabase]);
@@ -85,6 +94,11 @@ export default function LevelUpLogPage() {
             {[1, 2, 3].map(i => (
               <div key={i} style={{ height: '80px', borderRadius: '10px', backgroundColor: 'var(--color-surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             ))}
+          </div>
+        ) : loadError ? (
+          <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--color-danger)' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>⚠</div>
+            <p style={{ fontSize: '0.95rem' }}>{loadError}</p>
           </div>
         ) : entries.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--color-text-muted)' }}>
@@ -122,7 +136,7 @@ export default function LevelUpLogPage() {
                       {idx === 0 && <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--color-gold)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Latest</span>}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.125rem' }}>
-                      {formatDate(entry.created_at)}
+                      {formatDate(entry.timestamp)}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>

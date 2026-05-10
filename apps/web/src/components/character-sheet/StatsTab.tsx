@@ -5,7 +5,7 @@ import {
   getAbilityModifier, getPrimeAbilities, getSaveTargets,
   getAttackBonus, calculateAC, calculateSpeed,
   getMaxRetainers, getRetainerLoyaltyBase,
-  getAllSkills, rollDie, getKindredLanguages,
+  getAllSkills, rollDie, getKindredLanguages, getKindredACBonus,
 } from '@dolmenwood/rules-engine';
 import type { SkillEntry } from '@dolmenwood/rules-engine';
 import { createClient } from '@/lib/supabase/client';
@@ -73,7 +73,7 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
   const primes = getPrimeAbilities(character.characterClass);
   const saves = getSaveTargets(character.characterClass, character.level);
   const attackBonus = getAttackBonus(character.characterClass, character.level);
-  const ac = calculateAC({ dexScore: character.abilityScores.dex, armorBonus: 0, kindredACBonus: 0, classACBonus: 0, shieldBonus: 0 });
+  const ac = calculateAC({ dexScore: character.abilityScores.dex, armorBonus: 0, kindredACBonus: getKindredACBonus(character.kindred), classACBonus: 0, shieldBonus: 0 });
   const speed = calculateSpeed(0);
   const maxRetainers = getMaxRetainers(character.abilityScores.cha);
   const loyaltyBase = getRetainerLoyaltyBase(character.abilityScores.cha);
@@ -108,10 +108,12 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
   const nativeLanguages = useMemo(() => getKindredLanguages(character.kindred), [character.kindred]);
   const intMod = getAbilityModifier(character.abilityScores.int);
   const bonusLangSlots = Math.max(0, intMod);
+  const rawExtraLanguages = character.extraLanguages;
   const [extraLanguages, setExtraLanguages] = useState<string[]>(
-    character.extraLanguages ?? []
+    Array.isArray(rawExtraLanguages) ? rawExtraLanguages.filter(l => typeof l === 'string') : []
   );
   const [newLang, setNewLang] = useState('');
+  const [langError, setLangError] = useState('');
 
   async function addLanguage() {
     const lang = newLang.trim();
@@ -119,13 +121,23 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
     const updated = [...extraLanguages, lang];
     setExtraLanguages(updated);
     setNewLang('');
-    await supabase.from('characters').update({ extra_languages: updated }).eq('id', character.id);
+    setLangError('');
+    const { error } = await supabase.from('characters').update({ extra_languages: updated }).eq('id', character.id);
+    if (error) {
+      setExtraLanguages(extraLanguages);
+      setLangError('Failed to save language');
+    }
   }
 
   async function removeLanguage(idx: number) {
     const updated = extraLanguages.filter((_, i) => i !== idx);
     setExtraLanguages(updated);
-    await supabase.from('characters').update({ extra_languages: updated }).eq('id', character.id);
+    setLangError('');
+    const { error } = await supabase.from('characters').update({ extra_languages: updated }).eq('id', character.id);
+    if (error) {
+      setExtraLanguages(extraLanguages);
+      setLangError('Failed to remove language');
+    }
   }
 
   function rollSkill(skill: SkillEntry) {
@@ -407,6 +419,9 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
               />
               <button onClick={addLanguage} disabled={!newLang.trim()} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--color-primary)', color: 'white', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '600', minHeight: '44px', opacity: newLang.trim() ? 1 : 0.5 }}>Add</button>
             </div>
+          )}
+          {langError && (
+            <p style={{ margin: '0.25rem 0 0', fontSize: '0.78rem', color: 'var(--color-danger)' }}>{langError}</p>
           )}
         </div>
       </section>

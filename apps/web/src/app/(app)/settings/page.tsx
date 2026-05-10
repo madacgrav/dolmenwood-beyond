@@ -58,6 +58,7 @@ export default function SettingsPage() {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
@@ -137,7 +138,7 @@ export default function SettingsPage() {
     try {
       const { data: chars, error: cErr } = await supabase
         .from('characters')
-        .select('*, character_inventory(*), character_spells(*)');
+        .select('*, character_inventory(*), spell_slots(*), spell_preparations(*)');
       if (cErr) throw new Error(cErr.message);
       const json = JSON.stringify({ exportedAt: new Date().toISOString(), characters: chars }, null, 2);
       const blob = new Blob([json], { type: 'application/json' });
@@ -145,8 +146,10 @@ export default function SettingsPage() {
       const a = document.createElement('a');
       a.href = url;
       a.download = `dolmenwood-characters-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
       setExportError(e instanceof Error ? e.message : 'Export failed');
     } finally {
@@ -160,7 +163,8 @@ export default function SettingsPage() {
     try {
       const { error } = await supabase.rpc('delete_my_account');
       if (error) throw new Error(error.message);
-      await supabase.auth.signOut();
+      // Sign out — ignore errors since the account is already deleted
+      await supabase.auth.signOut().catch(() => undefined);
       router.push('/sign-in');
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : 'Failed to delete account');
@@ -385,10 +389,18 @@ export default function SettingsPage() {
               <li>All retainers and mounts</li>
             </ul>
             <p style={{ margin: '0 0 1.25rem', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-danger)' }}>This cannot be undone.</p>
+            <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Type <strong style={{ color: 'var(--color-danger)' }}>DELETE</strong> to confirm:</p>
+            <input
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              disabled={deleting}
+              style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-danger)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', marginBottom: '1rem', boxSizing: 'border-box', outline: 'none' }}
+            />
             {deleteError && <p style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: 'var(--color-danger)' }}>⚠ {deleteError}</p>}
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button
-                onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }}
+                onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); setDeleteConfirmText(''); }}
                 disabled={deleting}
                 style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', cursor: 'pointer', fontSize: '0.9rem', minHeight: '44px' }}
               >
@@ -396,8 +408,8 @@ export default function SettingsPage() {
               </button>
               <button
                 onClick={handleDeleteAccount}
-                disabled={deleting}
-                style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--color-danger)', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '700', minHeight: '44px', opacity: deleting ? 0.7 : 1 }}
+                disabled={deleting || deleteConfirmText !== 'DELETE'}
+                style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: 'none', backgroundColor: 'var(--color-danger)', color: 'white', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '700', minHeight: '44px', opacity: (deleting || deleteConfirmText !== 'DELETE') ? 0.5 : 1 }}
               >
                 {deleting ? 'Deleting…' : 'Delete Forever'}
               </button>
