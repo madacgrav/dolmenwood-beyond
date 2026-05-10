@@ -1,11 +1,9 @@
 'use client';
 import { useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Character } from '@dolmenwood/types';
+import type { CharacterWithNotes } from '@dolmenwood/types';
 import { getXPThresholdForNextLevel, getPrimeAbilities, getXPModifier, getKindredXPBonus, applyXPModifiers } from '@dolmenwood/rules-engine';
 import { createClient } from '@/lib/supabase/client';
-
-type CharacterWithNotes = Character & { notes?: string };
 
 interface Props {
   character: CharacterWithNotes;

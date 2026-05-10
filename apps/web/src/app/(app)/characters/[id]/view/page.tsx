@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import type { Character, AbilityScores } from '@dolmenwood/types';
+import type { Character, AbilityScores, CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
 import { CombatTab } from '@/components/character-sheet/CombatTab';
@@ -11,7 +11,6 @@ import { MagicTab } from '@/components/character-sheet/MagicTab';
 import { NotesTab } from '@/components/character-sheet/NotesTab';
 
 type TabName = 'stats' | 'combat' | 'inventory' | 'magic' | 'notes';
-type CharacterWithNotes = Character & { notes?: string };
 
 /**
  * /characters/[id]/view — Read-only character sheet for referees.
@@ -34,7 +33,7 @@ export default function CharacterViewPage() {
   const fetchCharacter = useCallback(async () => {
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push('/login'); return; }
+    if (!user) { router.push('/sign-in'); return; }
 
     // Fetch character (RLS ensures only authorised users see it)
     const { data, error } = await supabase
@@ -53,15 +52,16 @@ export default function CharacterViewPage() {
       return;
     }
 
-    // Verify referee access: caller must be referee_id of a campaign
-    // that contains the character's owner
-    const { data: campaigns } = await supabase
-      .from('campaigns')
-      .select('id')
-      .eq('referee_id', user.id)
+    // Verify referee access: the viewer must be the referee_id of a campaign
+    // that the character's owner belongs to (not just any campaign).
+    const { data: refAccess } = await supabase
+      .from('campaign_members')
+      .select('campaign_id, campaigns!inner(referee_id)')
+      .eq('account_id', row.owner_id as string)
+      .eq('campaigns.referee_id', user.id)
       .limit(1);
 
-    if (!campaigns || campaigns.length === 0) {
+    if (!refAccess || refAccess.length === 0) {
       router.push('/characters');
       return;
     }

@@ -221,3 +221,14 @@ export interface SkillTarget {
 export interface SpellSlotTable {
   [rank: number]: number;
 }
+
+/**
+ * Character extended with optional notes fields stored as JSONB columns.
+ * Used across the character sheet, view page, and sub-components so that
+ * a single canonical definition is shared rather than duplicated per file.
+ */
+export type CharacterWithNotes = Character & {
+  notes?: string;
+  sessionNotes?: SessionNote[];
+  peopleOfNote?: PersonOfNote[];
+};

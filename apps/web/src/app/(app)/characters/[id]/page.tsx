@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import type { Character, AbilityScores, SessionNote, PersonOfNote } from '@dolmenwood/types';
+import type { Character, AbilityScores, SessionNote, PersonOfNote, CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
 import { CombatTab } from '@/components/character-sheet/CombatTab';
@@ -11,11 +11,6 @@ import { MagicTab } from '@/components/character-sheet/MagicTab';
 import { NotesTab } from '@/components/character-sheet/NotesTab';
 
 type TabName = 'stats' | 'combat' | 'inventory' | 'magic' | 'notes';
-export type CharacterWithNotes = Character & {
-  notes?: string;
-  sessionNotes?: SessionNote[];
-  peopleOfNote?: PersonOfNote[];
-};
 
 export default function CharacterSheetPage() {
   const params = useParams<{ id: string }>();

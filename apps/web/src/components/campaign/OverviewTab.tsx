@@ -115,6 +115,20 @@ function RefereeView({ userId }: { userId: string }) {
 
     const campaignIds = rawCampaigns.map((c: { id: string }) => c.id);
 
+    // Fetch pack animals (party-owned mounts) for all campaigns in one query
+    const { data: mountsData } = await supabase
+      .from('mounts')
+      .select('id, name, mount_type, speed, campaign_id, owner_id')
+      .in('campaign_id', campaignIds)
+      .eq('owner_type', 'party');
+
+    const grouped = (mountsData ?? []).reduce<Record<string, PackAnimal[]>>((acc, m) => {
+      const cid = m.campaign_id as string | null;
+      if (cid) acc[cid] = [...(acc[cid] ?? []), m as PackAnimal];
+      return acc;
+    }, {});
+    setPackAnimals(grouped);
+
     const { data: rawMembers } = await supabase
       .from('campaign_members')
       .select('campaign_id, account_id, joined_at, accounts(display_name)')

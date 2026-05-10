@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
-import type { Character, AbilityScores } from '@dolmenwood/types';
+import type { AbilityScores, CharacterWithNotes, Kindred, CharacterClass } from '@dolmenwood/types';
 import {
   getAbilityModifier, getPrimeAbilities, getSaveTargets,
   getAttackBonus, calculateAC, calculateSpeed,
@@ -9,8 +9,6 @@ import {
 } from '@dolmenwood/rules-engine';
 import type { SkillEntry } from '@dolmenwood/rules-engine';
 import { createClient } from '@/lib/supabase/client';
-
-type CharacterWithNotes = Character & { notes?: string };
 
 interface DBRetainer {
   id: string;
@@ -67,6 +65,9 @@ function StatPill({ label, value, color }: { label: string; value: string | numb
   );
 }
 
+const KINDREDS: Kindred[] = ['Human', 'Breggle', 'Elf', 'Grimalkin', 'Mossling', 'Woodgrue'];
+const CHARACTER_CLASSES: CharacterClass[] = ['Bard', 'Cleric', 'Enchanter', 'Fighter', 'Friar', 'Hunter', 'Knight', 'Magician', 'Thief'];
+
 export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const primes = getPrimeAbilities(character.characterClass);
@@ -94,6 +95,7 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
   const [promotingRetainer, setPromotingRetainer] = useState<string | null>(null);
   const [promoteLoading, setPromoteLoading] = useState(false);
   const [promoteSuccess, setPromoteSuccess] = useState<{ name: string; charId: string } | null>(null);
+  const [promoteError, setPromoteError] = useState<string>('');
 
   // Skills
   const skills = useMemo(
@@ -156,7 +158,11 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
         hp_max: r.hp_max,
         is_active: true,
       }).select().single();
-      if (insertErr || !newChar) { setPromoteLoading(false); return; }
+      if (insertErr || !newChar) {
+        setPromoteError(insertErr?.message ?? 'Failed to promote retainer. Please try again.');
+        setPromoteLoading(false);
+        return;
+      }
       await supabase.from('retainers').update({ is_promoted_to_pc: true }).eq('id', r.id);
       setRetainers(prev => prev.filter(x => x.id !== r.id));
       setPromotingRetainer(null);
@@ -170,6 +176,7 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
   function handlePromoteClick(id: string) {
     setExpandedRetainer(id);
     setPromotingRetainer(id);
+    setPromoteError('');
   }
 
   async function updateRetainerHP(id: string, delta: number) {
@@ -453,14 +460,14 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
                 <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Kindred</label>
                 <select value={newRetainer.kindred} onChange={e => setNewRetainer(p => ({ ...p, kindred: e.target.value }))}
                   style={{ width: '100%', padding: '0.4rem 0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '40px' }}>
-                  {['Human', 'Breggle', 'Elf', 'Grimalkin', 'Mossling', 'Woodgrue'].map(k => <option key={k}>{k}</option>)}
+                  {KINDREDS.map(k => <option key={k}>{k}</option>)}
                 </select>
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Class</label>
                 <select value={newRetainer.character_class} onChange={e => setNewRetainer(p => ({ ...p, character_class: e.target.value }))}
                   style={{ width: '100%', padding: '0.4rem 0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.85rem', minHeight: '40px' }}>
-                  {['Fighter', 'Thief', 'Cleric', 'Magician', 'Bard', 'Enchanter', 'Friar', 'Hunter', 'Knight'].map(c => <option key={c}>{c}</option>)}
+                  {CHARACTER_CLASSES.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
             </div>
@@ -529,6 +536,11 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
               <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: 'var(--color-text)', lineHeight: 1.5 }}>
                 Promote <strong>{r.name}</strong> to a full player character? A new character sheet will be created with their current stats.
               </p>
+              {promoteError && (
+                <p style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: 'var(--color-danger)', lineHeight: 1.4 }}>
+                  ⚠ {promoteError}
+                </p>
+              )}
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button onClick={() => setPromotingRetainer(null)} disabled={promoteLoading}
                   style={{ flex: 1, padding: '0.625rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', cursor: 'pointer', fontSize: '0.9rem', minHeight: '44px' }}>
@@ -552,7 +564,7 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
             <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-gold)' }}>{promoteSuccess.name} promoted!</div>
             <a href={`/characters/${promoteSuccess.charId}`} style={{ fontSize: '0.8rem', color: 'var(--color-primary)', textDecoration: 'underline' }}>Open character sheet →</a>
           </div>
-          <button onClick={() => setPromoteSuccess(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.25rem', padding: 0, lineHeight: 1, minHeight: '24px', minWidth: '24px' }}>×</button>
+          <button onClick={() => setPromoteSuccess(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.25rem', padding: 0, lineHeight: 1, minHeight: '44px', minWidth: '44px' }}>×</button>
         </div>
       )}
     </div>

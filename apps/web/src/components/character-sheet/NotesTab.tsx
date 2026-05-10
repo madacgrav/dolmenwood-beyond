@@ -1,12 +1,7 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { Character, SessionNote, PersonOfNote } from '@dolmenwood/types';
+import type { Character, SessionNote, PersonOfNote, CharacterWithNotes } from '@dolmenwood/types';
 
-type CharacterWithNotes = Character & {
-  notes?: string;
-  sessionNotes?: SessionNote[];
-  peopleOfNote?: PersonOfNote[];
-};
 type SaveStatus = 'idle' | 'saving' | 'saved';
 
 interface Props {
@@ -57,7 +52,7 @@ function GeneralNotes({ character, onUpdate, readOnly }: { character: CharacterW
 }
 
 // ── Session Notes ─────────────────────────────────────────────────────────────
-function SessionNotes({ character, onUpdate }: { character: CharacterWithNotes; onUpdate: Props['onUpdate'] }) {
+function SessionNotes({ character, onUpdate, readOnly }: { character: CharacterWithNotes; onUpdate: Props['onUpdate']; readOnly?: boolean }) {
   const notes = character.sessionNotes ?? [];
   const [newText, setNewText] = useState('');
   const [adding, setAdding] = useState(false);
@@ -83,12 +78,14 @@ function SessionNotes({ character, onUpdate }: { character: CharacterWithNotes; 
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <h3 style={{ margin: 0, fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Session Notes</h3>
-        <button onClick={() => setAdding(a => !a)} style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', minHeight: '32px' }}>
-          {adding ? 'Cancel' : '+ New Session'}
-        </button>
+        {!readOnly && (
+          <button onClick={() => setAdding(a => !a)} style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', minHeight: '32px' }}>
+            {adding ? 'Cancel' : '+ New Session'}
+          </button>
+        )}
       </div>
 
-      {adding && (
+      {!readOnly && adding && (
         <div style={{ marginBottom: '1rem', padding: '0.875rem', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px' }}>
           <textarea
             value={newText}
@@ -104,14 +101,18 @@ function SessionNotes({ character, onUpdate }: { character: CharacterWithNotes; 
       )}
 
       {notes.length === 0 && !adding ? (
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', fontStyle: 'italic' }}>No session notes yet. Add one after your next game!</p>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', fontStyle: 'italic' }}>
+          {readOnly ? 'No session notes recorded.' : 'No session notes yet. Add one after your next game!'}
+        </p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {notes.map(note => (
             <div key={note.id} style={{ padding: '0.875rem', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.375rem' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)', fontWeight: '600' }}>{note.date}</span>
-                <button onClick={() => handleDelete(note.id)} aria-label="Delete session note" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1rem', padding: '0', lineHeight: 1, minHeight: '24px', minWidth: '24px' }}>×</button>
+                {!readOnly && (
+                  <button onClick={() => handleDelete(note.id)} aria-label="Delete session note" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1rem', padding: '0', lineHeight: 1, minHeight: '24px', minWidth: '24px' }}>×</button>
+                )}
               </div>
               <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{note.text}</p>
             </div>
@@ -123,7 +124,7 @@ function SessionNotes({ character, onUpdate }: { character: CharacterWithNotes; 
 }
 
 // ── People of Note ────────────────────────────────────────────────────────────
-function PeopleOfNote({ character, onUpdate }: { character: CharacterWithNotes; onUpdate: Props['onUpdate'] }) {
+function PeopleOfNote({ character, onUpdate, readOnly }: { character: CharacterWithNotes; onUpdate: Props['onUpdate']; readOnly?: boolean }) {
   const people = character.peopleOfNote ?? [];
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
@@ -146,12 +147,14 @@ function PeopleOfNote({ character, onUpdate }: { character: CharacterWithNotes; 
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <h3 style={{ margin: 0, fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.9rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>People of Note</h3>
-        <button onClick={() => setAdding(a => !a)} style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', minHeight: '32px' }}>
-          {adding ? 'Cancel' : '+ Add Person'}
-        </button>
+        {!readOnly && (
+          <button onClick={() => setAdding(a => !a)} style={{ padding: '0.25rem 0.75rem', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', minHeight: '32px' }}>
+            {adding ? 'Cancel' : '+ Add Person'}
+          </button>
+        )}
       </div>
 
-      {adding && (
+      {!readOnly && adding && (
         <div style={{ marginBottom: '1rem', padding: '0.875rem', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px' }}>
           <input
             value={newName}
@@ -173,14 +176,18 @@ function PeopleOfNote({ character, onUpdate }: { character: CharacterWithNotes; 
       )}
 
       {people.length === 0 && !adding ? (
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', fontStyle: 'italic' }}>No notable people yet. Track allies, enemies, and contacts here.</p>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', fontStyle: 'italic' }}>
+          {readOnly ? 'No people of note recorded.' : 'No notable people yet. Track allies, enemies, and contacts here.'}
+        </p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {people.map(person => (
             <div key={person.id} style={{ padding: '0.75rem', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <span style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--color-text)' }}>{person.name}</span>
-                <button onClick={() => handleDelete(person.id)} aria-label={`Delete ${person.name}`} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1rem', padding: '0', lineHeight: 1, minHeight: '24px', minWidth: '24px' }}>×</button>
+                {!readOnly && (
+                  <button onClick={() => handleDelete(person.id)} aria-label={`Delete ${person.name}`} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1rem', padding: '0', lineHeight: 1, minHeight: '24px', minWidth: '24px' }}>×</button>
+                )}
               </div>
               {person.note && <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{person.note}</p>}
             </div>
@@ -225,13 +232,8 @@ export function NotesTab({ character, onUpdate, readOnly }: Props) {
       </div>
 
       {subTab === 'General' && <GeneralNotes character={character} onUpdate={onUpdate} readOnly={readOnly} />}
-      {subTab === 'Sessions' && !readOnly && <SessionNotes character={character} onUpdate={onUpdate} />}
-      {subTab === 'People' && !readOnly && <PeopleOfNote character={character} onUpdate={onUpdate} />}
-      {(subTab === 'Sessions' || subTab === 'People') && readOnly && (
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', fontStyle: 'italic', textAlign: 'center', padding: '2rem 0' }}>
-          Not available in read-only view.
-        </p>
-      )}
+      {subTab === 'Sessions' && <SessionNotes character={character} onUpdate={onUpdate} readOnly={readOnly} />}
+      {subTab === 'People' && <PeopleOfNote character={character} onUpdate={onUpdate} readOnly={readOnly} />}
     </div>
   );
 }
