@@ -29,6 +29,9 @@ importers:
       prettier:
         specifier: ^3.4.0
         version: 3.8.3
+      puppeteer:
+        specifier: ^24.42.0
+        version: 24.42.0(typescript@5.9.3)
       turbo:
         specifier: latest
         version: 2.9.7
@@ -47,18 +50,12 @@ importers:
       '@dolmenwood/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@dolmenwood/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@supabase/ssr':
         specifier: ^0.5.0
         version: 0.5.2(@supabase/supabase-js@2.104.1)
       '@supabase/supabase-js':
         specifier: ^2.47.0
         version: 2.104.1
-      '@tanstack/react-query':
-        specifier: ^5.65.0
-        version: 5.100.5(react@19.2.5)
       clsx:
         specifier: ^2.1.0
         version: 2.1.1
@@ -111,9 +108,6 @@ importers:
       postcss:
         specifier: ^8.5.0
         version: 8.5.10
-      puppeteer:
-        specifier: ^24.42.0
-        version: 24.42.0(typescript@5.9.3)
       tailwindcss:
         specifier: ^4.1.0
         version: 4.2.4
@@ -138,19 +132,6 @@ importers:
         version: 3.2.4(@types/node@22.19.17)(jiti@2.6.1)(jsdom@29.1.1)(lightningcss@1.32.0)(terser@5.46.2)(yaml@2.8.3)
 
   packages/types:
-    devDependencies:
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-
-  packages/ui:
-    dependencies:
-      react:
-        specifier: ^19.0.0
-        version: 19.2.5
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.5(react@19.2.5)
     devDependencies:
       typescript:
         specifier: ^5.7.0
@@ -1464,14 +1445,6 @@ packages:
 
   '@tailwindcss/postcss@4.2.4':
     resolution: {integrity: sha512-wgAVj6nUWAolAu8YFvzT2cTBIElWHkjZwFYovF+xsqKsW2ADxM/X2opxj5NsF/qVccAOjRNe8X2IdPzMsWyHTg==}
-
-  '@tanstack/query-core@5.100.5':
-    resolution: {integrity: sha512-t20KrhKkf0HXzqQkPbJ5erhFesup68BAbwFgYmTrS7bxMF7O5MdmL8jUkik4thsG7Hg00fblz30h6yF1d5TxGg==}
-
-  '@tanstack/react-query@5.100.5':
-    resolution: {integrity: sha512-aNwj1mi2v2bQ9IxkyR1grLOUkv3BYWoykHy9KDyLNbjC3tsahbOHJibK+Wjtr1wRhG59/AvJhiJG5OlthaCgJA==}
-    peerDependencies:
-      react: ^18 || ^19
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -5433,13 +5406,6 @@ snapshots:
       '@tailwindcss/oxide': 4.2.4
       postcss: 8.5.10
       tailwindcss: 4.2.4
-
-  '@tanstack/query-core@5.100.5': {}
-
-  '@tanstack/react-query@5.100.5(react@19.2.5)':
-    dependencies:
-      '@tanstack/query-core': 5.100.5
-      react: 19.2.5
 
   '@testing-library/dom@10.4.1':
     dependencies:
