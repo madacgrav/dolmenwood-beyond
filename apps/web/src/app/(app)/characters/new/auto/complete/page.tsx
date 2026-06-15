@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
 import { createClient } from '@/lib/supabase/client';
+import { createCharacter } from '@/lib/data/characters';
 
 export default function CharacterCompletePage() {
   const router = useRouter();
@@ -21,32 +22,27 @@ export default function CharacterCompletePage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push('/sign-in'); return; }
 
-      const { data, error: insertError } = await supabase.from('characters').insert({
-        owner_id: user.id,
+      const { id, error: insertError } = await createCharacter(supabase, user.id, {
         name: wizard.name,
-        sex: wizard.sex || null,
-        age: wizard.age || null,
-        height: wizard.height || null,
-        weight: wizard.weight || null,
+        sex: wizard.sex,
+        age: wizard.age,
+        height: wizard.height,
+        weight: wizard.weight,
         kindred: wizard.kindred ?? 'Human',
-        character_class: wizard.characterClass ?? 'Fighter',
+        characterClass: wizard.characterClass ?? 'Fighter',
         alignment: wizard.alignment ?? 'neutral',
-        background: wizard.background || null,
-        level: 1,
-        xp: 0,
-        ability_scores: wizard.abilityScores,
-        hp_current: wizard.hpMax,
-        hp_max: wizard.hpMax,
-        portrait_url: wizard.portraitUrl,
-        is_active: true,
-      }).select('id').single();
+        background: wizard.background,
+        abilityScores: wizard.abilityScores,
+        hpMax: wizard.hpMax,
+        portraitUrl: wizard.portraitUrl,
+      });
 
       setSaving(false);
 
       if (insertError) {
-        setError(insertError.message);
-      } else if (data) {
-        setCharacterId(data.id as string);
+        setError(insertError);
+      } else if (id) {
+        setCharacterId(id);
         wizard.reset();
       }
     }

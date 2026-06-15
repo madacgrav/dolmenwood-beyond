@@ -9,7 +9,8 @@ GITHUB_ORG="madacgrav"
 GITHUB_REPO="dolmenwood-beyond"
 APP_NAME="dolmenwood-beyond-github-actions"
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-RESOURCE_GROUP="dolmenwood-prod-rg"
+# Must match AZURE_RESOURCE_GROUP in .github/workflows/deploy-azure.yml
+RESOURCE_GROUP="dolmenwood-beyond-rg"
 
 echo "Creating Azure AD app registration: $APP_NAME"
 APP_ID=$(az ad app create --display-name "$APP_NAME" --query appId -o tsv)

@@ -59,13 +59,11 @@ dolmenwood-beyond/
 │   │       ├── speed.ts
 │   │       ├── spells.ts
 │   │       └── xp.ts
-│   ├── types/src/index.ts     # All shared TypeScript interfaces
-│   └── ui/                    # Shared component stubs (peer deps only)
+│   └── types/src/index.ts     # All shared TypeScript interfaces
 ├── supabase/
 │   ├── migrations/            # 3 migration files (schema, equipment, invite codes)
 │   └── seed.sql
 ├── infra/azure/               # Bicep IaC (main.bicep + 4 modules)
-├── extracted-data/            # JSON files extracted from Dolmenwood Player's Book PDF
 └── .github/workflows/         # ci.yml, deploy-azure.yml, deploy-prod.yml
 ```
 

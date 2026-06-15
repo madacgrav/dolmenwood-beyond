@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // Use standalone output for Docker builds; skip locally on Windows where symlinks require elevated permissions
   ...(process.env.BUILD_STANDALONE === 'true' ? { output: 'standalone' } : {}),
   experimental: {},
-  transpilePackages: ['@dolmenwood/ui', '@dolmenwood/rules-engine', '@dolmenwood/types'],
+  transpilePackages: ['@dolmenwood/rules-engine', '@dolmenwood/types'],
 };
 
 const pwaConfig = withPWA({

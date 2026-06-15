@@ -7,23 +7,11 @@ import type { AbilityScores } from '@dolmenwood/types';
 import { useWizardStore } from '@/stores/wizard-store';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
 import { AnimatedDie } from '@/components/wizard/AnimatedDie';
-
-const ABILITY_NAMES: (keyof AbilityScores)[] = ['str', 'int', 'wis', 'dex', 'con', 'cha'];
-const ABILITY_LABELS: Record<keyof AbilityScores, string> = {
-  str: 'Strength', int: 'Intelligence', wis: 'Wisdom',
-  dex: 'Dexterity', con: 'Constitution', cha: 'Charisma',
-};
+import { ABILITY_KEYS, ABILITY_LABELS, isSubpar, primaryBtn, secondaryBtn } from '@/components/wizard/shared';
 
 function rollScores(): AbilityScores {
   const [str, int, wis, dex, con, cha] = Array.from({ length: 6 }, () => roll3d6());
   return { str: str!, int: int!, wis: wis!, dex: dex!, con: con!, cha: cha! };
-}
-
-function isSubpar(scores: AbilityScores): boolean {
-  const vals = Object.values(scores);
-  const allSixOrUnder = vals.every(v => v <= 6);
-  const twoThreeOrUnder = vals.filter(v => v <= 3).length >= 2;
-  return allSixOrUnder || twoThreeOrUnder;
 }
 
 export function Step1AbilityScores() {
@@ -121,7 +109,7 @@ export function Step1AbilityScores() {
 
         {/* Score grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          {ABILITY_NAMES.map((key) => {
+          {ABILITY_KEYS.map((key) => {
             const score = active[key];
             const mod = getAbilityModifier(score);
             const isOne = score === 1;
@@ -188,16 +176,3 @@ export function Step1AbilityScores() {
     </div>
   );
 }
-
-const primaryBtn: React.CSSProperties = {
-  width: '100%', padding: '0.875rem',
-  backgroundColor: 'var(--color-primary)', color: 'white',
-  border: 'none', borderRadius: '8px', fontSize: '1rem',
-  fontWeight: '600', cursor: 'pointer', minHeight: '44px',
-};
-const secondaryBtn: React.CSSProperties = {
-  width: '100%', padding: '0.875rem',
-  backgroundColor: 'var(--color-surface)', color: 'var(--color-text)',
-  border: '1px solid var(--color-border)', borderRadius: '8px',
-  fontSize: '0.95rem', cursor: 'pointer', minHeight: '44px',
-};

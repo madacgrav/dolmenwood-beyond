@@ -1,4 +1,5 @@
 'use client';
+import { primaryBtn as sharedPrimaryBtn } from '@/components/wizard/shared';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
@@ -146,8 +147,5 @@ export function Step8Equipment() {
   );
 }
 
-const primaryBtn: React.CSSProperties = {
-  width: '100%', padding: '0.875rem', backgroundColor: 'var(--color-primary)', color: 'white',
-  border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '600', cursor: 'pointer',
-  minHeight: '44px', marginBottom: '0.5rem',
-};
+
+const primaryBtn: React.CSSProperties = { ...sharedPrimaryBtn, marginBottom: '0.5rem' };

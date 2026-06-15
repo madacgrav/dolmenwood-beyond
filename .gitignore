@@ -37,3 +37,6 @@ supabase/.temp
 
 # Local secrets reference (never commit)
 GITHUB_SECRETS.md
+
+# Game reference PDFs (copyrighted; keep local only)
+*.pdf

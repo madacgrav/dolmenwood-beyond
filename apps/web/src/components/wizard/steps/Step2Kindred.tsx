@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
-import { getKindredData, getKindredTraits, ALL_KINDREDS } from '@dolmenwood/rules-engine';
+import { getKindredTraits, ALL_KINDREDS } from '@dolmenwood/rules-engine';
 import type { Kindred } from '@dolmenwood/types';
 
 const KINDRED_DESCRIPTIONS: Record<Kindred, string> = {

@@ -96,7 +96,7 @@ jobs:
             imageTag=latest
             supabaseUrl=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
           deploymentMode: Incremental
-          failOnStdErr: false
+          failOnStdErr: true
 
   build-and-push:
     name: Build & Push Docker Image

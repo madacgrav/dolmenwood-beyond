@@ -61,19 +61,21 @@ export function getHitDie(className: string): string {
 
 export const ALL_CLASSES = Object.keys(classData) as ClassName[];
 
-// ── Level-up change summary ───────────────────────────────────────────────────
+// ── Level-up feature summary ──────────────────────────────────────────────────
+// Note: distinct from LevelUpChange in @dolmenwood/types, which is the
+// persisted {field, oldValue, newValue} shape stored in level_up_logs.changes.
 
-export interface LevelUpChange {
+export interface LevelUpFeature {
   name: string;
   description: string;
 }
 
-export function getLevelUpChanges(
+export function getLevelUpFeatures(
   className: string,
   fromLevel: number,
   toLevel: number,
-): LevelUpChange[] {
-  const changes: LevelUpChange[] = [];
+): LevelUpFeature[] {
+  const changes: LevelUpFeature[] = [];
 
   const oldAttack = getAttackBonus(className, fromLevel);
   const newAttack = getAttackBonus(className, toLevel);

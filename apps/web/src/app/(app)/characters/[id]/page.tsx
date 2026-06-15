@@ -2,7 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import type { Character, AbilityScores, SessionNote, PersonOfNote, CharacterWithNotes } from '@dolmenwood/types';
+import { fetchCharacterWithNotes, updateCharacter, deleteCharacter } from '@/lib/data/characters';
+import type { CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
 import { CombatTab } from '@/components/character-sheet/CombatTab';
@@ -21,47 +22,16 @@ export default function CharacterSheetPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('stats');
   const [editMode, setEditMode] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchCharacter = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('characters')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error || !data) {
+    const mapped = await fetchCharacterWithNotes(supabase, id);
+    if (!mapped) {
       router.push('/characters');
       return;
     }
-
-    const row = data as Record<string, unknown>;
-    const mapped: CharacterWithNotes = {
-      id: row.id as string,
-      ownerId: row.owner_id as string,
-      name: row.name as string,
-      sex: row.sex as string | undefined,
-      age: row.age as string | undefined,
-      height: row.height as string | undefined,
-      weight: row.weight as string | undefined,
-      kindred: row.kindred as Character['kindred'],
-      characterClass: row.character_class as Character['characterClass'],
-      alignment: row.alignment as Character['alignment'],
-      moonSign: row.moon_sign as string | undefined,
-      background: row.background as string | undefined,
-      level: row.level as number,
-      xp: row.xp as number,
-      abilityScores: row.ability_scores as AbilityScores,
-      hpCurrent: row.hp_current as number,
-      hpMax: row.hp_max as number,
-      portraitUrl: row.portrait_url as string | undefined,
-      isActive: row.is_active as boolean,
-      extraLanguages: (row.extra_languages as string[] | undefined) ?? [],
-      createdAt: row.created_at as string,
-      updatedAt: row.updated_at as string,
-      notes: row.notes as string | undefined,
-      sessionNotes: (row.session_notes as SessionNote[] | undefined) ?? [],
-      peopleOfNote: (row.people_of_note as PersonOfNote[] | undefined) ?? [],
-    };
     setCharacter(mapped);
     setLoading(false);
   }, [id, supabase, router]);
@@ -71,17 +41,20 @@ export default function CharacterSheetPage() {
   async function handleUpdate(updates: Partial<CharacterWithNotes>) {
     if (!character) return;
     setCharacter(prev => prev ? { ...prev, ...updates } : prev);
-    const dbUpdates: Record<string, unknown> = {};
-    if (updates.hpCurrent !== undefined) dbUpdates.hp_current = updates.hpCurrent;
-    if (updates.xp !== undefined) dbUpdates.xp = updates.xp;
-    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
-    if (updates.sessionNotes !== undefined) dbUpdates.session_notes = updates.sessionNotes;
-    if (updates.peopleOfNote !== undefined) dbUpdates.people_of_note = updates.peopleOfNote;
-    if (updates.abilityScores !== undefined) dbUpdates.ability_scores = updates.abilityScores;
-    if (updates.level !== undefined) dbUpdates.level = updates.level;
-    if (updates.hpMax !== undefined) dbUpdates.hp_max = updates.hpMax;
-    if (updates.name !== undefined) dbUpdates.name = updates.name;
-    await supabase.from('characters').update(dbUpdates).eq('id', character.id);
+    await updateCharacter(supabase, character.id, updates);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!character) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const error = await deleteCharacter(supabase, character.id);
+    setDeleting(false);
+    if (error) {
+      setDeleteError('Failed to delete character. Please try again.');
+    } else {
+      router.push('/characters');
+    }
   }
 
   if (loading) {
@@ -119,6 +92,7 @@ export default function CharacterSheetPage() {
         onToggleEdit={() => setEditMode(e => !e)}
         onUpdate={handleUpdate}
         onBack={() => router.push('/characters')}
+        onDelete={() => { setDeleteError(null); setShowDeleteConfirm(true); }}
       />
       <div style={{
         position: 'sticky', top: 0, zIndex: 10,
@@ -157,6 +131,50 @@ export default function CharacterSheetPage() {
         {activeTab === 'magic' && <MagicTab character={character} characterId={id} />}
         {activeTab === 'notes' && <NotesTab character={character} onUpdate={handleUpdate} />}
       </div>
+
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1.5rem',
+        }}>
+          <div style={{
+            backgroundColor: 'var(--color-surface)',
+            borderRadius: '12px', padding: '1.5rem',
+            width: '100%', maxWidth: '360px',
+          }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: 'var(--color-text)', fontFamily: 'var(--font-display), Georgia, serif' }}>
+              Delete {character.name}?
+            </h3>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem' }}>
+              This will permanently delete this character and all their data. This cannot be undone.
+            </p>
+            {deleteError && (
+              <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', margin: '0 0 1rem' }}>
+                {deleteError}
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => { setShowDeleteConfirm(false); setDeleteError(null); }}
+                disabled={deleting}
+                style={{ flex: 1, padding: '0.75rem', backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--color-text)', minHeight: '44px', opacity: deleting ? 0.5 : 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                style={{ flex: 1, padding: '0.75rem', backgroundColor: 'var(--color-danger)', border: 'none', borderRadius: '8px', cursor: deleting ? 'not-allowed' : 'pointer', color: 'white', fontWeight: '600', minHeight: '44px', opacity: deleting ? 0.7 : 1 }}
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

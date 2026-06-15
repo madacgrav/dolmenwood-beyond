@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { createCharacter } from '@/lib/data/characters';
 import type { Kindred, CharacterClass, Alignment, AbilityScores } from '@dolmenwood/types';
 
 const VALID_KINDREDS: Kindred[] = ['Human', 'Breggle', 'Elf', 'Grimalkin', 'Mossling', 'Woodgrue'];
@@ -135,31 +136,13 @@ export default function ImportCharacterPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { router.push('/sign-in'); return; }
 
-    const { data, error } = await supabase.from('characters').insert({
-      owner_id: user.id,
-      name: validData.name,
-      sex: validData.sex ?? null,
-      age: validData.age ?? null,
-      height: validData.height ?? null,
-      weight: validData.weight ?? null,
-      kindred: validData.kindred,
-      character_class: validData.characterClass,
-      alignment: validData.alignment,
-      background: validData.background ?? null,
-      level: validData.level ?? 1,
-      xp: validData.xp ?? 0,
-      ability_scores: validData.abilityScores,
-      hp_current: validData.hpCurrent ?? validData.hpMax,
-      hp_max: validData.hpMax,
-      portrait_url: null,
-      is_active: true,
-    }).select('id').single();
+    const { id, error } = await createCharacter(supabase, user.id, validData);
 
     setSaving(false);
     if (error) {
-      setSaveError(error.message);
-    } else if (data) {
-      router.push(`/characters/${data.id as string}`);
+      setSaveError(error);
+    } else if (id) {
+      router.push(`/characters/${id}`);
     }
   }
 

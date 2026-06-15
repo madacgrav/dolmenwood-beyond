@@ -1,12 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
+import { createClient } from '@/lib/supabase/client';
+import { createCharacter } from '@/lib/data/characters';
 
 export default function ManualCompletePage() {
   const router = useRouter();
-  const { name, kindred, characterClass, abilityScores, hpMax, reset } = useWizardStore();
+  const wizard = useWizardStore();
+  const { name, kindred, characterClass, abilityScores, hpMax, reset } = wizard;
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     // Guard: if wizard state is empty, send back to start
@@ -15,13 +20,40 @@ export default function ManualCompletePage() {
     }
   }, [characterClass, kindred, router]);
 
-  function handleFinish() {
-    // TODO: save character to Supabase
-    reset();
-    router.push('/characters');
-  }
-
   const displayName = name || 'Unnamed Adventurer';
+
+  async function handleFinish() {
+    if (saving) return;
+    setSaving(true);
+    setSaveError('');
+
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { router.push('/sign-in'); return; }
+
+    const { id, error } = await createCharacter(supabase, user.id, {
+      name: displayName,
+      sex: wizard.sex,
+      age: wizard.age,
+      height: wizard.height,
+      weight: wizard.weight,
+      kindred: kindred ?? 'Human',
+      characterClass: characterClass ?? 'Fighter',
+      alignment: wizard.alignment ?? 'neutral',
+      background: wizard.background,
+      abilityScores,
+      hpMax,
+      portraitUrl: wizard.portraitUrl,
+    });
+
+    setSaving(false);
+    if (error) {
+      setSaveError(error);
+    } else if (id) {
+      reset();
+      router.push(`/characters/${id}`);
+    }
+  }
 
   return (
     <div style={{
@@ -91,8 +123,20 @@ export default function ManualCompletePage() {
           ))}
         </div>
 
+        {saveError && (
+          <div style={{
+            marginBottom: '0.75rem', padding: '0.75rem 1rem',
+            backgroundColor: 'color-mix(in srgb, var(--color-danger) 15%, var(--color-bg))',
+            border: '1px solid var(--color-danger)', borderRadius: '8px',
+            color: 'var(--color-danger)', fontSize: '0.875rem',
+          }}>
+            ⚠️ Failed to save character: {saveError}
+          </div>
+        )}
+
         <button
           onClick={handleFinish}
+          disabled={saving}
           style={{
             width: '100%',
             padding: '0.875rem',
@@ -102,12 +146,13 @@ export default function ManualCompletePage() {
             borderRadius: '8px',
             fontSize: '1rem',
             fontWeight: '600',
-            cursor: 'pointer',
+            cursor: saving ? 'wait' : 'pointer',
+            opacity: saving ? 0.6 : 1,
             minHeight: '44px',
             marginBottom: '0.75rem',
           }}
         >
-          Save Character →
+          {saving ? 'Saving…' : 'Save Character →'}
         </button>
 
         <button

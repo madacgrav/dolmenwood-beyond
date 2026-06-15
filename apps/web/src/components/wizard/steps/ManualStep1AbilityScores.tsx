@@ -6,20 +6,10 @@ import { useWizardStore } from '@/stores/wizard-store';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
 import { getAbilityModifier, roll3d6 } from '@dolmenwood/rules-engine';
 import type { AbilityScores } from '@dolmenwood/types';
+import { ABILITY_KEYS, ABILITY_LABELS, isSubpar } from '@/components/wizard/shared';
 
-const ABILITIES: { key: keyof AbilityScores; label: string }[] = [
-  { key: 'str', label: 'Strength' },
-  { key: 'int', label: 'Intelligence' },
-  { key: 'wis', label: 'Wisdom' },
-  { key: 'dex', label: 'Dexterity' },
-  { key: 'con', label: 'Constitution' },
-  { key: 'cha', label: 'Charisma' },
-];
-
-function isSubpar(scores: AbilityScores): boolean {
-  const vals = Object.values(scores);
-  return vals.every(v => v <= 6) || vals.filter(v => v <= 3).length >= 2;
-}
+const ABILITIES: { key: keyof AbilityScores; label: string }[] =
+  ABILITY_KEYS.map(key => ({ key, label: ABILITY_LABELS[key] }));
 
 export function ManualStep1AbilityScores() {
   const router = useRouter();

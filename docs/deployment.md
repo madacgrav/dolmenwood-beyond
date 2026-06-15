@@ -51,7 +51,20 @@ Required GitHub secrets (set by script):
 - `AZURE_SUBSCRIPTION_ID`
 - `AZURE_RESOURCE_GROUP`
 
-### 3. Add application secrets to GitHub
+### 3. Configure Supabase URL settings
+
+In the [Supabase dashboard](https://supabase.com) for the dolmenwood-beyond project, go to **Authentication → URL Configuration** and set:
+
+| Setting | Value |
+|---------|-------|
+| **Site URL** | `https://dolmenwood-prod-web.azurewebsites.net` |
+| **Redirect URLs** | `https://dolmenwood-prod-web.azurewebsites.net/**` |
+
+> ⚠️ **Critical**: The Site URL is embedded in all Supabase auth emails (email verification, password reset). If it is set to `localhost`, production users will receive broken links.
+>
+> `supabase/config.toml` controls the **local** Supabase instance only. The cloud project's URL Configuration must be set manually in the dashboard — it is not overwritten by `supabase db push`.
+
+### 4. Add application secrets to GitHub
 
 In your GitHub repo → Settings → Secrets → Actions:
 
@@ -69,7 +82,7 @@ In your GitHub repo → Settings → Variables → Actions:
 NEXT_PUBLIC_SUPABASE_URL       # Your Supabase project URL (non-secret, used as a var)
 ```
 
-### 4. Deploy infrastructure for the first time
+### 5. Deploy infrastructure for the first time
 
 ```bash
 az deployment group create \

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { listLedger, sumLedger, recordBankTransaction, type LedgerRow } from '@/lib/data/bank';
 
 interface CharacterRow {
   id: string;
@@ -11,15 +12,6 @@ interface CharacterRow {
   level: number;
   owner_id: string;
   coins_gp: number;
-}
-
-interface LedgerRow {
-  id: string;
-  character_id: string;
-  amount_gp: number;
-  description: string;
-  performed_by: string;
-  created_at: string;
 }
 
 interface CharacterBank {
@@ -38,22 +30,18 @@ export function BankingTab() {
   const supabase = createClient();
   const [entries, setEntries] = useState<CharacterBank[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
-    const [{ data: { user } }, { data: characters }, { data: ledger }] = await Promise.all([
-      supabase.auth.getUser(),
+    const [{ data: characters }, rows] = await Promise.all([
       supabase.from('characters').select('id, name, kindred, character_class, level, owner_id, coins_gp').order('name'),
-      supabase.from('bank_ledger').select('*').order('created_at', { ascending: false }),
+      listLedger(supabase),
     ]);
 
-    setCurrentUserId(user?.id ?? null);
     const chars = (characters ?? []) as CharacterRow[];
-    const rows = (ledger ?? []) as LedgerRow[];
 
     setEntries(chars.map(c => {
       const charLedger = rows.filter(r => r.character_id === c.id);
-      const balance = charLedger.reduce((sum, r) => sum + r.amount_gp, 0);
+      const balance = sumLedger(charLedger);
       return {
         character: c,
         balance,
@@ -81,20 +69,15 @@ export function BankingTab() {
     if (amount > entry.balance) { update(entry.character.id, { transferError: `Bank only holds ${entry.balance} gp for this character.` }); return; }
 
     update(entry.character.id, { transferLoading: true, transferError: '' });
-    const newGp = entry.character.coins_gp + amount;
 
-    const [{ error: ledgerErr }, { error: coinErr }] = await Promise.all([
-      supabase.from('bank_ledger').insert({
-        character_id: entry.character.id,
-        amount_gp: -amount,
-        description: entry.transferDesc.trim() || 'Transfer to character',
-        performed_by: currentUserId,
-      }),
-      supabase.from('characters').update({ coins_gp: newGp }).eq('id', entry.character.id),
-    ]);
+    const txError = await recordBankTransaction(supabase, {
+      characterId: entry.character.id,
+      amountGp: -amount,
+      description: entry.transferDesc.trim() || 'Transfer to character',
+    });
 
-    if (ledgerErr || coinErr) {
-      update(entry.character.id, { transferError: (ledgerErr ?? coinErr)!.message, transferLoading: false });
+    if (txError) {
+      update(entry.character.id, { transferError: txError, transferLoading: false });
     } else {
       await loadData();
     }

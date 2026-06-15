@@ -1,4 +1,5 @@
 'use client';
+import { primaryBtn } from '@/components/wizard/shared';
 import { useRouter } from 'next/navigation';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
 import { calculateSpeed } from '@dolmenwood/rules-engine';
@@ -65,8 +66,3 @@ export function Step10Speed() {
     </div>
   );
 }
-
-const primaryBtn: React.CSSProperties = {
-  width: '100%', padding: '0.875rem', backgroundColor: 'var(--color-primary)', color: 'white',
-  border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '600', cursor: 'pointer', minHeight: '44px',
-};

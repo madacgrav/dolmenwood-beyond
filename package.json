@@ -9,6 +9,7 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "screenshot": "node scripts/screenshot.mjs",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -23,6 +24,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.4.0",
+    "puppeteer": "^24.42.0",
     "turbo": "latest",
     "typescript": "^5.7.0",
     "yaml-lint": "^1.7.0"

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { listCharacters, deleteCharacter as deleteCharacterQuery } from '@/lib/data/characters';
 import type { Character } from '@dolmenwood/types';
 
 export function useCharacters() {
@@ -13,39 +14,10 @@ export function useCharacters() {
     const supabase = createClient();
 
     async function fetchCharacters() {
-      const { data, error } = await supabase
-        .from('characters')
-        .select('*')
-        .order('updated_at', { ascending: false });
-
+      const { characters: mapped, error } = await listCharacters(supabase);
       if (error) {
-        setError(error.message);
+        setError(error);
       } else {
-        // Map snake_case DB columns to camelCase Character type
-        const mapped: Character[] = (data ?? []).map((row: Record<string, unknown>) => ({
-          id: row.id as string,
-          ownerId: row.owner_id as string,
-          name: row.name as string,
-          sex: row.sex as string | undefined,
-          age: row.age as string | undefined,
-          height: row.height as string | undefined,
-          weight: row.weight as string | undefined,
-          kindred: row.kindred as Character['kindred'],
-          characterClass: row.character_class as Character['characterClass'],
-          alignment: row.alignment as Character['alignment'],
-          moonSign: row.moon_sign as string | undefined,
-          background: row.background as string | undefined,
-          level: row.level as number,
-          xp: row.xp as number,
-          abilityScores: row.ability_scores as Character['abilityScores'],
-          hpCurrent: row.hp_current as number,
-          hpMax: row.hp_max as number,
-          portraitUrl: row.portrait_url as string | undefined,
-          isActive: row.is_active as boolean,
-          extraLanguages: (row.extra_languages as string[] | undefined) ?? [],
-          createdAt: row.created_at as string,
-          updatedAt: row.updated_at as string,
-        }));
         setCharacters(mapped);
       }
       setLoading(false);
@@ -67,8 +39,7 @@ export function useCharacters() {
   }, []);
 
   async function deleteCharacter(id: string) {
-    const supabase = createClient();
-    const { error } = await supabase.from('characters').delete().eq('id', id);
+    const error = await deleteCharacterQuery(createClient(), id);
     if (!error) {
       setCharacters(prev => prev.filter(c => c.id !== id));
     }

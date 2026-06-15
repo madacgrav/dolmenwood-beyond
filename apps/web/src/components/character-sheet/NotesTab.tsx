@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { Character, SessionNote, PersonOfNote, CharacterWithNotes } from '@dolmenwood/types';
+import type { SessionNote, PersonOfNote, CharacterWithNotes } from '@dolmenwood/types';
 
 type SaveStatus = 'idle' | 'saving' | 'saved';
 

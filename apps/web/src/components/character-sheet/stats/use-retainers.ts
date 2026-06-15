@@ -1,0 +1,127 @@
+'use client';
+import { useState, useEffect } from 'react';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  listActiveRetainers,
+  insertRetainer,
+  updateRetainerHP as updateRetainerHPRow,
+  deleteRetainer,
+  markRetainerPromoted,
+  type DBRetainer,
+} from '@/lib/data/retainers';
+import type { NewRetainerState } from './types';
+
+export function useRetainers(supabase: SupabaseClient, characterId: string, loyaltyBase: number) {
+  const [retainers, setRetainers] = useState<DBRetainer[]>([]);
+  const [retainerLoading, setRetainerLoading] = useState(true);
+  const [showAddRetainer, setShowAddRetainer] = useState(false);
+  const [newRetainer, setNewRetainer] = useState<NewRetainerState>({
+    name: '', kindred: 'Human', character_class: 'Fighter', level: 1,
+    ac: 10, hp_current: 4, hp_max: 4, attack_bonus: 0,
+    morale: 7, loyalty: loyaltyBase, wage_type: 'daily', wage_amount: 1,
+  });
+  const [expandedRetainer, setExpandedRetainer] = useState<string | null>(null);
+  const [promotingRetainer, setPromotingRetainer] = useState<string | null>(null);
+  const [promoteLoading, setPromoteLoading] = useState(false);
+  const [promoteSuccess, setPromoteSuccess] = useState<{ name: string; charId: string } | null>(null);
+  const [promoteError, setPromoteError] = useState<string>('');
+
+  useEffect(() => {
+    listActiveRetainers(supabase, characterId).then(data => {
+      setRetainers(data);
+      setRetainerLoading(false);
+    });
+  }, [characterId, supabase]);
+
+  async function addRetainer() {
+    if (!newRetainer.name.trim()) return;
+    const data = await insertRetainer(supabase, {
+      ...newRetainer,
+      name: newRetainer.name.trim(),
+      owner_character_id: characterId,
+    });
+    if (data) {
+      setRetainers(prev => [...prev, data]);
+      setNewRetainer({
+        name: '', kindred: 'Human', character_class: 'Fighter', level: 1,
+        ac: 10, hp_current: 4, hp_max: 4, attack_bonus: 0,
+        morale: 7, loyalty: loyaltyBase, wage_type: 'daily', wage_amount: 1,
+      });
+      setShowAddRetainer(false);
+    }
+  }
+
+  async function promoteRetainer(r: DBRetainer) {
+    setPromoteLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      // Intentionally NOT createCharacter() from lib/data/characters: that
+      // helper also writes sex/age/height/weight/background/portrait_url as
+      // explicit nulls and only selects 'id'. The promotion payload below is
+      // kept byte-for-byte identical to the original inline insert.
+      const { data: newChar, error: insertErr } = await supabase.from('characters').insert({
+        owner_id: user.id,
+        name: r.name,
+        kindred: r.kindred,
+        character_class: r.character_class,
+        level: r.level,
+        xp: 0,
+        alignment: 'neutral',
+        ability_scores: { str: 10, int: 10, wis: 10, dex: 10, con: 10, cha: 10 },
+        hp_current: r.hp_current,
+        hp_max: r.hp_max,
+        is_active: true,
+      }).select().single();
+      if (insertErr || !newChar) {
+        setPromoteError(insertErr?.message ?? 'Failed to promote retainer. Please try again.');
+        setPromoteLoading(false);
+        return;
+      }
+      await markRetainerPromoted(supabase, r.id);
+      setRetainers(prev => prev.filter(x => x.id !== r.id));
+      setPromotingRetainer(null);
+      setPromoteSuccess({ name: r.name, charId: (newChar as Record<string, string>).id! });
+      setTimeout(() => setPromoteSuccess(null), 6000);
+    } finally {
+      setPromoteLoading(false);
+    }
+  }
+
+  function handlePromoteClick(id: string) {
+    setExpandedRetainer(id);
+    setPromotingRetainer(id);
+    setPromoteError('');
+  }
+
+  async function updateRetainerHP(id: string, delta: number) {
+    const r = retainers.find(x => x.id === id);
+    if (!r) return;
+    const hp = Math.max(0, Math.min(r.hp_max, r.hp_current + delta));
+    setRetainers(prev => prev.map(x => x.id === id ? { ...x, hp_current: hp } : x));
+    await updateRetainerHPRow(supabase, id, hp);
+  }
+
+  async function dismissRetainer(id: string) {
+    if (!confirm('Dismiss this retainer?')) return;
+    setRetainers(prev => prev.filter(x => x.id !== id));
+    await deleteRetainer(supabase, id);
+  }
+
+  return {
+    retainers,
+    retainerLoading,
+    showAddRetainer, setShowAddRetainer,
+    newRetainer, setNewRetainer,
+    expandedRetainer, setExpandedRetainer,
+    promotingRetainer, setPromotingRetainer,
+    promoteLoading,
+    promoteSuccess, setPromoteSuccess,
+    promoteError,
+    addRetainer,
+    promoteRetainer,
+    handlePromoteClick,
+    updateRetainerHP,
+    dismissRetainer,
+  };
+}

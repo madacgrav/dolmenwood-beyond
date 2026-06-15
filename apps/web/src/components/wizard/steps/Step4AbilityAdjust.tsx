@@ -1,4 +1,5 @@
 'use client';
+import { primaryBtn, secondaryBtn } from '@/components/wizard/shared';
 
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
@@ -85,12 +86,3 @@ export function Step4AbilityAdjust({ basePath = '/characters/new/auto' }: { base
     </div>
   );
 }
-
-const primaryBtn: React.CSSProperties = {
-  width: '100%', padding: '0.875rem', backgroundColor: 'var(--color-primary)', color: 'white',
-  border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '600', cursor: 'pointer', minHeight: '44px',
-};
-const secondaryBtn: React.CSSProperties = {
-  width: '100%', padding: '0.875rem', backgroundColor: 'var(--color-surface)', color: 'var(--color-text)',
-  border: '1px solid var(--color-border)', borderRadius: '8px', fontSize: '0.95rem', cursor: 'pointer', minHeight: '44px',
-};

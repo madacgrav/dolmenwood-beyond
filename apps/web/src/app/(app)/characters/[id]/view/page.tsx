@@ -2,7 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import type { Character, AbilityScores, CharacterWithNotes } from '@dolmenwood/types';
+import { fetchCharacterWithNotes } from '@/lib/data/characters';
+import type { CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
 import { CombatTab } from '@/components/character-sheet/CombatTab';
@@ -36,18 +37,11 @@ export default function CharacterViewPage() {
     if (!user) { router.push('/sign-in'); return; }
 
     // Fetch character (RLS ensures only authorised users see it)
-    const { data, error } = await supabase
-      .from('characters')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error || !data) { router.push('/characters'); return; }
-
-    const row = data as Record<string, unknown>;
+    const mapped = await fetchCharacterWithNotes(supabase, id);
+    if (!mapped) { router.push('/characters'); return; }
 
     // Owner should use the editable sheet
-    if (row.owner_id === user.id) {
+    if (mapped.ownerId === user.id) {
       router.replace(`/characters/${id}`);
       return;
     }
@@ -57,7 +51,7 @@ export default function CharacterViewPage() {
     const { data: refAccess } = await supabase
       .from('campaign_members')
       .select('campaign_id, campaigns!inner(referee_id)')
-      .eq('account_id', row.owner_id as string)
+      .eq('account_id', mapped.ownerId)
       .eq('campaigns.referee_id', user.id)
       .limit(1);
 
@@ -65,33 +59,6 @@ export default function CharacterViewPage() {
       router.push('/characters');
       return;
     }
-
-    // Map DB row to typed Character
-    const mapped: CharacterWithNotes = {
-      id: row.id as string,
-      ownerId: row.owner_id as string,
-      name: row.name as string,
-      sex: row.sex as string | undefined,
-      age: row.age as string | undefined,
-      height: row.height as string | undefined,
-      weight: row.weight as string | undefined,
-      kindred: row.kindred as Character['kindred'],
-      characterClass: row.character_class as Character['characterClass'],
-      alignment: row.alignment as Character['alignment'],
-      moonSign: row.moon_sign as string | undefined,
-      background: row.background as string | undefined,
-      level: row.level as number,
-      xp: row.xp as number,
-      abilityScores: row.ability_scores as AbilityScores,
-      hpCurrent: row.hp_current as number,
-      hpMax: row.hp_max as number,
-      portraitUrl: row.portrait_url as string | undefined,
-      isActive: row.is_active as boolean,
-      extraLanguages: (row.extra_languages as string[] | undefined) ?? [],
-      createdAt: row.created_at as string,
-      updatedAt: row.updated_at as string,
-      notes: row.notes as string | undefined,
-    };
 
     setCharacter(mapped);
     setLoading(false);

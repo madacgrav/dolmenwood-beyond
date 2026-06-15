@@ -1,0 +1,84 @@
+name: Agent PR Review
+description: >-
+  Gather PR data, run an AI review agent against the diff, and post the
+  result as a PR comment. Shared by all reviewer jobs in pr-review.yml.
+
+inputs:
+  agent-file:
+    description: Path to the agent system-prompt markdown file
+    required: true
+  sleep:
+    description: Seconds to wait before calling the model (rate-limit stagger)
+    required: false
+    default: '0'
+  github-token:
+    description: Token used for gh CLI calls
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Gather PR data
+      id: pr
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        # Truncate diff to stay within model token limits
+        gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
+
+        FILES=$(gh pr view ${{ github.event.pull_request.number }} \
+          --json files --jq '[.files[].path] | join(", ")')
+        echo "files=$FILES" >> $GITHUB_OUTPUT
+
+        DIFF_DELIM=$(openssl rand -hex 16)
+        {
+          echo "diff<<${DIFF_DELIM}"
+          cat pr.diff
+          echo
+          echo "${DIFF_DELIM}"
+        } >> $GITHUB_OUTPUT
+
+    - name: Load agent system prompt
+      id: agent
+      shell: bash
+      run: |
+        AGENT_DELIM=$(openssl rand -hex 16)
+        {
+          echo "system<<${AGENT_DELIM}"
+          cat ${{ inputs.agent-file }}
+          echo
+          echo "${AGENT_DELIM}"
+        } >> $GITHUB_OUTPUT
+
+    - name: Rate limit buffer
+      if: inputs.sleep != '0'
+      shell: bash
+      run: sleep ${{ inputs.sleep }}
+
+    - name: Run review
+      id: review
+      uses: actions/ai-inference@v1
+      with:
+        model: openai/gpt-4o
+        max-tokens: 800
+        system-prompt: ${{ steps.agent.outputs.system }}
+        prompt: |
+          Review this pull request for Dolmenwood Beyond.
+
+          **PR title:** ${{ github.event.pull_request.title }}
+          **Description:** ${{ github.event.pull_request.body || '(none)' }}
+          **Changed files:** ${{ steps.pr.outputs.files }}
+
+          **Diff:**
+          ```diff
+          ${{ steps.pr.outputs.diff }}
+          ```
+
+    - name: Post review comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        BODY: ${{ steps.review.outputs.response }}
+      run: |
+        gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"

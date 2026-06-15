@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import type { LevelUpChange } from '@dolmenwood/types';
 
 interface LevelUpEntry {
   id: string;
@@ -11,7 +12,7 @@ interface LevelUpEntry {
   to_level: number;
   hp_roll: number;
   hp_roll_final: number;
-  changes: { field: string; oldValue: unknown; newValue: unknown }[];
+  changes: LevelUpChange[];
   timestamp: string;
 }
 
@@ -19,7 +20,7 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function formatChange(c: { field: string; oldValue: unknown; newValue: unknown }) {
+function formatChange(c: LevelUpChange) {
   const old = typeof c.oldValue === 'object' && c.oldValue !== null
     ? JSON.stringify(c.oldValue)
     : String(c.oldValue ?? '—');

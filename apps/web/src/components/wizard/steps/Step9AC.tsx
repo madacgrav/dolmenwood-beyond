@@ -1,4 +1,5 @@
 'use client';
+import { primaryBtn } from '@/components/wizard/shared';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
@@ -66,8 +67,3 @@ export function Step9AC() {
     </div>
   );
 }
-
-const primaryBtn: React.CSSProperties = {
-  width: '100%', padding: '0.875rem', backgroundColor: 'var(--color-primary)', color: 'white',
-  border: 'none', borderRadius: '8px', fontSize: '1rem', fontWeight: '600', cursor: 'pointer', minHeight: '44px',
-};

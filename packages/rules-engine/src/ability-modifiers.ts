@@ -13,17 +13,3 @@ export function getAbilityModifier(score: number): number {
   if (score >= 18) return 3;
   return MODIFIER_TABLE[score] ?? 0;
 }
-
-export function getAllModifiers(scores: {
-  str: number; int: number; wis: number;
-  dex: number; con: number; cha: number;
-}): Record<string, number> {
-  return {
-    str: getAbilityModifier(scores.str),
-    int: getAbilityModifier(scores.int),
-    wis: getAbilityModifier(scores.wis),
-    dex: getAbilityModifier(scores.dex),
-    con: getAbilityModifier(scores.con),
-    cha: getAbilityModifier(scores.cha),
-  };
-}

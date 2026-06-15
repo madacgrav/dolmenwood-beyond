@@ -14,265 +14,57 @@ concurrency:
   group: pr-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+# The four reviewer jobs share the composite action in
+# .github/actions/agent-review (gather diff → run agent → post comment).
+# They stay separate jobs (rather than a matrix) so the consolidation
+# summary keeps a per-agent status row. Sleeps stagger the model calls
+# to avoid rate limiting.
 jobs:
   developer-architect:
     name: 🏗️ Developer Architect Review
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Gather PR data
-        id: pr
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Truncate diff to ~50KB to stay within model token limits
-          gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
-
-          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
-            --json files --jq '[.files[].path] | join(", ")')
-          echo "files=$FILES" >> $GITHUB_OUTPUT
-
-          DIFF_DELIM=$(openssl rand -hex 16)
-          {
-            echo "diff<<${DIFF_DELIM}"
-            cat pr.diff
-            echo
-            echo "${DIFF_DELIM}"
-          } >> $GITHUB_OUTPUT
-
-      - name: Load agent system prompt
-        id: agent
-        run: |
-          AGENT_DELIM=$(openssl rand -hex 16)
-          {
-            echo "system<<${AGENT_DELIM}"
-            cat .github/agents/developer-architect-review.agent.md
-            echo
-            echo "${AGENT_DELIM}"
-          } >> $GITHUB_OUTPUT
-
-      - name: Run review
-        id: review
-        uses: actions/ai-inference@v1
+      - uses: ./.github/actions/agent-review
         with:
-          model: openai/gpt-4o
-          max-tokens: 800
-          system-prompt: ${{ steps.agent.outputs.system }}
-          prompt: |
-            Review this pull request for Dolmenwood Beyond.
-
-            **PR title:** ${{ github.event.pull_request.title }}
-            **Description:** ${{ github.event.pull_request.body || '(none)' }}
-            **Changed files:** ${{ steps.pr.outputs.files }}
-
-            **Diff:**
-            ```diff
-            ${{ steps.pr.outputs.diff }}
-            ```
-
-      - name: Post review comment
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BODY: ${{ steps.review.outputs.response }}
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+          agent-file: .github/agents/developer-architect-review.agent.md
+          github-token: ${{ github.token }}
 
   devops:
     name: 🚀 DevOps Review
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Gather PR data
-        id: pr
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
-
-          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
-            --json files --jq '[.files[].path] | join(", ")')
-          echo "files=$FILES" >> $GITHUB_OUTPUT
-
-          DIFF_DELIM=$(openssl rand -hex 16)
-          {
-            echo "diff<<${DIFF_DELIM}"
-            cat pr.diff
-            echo
-            echo "${DIFF_DELIM}"
-          } >> $GITHUB_OUTPUT
-
-      - name: Load agent system prompt
-        id: agent
-        run: |
-          AGENT_DELIM=$(openssl rand -hex 16)
-          {
-            echo "system<<${AGENT_DELIM}"
-            cat .github/agents/devops-review.agent.md
-            echo
-            echo "${AGENT_DELIM}"
-          } >> $GITHUB_OUTPUT
-
-      - name: Rate limit buffer
-        run: sleep 20
-
-      - name: Run review
-        id: review
-        uses: actions/ai-inference@v1
+      - uses: ./.github/actions/agent-review
         with:
-          model: openai/gpt-4o
-          max-tokens: 800
-          system-prompt: ${{ steps.agent.outputs.system }}
-          prompt: |
-            Review this pull request for Dolmenwood Beyond.
-
-            **PR title:** ${{ github.event.pull_request.title }}
-            **Description:** ${{ github.event.pull_request.body || '(none)' }}
-            **Changed files:** ${{ steps.pr.outputs.files }}
-
-            **Diff:**
-            ```diff
-            ${{ steps.pr.outputs.diff }}
-            ```
-
-      - name: Post review comment
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BODY: ${{ steps.review.outputs.response }}
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+          agent-file: .github/agents/devops-review.agent.md
+          sleep: '20'
+          github-token: ${{ github.token }}
 
   security:
     name: 🔒 Security Review
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Gather PR data
-        id: pr
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
-
-          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
-            --json files --jq '[.files[].path] | join(", ")')
-          echo "files=$FILES" >> $GITHUB_OUTPUT
-
-          DIFF_DELIM=$(openssl rand -hex 16)
-          {
-            echo "diff<<${DIFF_DELIM}"
-            cat pr.diff
-            echo
-            echo "${DIFF_DELIM}"
-          } >> $GITHUB_OUTPUT
-
-      - name: Load agent system prompt
-        id: agent
-        run: |
-          AGENT_DELIM=$(openssl rand -hex 16)
-          {
-            echo "system<<${AGENT_DELIM}"
-            cat .github/agents/security-reviewer.agent.md
-            echo
-            echo "${AGENT_DELIM}"
-          } >> $GITHUB_OUTPUT
-
-      - name: Rate limit buffer
-        run: sleep 40
-
-      - name: Run review
-        id: review
-        uses: actions/ai-inference@v1
+      - uses: ./.github/actions/agent-review
         with:
-          model: openai/gpt-4o
-          max-tokens: 800
-          system-prompt: ${{ steps.agent.outputs.system }}
-          prompt: |
-            Review this pull request for Dolmenwood Beyond.
-
-            **PR title:** ${{ github.event.pull_request.title }}
-            **Description:** ${{ github.event.pull_request.body || '(none)' }}
-            **Changed files:** ${{ steps.pr.outputs.files }}
-
-            **Diff:**
-            ```diff
-            ${{ steps.pr.outputs.diff }}
-            ```
-
-      - name: Post review comment
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BODY: ${{ steps.review.outputs.response }}
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+          agent-file: .github/agents/security-reviewer.agent.md
+          sleep: '40'
+          github-token: ${{ github.token }}
 
   qa:
     name: 🧪 QA Review
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Gather PR data
-        id: pr
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
-
-          FILES=$(gh pr view ${{ github.event.pull_request.number }} \
-            --json files --jq '[.files[].path] | join(", ")')
-          echo "files=$FILES" >> $GITHUB_OUTPUT
-
-          DIFF_DELIM=$(openssl rand -hex 16)
-          {
-            echo "diff<<${DIFF_DELIM}"
-            cat pr.diff
-            echo
-            echo "${DIFF_DELIM}"
-          } >> $GITHUB_OUTPUT
-
-      - name: Load agent system prompt
-        id: agent
-        run: |
-          AGENT_DELIM=$(openssl rand -hex 16)
-          {
-            echo "system<<${AGENT_DELIM}"
-            cat .github/agents/qa-reviewer.agent.md
-            echo
-            echo "${AGENT_DELIM}"
-          } >> $GITHUB_OUTPUT
-
-      - name: Rate limit buffer
-        run: sleep 60
-
-      - name: Run review
-        id: review
-        uses: actions/ai-inference@v1
+      - uses: ./.github/actions/agent-review
         with:
-          model: openai/gpt-4o
-          max-tokens: 800
-          system-prompt: ${{ steps.agent.outputs.system }}
-          prompt: |
-            Review this pull request for Dolmenwood Beyond.
+          agent-file: .github/agents/qa-reviewer.agent.md
+          sleep: '60'
+          github-token: ${{ github.token }}
 
-            **PR title:** ${{ github.event.pull_request.title }}
-            **Description:** ${{ github.event.pull_request.body || '(none)' }}
-            **Changed files:** ${{ steps.pr.outputs.files }}
-
-            **Diff:**
-            ```diff
-            ${{ steps.pr.outputs.diff }}
-            ```
-
-      - name: Post review comment
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BODY: ${{ steps.review.outputs.response }}
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
-
+  # Blogger differs from the other reviewers: it only runs when blog
+  # files changed, and it reviews the post content rather than the diff.
   blogger:
     name: ✍️ Blogger Review
     runs-on: ubuntu-latest
@@ -318,6 +110,7 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Rate limit buffer
+        if: steps.blog.outputs.has_blogs == 'true'
         run: sleep 80
 
       - name: Run review
@@ -403,4 +196,3 @@ jobs:
           } > summary.md
 
           gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file summary.md
-
