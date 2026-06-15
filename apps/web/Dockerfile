@@ -11,7 +11,6 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/types/package.json ./packages/types/
 COPY packages/rules-engine/package.json ./packages/rules-engine/
-COPY packages/ui/package.json ./packages/ui/
 
 RUN pnpm install --frozen-lockfile
 
@@ -25,7 +24,7 @@ RUN corepack enable && corepack prepare pnpm@10.11.0 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 RUN --mount=type=bind,from=deps,source=/app,target=/deps,readonly \
-    for pkg in packages/types packages/rules-engine packages/ui; do \
+    for pkg in packages/types packages/rules-engine; do \
       if [ -d "/deps/${pkg}/node_modules" ]; then \
         mkdir -p "./${pkg}" && cp -a "/deps/${pkg}/node_modules" "./${pkg}/"; \
       fi; \
