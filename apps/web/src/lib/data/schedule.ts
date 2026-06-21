@@ -27,3 +27,17 @@ export async function loadSchedule(
   if (error || !data) return [];
   return data as Session[];
 }
+
+export async function createSession(
+  supabase: SupabaseClient,
+  input: { campaignId: string; createdBy: string; title: string; scheduledAt: string; notes: string },
+): Promise<{ error: { message: string } | null }> {
+  const { error } = await supabase.from('campaign_sessions').insert({
+    campaign_id: input.campaignId,
+    created_by: input.createdBy,
+    title: input.title,
+    scheduled_at: input.scheduledAt,   // ISO (caller converts from datetime-local)
+    notes: input.notes,
+  });
+  return { error };
+}

@@ -247,8 +247,8 @@ export async function createSession(
 
 ### Verification
 #### Automated
-- [ ] `pnpm typecheck` passes
-- [ ] `pnpm lint` passes
+- [x] `pnpm typecheck` passes
+- [x] `pnpm lint` passes
 #### Manual
 - [ ] Create a session as a player → it appears in the list at the correct local time
 - [ ] A user in a different campaign does not see it

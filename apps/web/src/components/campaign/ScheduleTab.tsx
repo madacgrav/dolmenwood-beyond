@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { loadSchedule, type Session } from '@/lib/data/schedule';
+import { loadSchedule, createSession, type Session } from '@/lib/data/schedule';
 import { SessionList } from '@/components/campaign/schedule/SessionList';
+import { SessionForm, type SessionFormField } from '@/components/campaign/schedule/SessionForm';
 
 interface CampaignOption {
   id: string;
@@ -16,6 +17,14 @@ export function ScheduleTab({ userId }: { userId: string }) {
   const [campaignId, setCampaignId] = useState('');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Create-session form state
+  const [showForm, setShowForm] = useState(false);
+  const [formTitle, setFormTitle] = useState('');
+  const [formWhen, setFormWhen] = useState('');   // datetime-local string
+  const [formNotes, setFormNotes] = useState('');
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Load campaigns the user owns or belongs to (RLS-scoped).
   useEffect(() => {
@@ -30,6 +39,11 @@ export function ScheduleTab({ userId }: { userId: string }) {
     loadCampaigns();
   }, [supabase]);
 
+  const refetch = useCallback(async () => {
+    if (!campaignId) return;
+    setSessions(await loadSchedule(supabase, campaignId));
+  }, [supabase, campaignId]);
+
   useEffect(() => {
     if (!campaignId) return;
     let active = true;
@@ -43,6 +57,44 @@ export function ScheduleTab({ userId }: { userId: string }) {
     })();
     return () => { active = false; };
   }, [supabase, campaignId]);
+
+  function handleFormChange(field: SessionFormField, value: string) {
+    if (field === 'title') setFormTitle(value);
+    else if (field === 'scheduledAt') setFormWhen(value);
+    else setFormNotes(value);
+  }
+
+  function resetForm() {
+    setShowForm(false);
+    setFormTitle('');
+    setFormWhen('');
+    setFormNotes('');
+    setFormError('');
+  }
+
+  async function handleCreate() {
+    if (!formTitle.trim()) { setFormError('Enter a title.'); return; }
+    if (!formWhen) { setFormError('Pick a date and time.'); return; }
+
+    setSaving(true);
+    setFormError('');
+    const scheduledAt = new Date(formWhen).toISOString();
+    const { error } = await createSession(supabase, {
+      campaignId,
+      createdBy: userId,
+      title: formTitle.trim(),
+      scheduledAt,
+      notes: formNotes.trim(),
+    });
+    setSaving(false);
+
+    if (error) {
+      setFormError(error.message);
+    } else {
+      resetForm();
+      await refetch();
+    }
+  }
 
   if (campaigns.length === 0 && !loading) {
     return (
@@ -70,6 +122,31 @@ export function ScheduleTab({ userId }: { userId: string }) {
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
+      )}
+
+      {showForm ? (
+        <SessionForm
+          title={formTitle}
+          scheduledAt={formWhen}
+          notes={formNotes}
+          error={formError}
+          loading={saving}
+          mode="create"
+          onChange={handleFormChange}
+          onSubmit={handleCreate}
+          onCancel={resetForm}
+        />
+      ) : (
+        <button
+          onClick={() => setShowForm(true)}
+          style={{
+            padding: '0.625rem', borderRadius: '8px', border: 'none',
+            backgroundColor: 'var(--color-primary)', color: 'white',
+            fontWeight: '600', fontSize: '0.875rem', cursor: 'pointer', minHeight: '44px',
+          }}
+        >
+          ➕ New session
+        </button>
       )}
 
       {loading ? (
