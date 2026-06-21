@@ -41,3 +41,12 @@ export async function createSession(
   });
   return { error };
 }
+
+export async function setRsvp(
+  supabase: SupabaseClient,
+  sessionId: string,
+  status: RsvpStatus,
+): Promise<{ error: { message: string } | null }> {
+  const { error } = await supabase.rpc('set_session_rsvp', { p_session_id: sessionId, p_status: status });
+  return { error };
+}

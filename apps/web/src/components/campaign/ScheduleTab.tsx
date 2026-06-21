@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { loadSchedule, createSession, type Session } from '@/lib/data/schedule';
+import { loadSchedule, createSession, setRsvp, type RsvpStatus, type Session } from '@/lib/data/schedule';
 import { SessionList } from '@/components/campaign/schedule/SessionList';
 import { SessionForm, type SessionFormField } from '@/components/campaign/schedule/SessionForm';
 
@@ -96,6 +96,11 @@ export function ScheduleTab({ userId }: { userId: string }) {
     }
   }
 
+  async function handleRsvp(sessionId: string, status: RsvpStatus) {
+    const { error } = await setRsvp(supabase, sessionId, status);
+    if (!error) await refetch();
+  }
+
   if (campaigns.length === 0 && !loading) {
     return (
       <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
@@ -156,7 +161,7 @@ export function ScheduleTab({ userId }: { userId: string }) {
           ))}
         </div>
       ) : (
-        <SessionList sessions={sessions} userId={userId} />
+        <SessionList sessions={sessions} userId={userId} onRsvp={handleRsvp} />
       )}
     </div>
   );

@@ -102,3 +102,38 @@ $$;
 
 revoke execute on function public.get_campaign_schedule(uuid) from public;
 grant  execute on function public.get_campaign_schedule(uuid) to authenticated;
+
+-- Write RPC: upsert the caller's RSVP for a session (participant-guarded).
+create or replace function public.set_session_rsvp(p_session_id uuid, p_status text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_campaign_id uuid;
+begin
+  if p_status not in ('yes','no','maybe') then
+    raise exception 'Invalid RSVP status';
+  end if;
+
+  select campaign_id into v_campaign_id
+  from public.campaign_sessions where id = p_session_id;
+
+  if v_campaign_id is null then
+    raise exception 'Session not found';
+  end if;
+
+  if not (public.is_campaign_member(v_campaign_id) or public.is_campaign_referee(v_campaign_id)) then
+    raise exception 'Not a participant of this campaign';
+  end if;
+
+  insert into public.session_rsvps (session_id, account_id, status)
+  values (p_session_id, auth.uid(), p_status)
+  on conflict (session_id, account_id)
+  do update set status = excluded.status, updated_at = now();
+end;
+$$;
+
+revoke execute on function public.set_session_rsvp(uuid, text) from public;
+grant  execute on function public.set_session_rsvp(uuid, text) to authenticated;

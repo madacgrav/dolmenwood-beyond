@@ -319,8 +319,8 @@ export async function setRsvp(
 
 ### Verification
 #### Automated
-- [ ] `npx supabase db reset` applies cleanly
-- [ ] `pnpm typecheck` / `pnpm lint` pass
+- [x] `npx supabase db reset` applies cleanly
+- [x] `pnpm typecheck` / `pnpm lint` pass
 #### Manual
 - [ ] Set your RSVP to each of yes/no/maybe → persists across a tab reload, active button reflects it
 - [ ] A second account's RSVP on the same session updates the tally counts

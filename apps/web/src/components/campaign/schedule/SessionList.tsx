@@ -1,11 +1,13 @@
 'use client';
 
 import { formatSessionDate } from '@/lib/format';
-import type { Session } from '@/lib/data/schedule';
+import type { RsvpStatus, Session } from '@/lib/data/schedule';
+import { RsvpControl } from '@/components/campaign/schedule/RsvpControl';
 
 interface SessionListProps {
   sessions: Session[];
   userId: string;
+  onRsvp: (sessionId: string, status: RsvpStatus) => void;
 }
 
 /** Sort: upcoming (>= now) ascending first, then past descending. */
@@ -20,7 +22,14 @@ function sortSessions(sessions: Session[]): Session[] {
   return [...upcoming, ...past];
 }
 
-export function SessionList({ sessions }: SessionListProps) {
+function tally(session: Session): { yes: number; no: number; maybe: number } {
+  return session.rsvps.reduce(
+    (acc, r) => { acc[r.status] += 1; return acc; },
+    { yes: 0, no: 0, maybe: 0 },
+  );
+}
+
+export function SessionList({ sessions, userId, onRsvp }: SessionListProps) {
   if (sessions.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
@@ -37,6 +46,8 @@ export function SessionList({ sessions }: SessionListProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {ordered.map(session => {
         const isPast = new Date(session.scheduled_at).getTime() < now;
+        const counts = tally(session);
+        const myStatus = session.rsvps.find(r => r.account_id === userId)?.status ?? null;
         return (
           <div
             key={session.id}
@@ -59,6 +70,11 @@ export function SessionList({ sessions }: SessionListProps) {
                 {session.notes}
               </div>
             )}
+
+            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.6rem', marginBottom: '0.4rem' }}>
+              ✅ {counts.yes} · ❔ {counts.maybe} · ❌ {counts.no}
+            </div>
+            <RsvpControl status={myStatus} onSet={status => onRsvp(session.id, status)} />
           </div>
         );
       })}
