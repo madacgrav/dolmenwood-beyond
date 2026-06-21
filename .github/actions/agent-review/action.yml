@@ -24,8 +24,13 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        # Truncate diff to stay within model token limits
-        gh pr diff ${{ github.event.pull_request.number }} | head -c 12000 > pr.diff
+        # Truncate diff to stay within model token limits.
+        # Write the full diff to a file first, then truncate — piping
+        # straight into `head -c` makes `head` close the pipe early on
+        # large diffs, so `gh` dies with SIGPIPE (exit 141) and pipefail
+        # fails the step.
+        gh pr diff ${{ github.event.pull_request.number }} > pr.full.diff
+        head -c 12000 pr.full.diff > pr.diff
 
         FILES=$(gh pr view ${{ github.event.pull_request.number }} \
           --json files --jq '[.files[].path] | join(", ")')
