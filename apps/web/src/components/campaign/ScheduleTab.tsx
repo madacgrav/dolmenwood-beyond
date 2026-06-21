@@ -4,9 +4,15 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { loadSchedule, createSession, updateSession, deleteSession, setRsvp, type RsvpStatus, type Session } from '@/lib/data/schedule';
 import { toDatetimeLocal } from '@/lib/format';
+import { sameDay } from '@/lib/calendar';
 import { SessionList } from '@/components/campaign/schedule/SessionList';
 import { SessionForm, type SessionFormField } from '@/components/campaign/schedule/SessionForm';
+import { SessionCalendar } from '@/components/campaign/schedule/SessionCalendar';
 import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
+
+function firstOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
 
 interface CampaignOption {
   id: string;
@@ -33,6 +39,11 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
   const [deletingSession, setDeletingSession] = useState<Session | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // View state
+  const [view, setView] = useState<'list' | 'grid'>('list');
+  const [month, setMonth] = useState<Date>(() => firstOfMonth(new Date()));
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   // Load campaigns the user owns or belongs to (RLS-scoped).
   useEffect(() => {
@@ -193,6 +204,29 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
         </button>
       )}
 
+      {/* List / grid toggle */}
+      <div style={{ display: 'flex', gap: '0.375rem' }}>
+        {(['list', 'grid'] as const).map(v => {
+          const active = view === v;
+          return (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              style={{
+                flex: 1, padding: '0.4rem', borderRadius: '8px',
+                border: active ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                backgroundColor: active ? 'var(--color-primary)' : 'transparent',
+                color: active ? 'white' : 'var(--color-text-muted)',
+                fontWeight: active ? '700' : '500',
+                fontSize: '0.8rem', cursor: 'pointer', minHeight: '36px',
+              }}
+            >
+              {v === 'list' ? '📋 List' : '📅 Month'}
+            </button>
+          );
+        })}
+      </div>
+
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '1rem 0' }}>
           {[1, 2, 3].map(i => (
@@ -200,14 +234,28 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
           ))}
         </div>
       ) : (
-        <SessionList
-          sessions={sessions}
-          userId={userId}
-          isReferee={isReferee}
-          onRsvp={handleRsvp}
-          onEdit={handleEdit}
-          onDelete={setDeletingSession}
-        />
+        <>
+          {view === 'grid' && (
+            <SessionCalendar
+              sessions={sessions}
+              month={month}
+              onPrev={() => { setSelectedDay(null); setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1)); }}
+              onNext={() => { setSelectedDay(null); setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1)); }}
+              selectedDay={selectedDay}
+              onSelectDay={d => setSelectedDay(d)}
+            />
+          )}
+          <SessionList
+            sessions={view === 'grid' && selectedDay
+              ? sessions.filter(s => sameDay(new Date(s.scheduled_at), selectedDay))
+              : sessions}
+            userId={userId}
+            isReferee={isReferee}
+            onRsvp={handleRsvp}
+            onEdit={handleEdit}
+            onDelete={setDeletingSession}
+          />
+        </>
       )}
 
       {deletingSession && (

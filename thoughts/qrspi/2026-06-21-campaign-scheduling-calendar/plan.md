@@ -414,8 +414,8 @@ export function sameDay(a: Date, b: Date): boolean {
 
 ### Verification
 #### Automated
-- [ ] `pnpm typecheck` / `pnpm lint` pass
-- [ ] `pnpm build` succeeds
+- [x] `pnpm typecheck` / `pnpm lint` pass
+- [x] `pnpm build` succeeds
 #### Manual
 - [ ] Grid shows correct weekday alignment for the current month; ‹/› navigate months
 - [ ] A day with a session shows a marker; selecting it surfaces that day's session(s)
