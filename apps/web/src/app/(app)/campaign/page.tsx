@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { BankingTab } from '@/components/campaign/BankingTab';
 import { OverviewTab } from '@/components/campaign/OverviewTab';
+import { ScheduleTab } from '@/components/campaign/ScheduleTab';
 
-type TabId = 'overview' | 'bank';
+type TabId = 'overview' | 'bank' | 'schedule';
 
 export default function CampaignPage() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -32,6 +33,7 @@ export default function CampaignPage() {
   const tabs: { id: TabId; label: string; refereeOnly?: boolean }[] = [
     { id: 'overview', label: '⚔️ Party' },
     { id: 'bank', label: '🏦 Bank', refereeOnly: true },
+    { id: 'schedule', label: '📅 Schedule' },
   ];
 
   const visibleTabs = tabs.filter(t => !t.refereeOnly || isReferee);
@@ -111,6 +113,10 @@ export default function CampaignPage() {
             </div>
             <BankingTab />
           </div>
+        )}
+
+        {activeTab === 'schedule' && userId && (
+          <ScheduleTab userId={userId} />
         )}
       </div>
     </div>
