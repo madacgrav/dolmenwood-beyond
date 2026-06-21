@@ -2,29 +2,37 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { loadSchedule, createSession, setRsvp, type RsvpStatus, type Session } from '@/lib/data/schedule';
+import { loadSchedule, createSession, updateSession, deleteSession, setRsvp, type RsvpStatus, type Session } from '@/lib/data/schedule';
+import { toDatetimeLocal } from '@/lib/format';
 import { SessionList } from '@/components/campaign/schedule/SessionList';
 import { SessionForm, type SessionFormField } from '@/components/campaign/schedule/SessionForm';
+import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
 
 interface CampaignOption {
   id: string;
   name: string;
 }
 
-export function ScheduleTab({ userId }: { userId: string }) {
+export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: boolean }) {
   const supabase = createClient();
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
   const [campaignId, setCampaignId] = useState('');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Create-session form state
+  // Session form state (shared by create + edit)
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formTitle, setFormTitle] = useState('');
   const [formWhen, setFormWhen] = useState('');   // datetime-local string
   const [formNotes, setFormNotes] = useState('');
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Delete-session modal state
+  const [deletingSession, setDeletingSession] = useState<Session | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // Load campaigns the user owns or belongs to (RLS-scoped).
   useEffect(() => {
@@ -66,26 +74,42 @@ export function ScheduleTab({ userId }: { userId: string }) {
 
   function resetForm() {
     setShowForm(false);
+    setEditingId(null);
     setFormTitle('');
     setFormWhen('');
     setFormNotes('');
     setFormError('');
   }
 
-  async function handleCreate() {
+  function handleEdit(session: Session) {
+    setEditingId(session.id);
+    setShowForm(true);
+    setFormTitle(session.title);
+    setFormWhen(toDatetimeLocal(session.scheduled_at));
+    setFormNotes(session.notes);
+    setFormError('');
+  }
+
+  async function handleSubmit() {
     if (!formTitle.trim()) { setFormError('Enter a title.'); return; }
     if (!formWhen) { setFormError('Pick a date and time.'); return; }
 
     setSaving(true);
     setFormError('');
     const scheduledAt = new Date(formWhen).toISOString();
-    const { error } = await createSession(supabase, {
-      campaignId,
-      createdBy: userId,
-      title: formTitle.trim(),
-      scheduledAt,
-      notes: formNotes.trim(),
-    });
+    const { error } = editingId
+      ? await updateSession(supabase, editingId, {
+          title: formTitle.trim(),
+          scheduledAt,
+          notes: formNotes.trim(),
+        })
+      : await createSession(supabase, {
+          campaignId,
+          createdBy: userId,
+          title: formTitle.trim(),
+          scheduledAt,
+          notes: formNotes.trim(),
+        });
     setSaving(false);
 
     if (error) {
@@ -99,6 +123,21 @@ export function ScheduleTab({ userId }: { userId: string }) {
   async function handleRsvp(sessionId: string, status: RsvpStatus) {
     const { error } = await setRsvp(supabase, sessionId, status);
     if (!error) await refetch();
+  }
+
+  async function handleConfirmDelete() {
+    if (!deletingSession) return;
+    setDeleting(true);
+    setDeleteError('');
+    const { error } = await deleteSession(supabase, deletingSession.id);
+    setDeleting(false);
+
+    if (error) {
+      setDeleteError(error.message);
+    } else {
+      setDeletingSession(null);
+      await refetch();
+    }
   }
 
   if (campaigns.length === 0 && !loading) {
@@ -136,9 +175,9 @@ export function ScheduleTab({ userId }: { userId: string }) {
           notes={formNotes}
           error={formError}
           loading={saving}
-          mode="create"
+          mode={editingId ? 'edit' : 'create'}
           onChange={handleFormChange}
-          onSubmit={handleCreate}
+          onSubmit={handleSubmit}
           onCancel={resetForm}
         />
       ) : (
@@ -161,7 +200,24 @@ export function ScheduleTab({ userId }: { userId: string }) {
           ))}
         </div>
       ) : (
-        <SessionList sessions={sessions} userId={userId} onRsvp={handleRsvp} />
+        <SessionList
+          sessions={sessions}
+          userId={userId}
+          isReferee={isReferee}
+          onRsvp={handleRsvp}
+          onEdit={handleEdit}
+          onDelete={setDeletingSession}
+        />
+      )}
+
+      {deletingSession && (
+        <DeleteSessionModal
+          sessionTitle={deletingSession.title}
+          deleting={deleting}
+          error={deleteError}
+          onCancel={() => { setDeletingSession(null); setDeleteError(''); }}
+          onConfirm={handleConfirmDelete}
+        />
       )}
     </div>
   );

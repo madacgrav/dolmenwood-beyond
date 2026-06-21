@@ -50,3 +50,22 @@ export async function setRsvp(
   const { error } = await supabase.rpc('set_session_rsvp', { p_session_id: sessionId, p_status: status });
   return { error };
 }
+
+export async function updateSession(
+  supabase: SupabaseClient,
+  id: string,
+  patch: { title: string; scheduledAt: string; notes: string },
+): Promise<{ error: { message: string } | null }> {
+  const { error } = await supabase.from('campaign_sessions')
+    .update({ title: patch.title, scheduled_at: patch.scheduledAt, notes: patch.notes })
+    .eq('id', id);
+  return { error };
+}
+
+export async function deleteSession(
+  supabase: SupabaseClient,
+  id: string,
+): Promise<{ error: { message: string } | null }> {
+  const { error } = await supabase.from('campaign_sessions').delete().eq('id', id);
+  return { error };
+}

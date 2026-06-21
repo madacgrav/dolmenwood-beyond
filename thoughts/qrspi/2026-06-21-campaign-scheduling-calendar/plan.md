@@ -367,7 +367,7 @@ export async function deleteSession(
 
 ### Verification
 #### Automated
-- [ ] `pnpm typecheck` / `pnpm lint` pass
+- [x] `pnpm typecheck` / `pnpm lint` pass
 #### Manual
 - [ ] Creator edits a session (title/time/notes) → list reflects changes
 - [ ] Creator deletes own session via modal → removed; its RSVP rows are gone (cascade — confirm in Studio)

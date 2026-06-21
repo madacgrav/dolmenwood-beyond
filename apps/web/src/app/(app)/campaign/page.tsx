@@ -116,7 +116,7 @@ export default function CampaignPage() {
         )}
 
         {activeTab === 'schedule' && userId && (
-          <ScheduleTab userId={userId} />
+          <ScheduleTab userId={userId} isReferee={isReferee} />
         )}
       </div>
     </div>

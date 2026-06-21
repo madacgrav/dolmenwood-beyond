@@ -7,7 +7,10 @@ import { RsvpControl } from '@/components/campaign/schedule/RsvpControl';
 interface SessionListProps {
   sessions: Session[];
   userId: string;
+  isReferee: boolean;
   onRsvp: (sessionId: string, status: RsvpStatus) => void;
+  onEdit: (session: Session) => void;
+  onDelete: (session: Session) => void;
 }
 
 /** Sort: upcoming (>= now) ascending first, then past descending. */
@@ -29,7 +32,7 @@ function tally(session: Session): { yes: number; no: number; maybe: number } {
   );
 }
 
-export function SessionList({ sessions, userId, onRsvp }: SessionListProps) {
+export function SessionList({ sessions, userId, isReferee, onRsvp, onEdit, onDelete }: SessionListProps) {
   if (sessions.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
@@ -48,6 +51,7 @@ export function SessionList({ sessions, userId, onRsvp }: SessionListProps) {
         const isPast = new Date(session.scheduled_at).getTime() < now;
         const counts = tally(session);
         const myStatus = session.rsvps.find(r => r.account_id === userId)?.status ?? null;
+        const canManage = session.created_by === userId || isReferee;
         return (
           <div
             key={session.id}
@@ -59,11 +63,39 @@ export function SessionList({ sessions, userId, onRsvp }: SessionListProps) {
               opacity: isPast ? 0.65 : 1,
             }}
           >
-            <div style={{ fontWeight: '700', color: 'var(--color-text)', fontSize: '0.95rem' }}>
-              {session.title}
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', marginTop: '0.15rem' }}>
-              {formatSessionDate(session.scheduled_at)}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '700', color: 'var(--color-text)', fontSize: '0.95rem' }}>
+                  {session.title}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', marginTop: '0.15rem' }}>
+                  {formatSessionDate(session.scheduled_at)}
+                </div>
+              </div>
+              {canManage && (
+                <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }}>
+                  <button
+                    onClick={() => onEdit(session)}
+                    style={{
+                      padding: '0.3rem 0.5rem', borderRadius: '6px',
+                      border: '1px solid var(--color-border)', backgroundColor: 'transparent',
+                      color: 'var(--color-text-muted)', fontSize: '0.72rem', cursor: 'pointer',
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(session)}
+                    style={{
+                      padding: '0.3rem 0.5rem', borderRadius: '6px',
+                      border: '1px solid var(--color-border)', backgroundColor: 'transparent',
+                      color: 'var(--color-danger)', fontSize: '0.72rem', cursor: 'pointer',
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
             {session.notes && (
               <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.4rem', whiteSpace: 'pre-wrap' }}>
