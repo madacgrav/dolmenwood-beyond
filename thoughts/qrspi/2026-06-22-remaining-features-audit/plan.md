@@ -309,8 +309,8 @@ setArmorByCharacter(await fetchEquippedArmorBonuses(supabase, mapped.map(c => c.
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web build` passes
-- [ ] `grep -rn "/party" apps/web/src` returns nothing (or only unrelated substrings)
+- [x] `pnpm --filter @dolmenwood/web build` passes
+- [x] `grep -rn "/party" apps/web/src` returns nothing (or only unrelated substrings)
 #### Manual
 - [ ] Navigating to `/party` 404s.
 
