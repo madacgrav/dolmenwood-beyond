@@ -41,7 +41,7 @@ const inputStyle: React.CSSProperties = {
   fontSize: '1rem', outline: 'none', boxSizing: 'border-box', minHeight: '44px',
 };
 
-export function Step13Details() {
+export function Step13Details({ basePath = '/characters/new/auto' }: { basePath?: string }) {
   const router = useRouter();
   const {
     name, sex, age, height, weight, background, kindred,
@@ -59,13 +59,13 @@ export function Step13Details() {
       setNameError(true);
       return;
     }
-    router.push('/characters/new/auto/complete');
+    router.push(`${basePath}/complete`);
   }
 
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh', paddingBottom: '2rem' }}>
       <WizardProgress step={13} totalSteps={13} title="Name & Details"
-        onBack={() => router.push('/characters/new/auto/12')} />
+        onBack={() => router.push(`${basePath}/12`)} />
       <div style={{ padding: '1rem', maxWidth: '500px', margin: '0 auto' }}>
         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
           Almost there! Give your adventurer a name and any final details.

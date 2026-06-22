@@ -35,19 +35,19 @@ const ALIGNMENTS: AlignmentOption[] = [
 // Classes restricted from chaotic alignment
 const NO_CHAOTIC = new Set(['Cleric', 'Friar']);
 
-export function Step11Alignment() {
+export function Step11Alignment({ basePath = '/characters/new/auto' }: { basePath?: string }) {
   const router = useRouter();
   const { alignment, setAlignment, characterClass } = useWizardStore();
 
   function handleSelect(a: Alignment) {
     setAlignment(a);
-    router.push('/characters/new/auto/12');
+    router.push(`${basePath}/12`);
   }
 
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh' }}>
       <WizardProgress step={11} totalSteps={13} title="Choose Alignment"
-        onBack={() => router.push('/characters/new/auto/10')} />
+        onBack={() => router.push(`${basePath}/10`)} />
       <div style={{ padding: '1rem', maxWidth: '500px', margin: '0 auto' }}>
         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
           Alignment shapes your character's worldview in Dolmenwood.

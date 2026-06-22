@@ -5,7 +5,7 @@ import { useWizardStore } from '@/stores/wizard-store';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
 import { getXPModifier, getPrimeAbilities, getXPThresholdForNextLevel } from '@dolmenwood/rules-engine';
 
-export function Step12LevelXP() {
+export function Step12LevelXP({ basePath = '/characters/new/auto' }: { basePath?: string }) {
   const router = useRouter();
   const { abilityScores, characterClass } = useWizardStore();
   const primes = characterClass ? getPrimeAbilities(characterClass) : [];
@@ -23,7 +23,7 @@ export function Step12LevelXP() {
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh' }}>
       <WizardProgress step={12} totalSteps={13} title="Level & XP"
-        onBack={() => router.push('/characters/new/auto/11')} />
+        onBack={() => router.push(`${basePath}/11`)} />
       <div style={{ padding: '1rem', maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
           {stats.map(({ label, value }) => (
@@ -79,7 +79,7 @@ export function Step12LevelXP() {
           </div>
         )}
 
-        <button onClick={() => router.push('/characters/new/auto/13')} style={primaryBtn}>
+        <button onClick={() => router.push(`${basePath}/13`)} style={primaryBtn}>
           Continue →
         </button>
       </div>

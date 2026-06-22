@@ -108,8 +108,8 @@ case 13: return <Step13Details basePath={BASE} />;
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web typecheck` passes
-- [ ] `pnpm --filter @dolmenwood/web build` passes
+- [x] `pnpm --filter @dolmenwood/web typecheck` passes
+- [x] `pnpm --filter @dolmenwood/web build` passes
 #### Manual
 - [ ] Walk `/characters/new/manual/1` → 13 → complete; character saves, opens its sheet.
 - [ ] Back buttons on steps 8–13 stay within `/manual/*`.
