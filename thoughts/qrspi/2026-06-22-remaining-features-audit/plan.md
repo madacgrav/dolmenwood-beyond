@@ -344,7 +344,7 @@ Each PNG should be a solid `#1a1510` background with the gold sword glyph center
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web build` passes
+- [x] `pnpm --filter @dolmenwood/web build` passes
 #### Manual
 - [ ] DevTools → Application → Manifest lists both PNG icons with no warnings; install
   prompt shows the raster icon.
