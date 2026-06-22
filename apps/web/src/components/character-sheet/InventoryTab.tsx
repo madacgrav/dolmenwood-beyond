@@ -8,6 +8,8 @@ import { RestockSheet } from './inventory/RestockSheet';
 import { useInventory } from './inventory/use-inventory';
 import { useAddItem } from './inventory/use-add-item';
 import { useRestock } from './inventory/use-restock';
+import { useOptionalRules } from '@/hooks/use-optional-rules';
+import { calculateCoinWeight } from '@dolmenwood/rules-engine';
 
 interface Props {
   characterId: string;
@@ -36,6 +38,9 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
 
   const isOwner = !readOnly && inv.currentUserId === ownerId;
 
+  const [rules] = useOptionalRules();
+  const coinWeight = rules.coinWeightEnabled ? calculateCoinWeight(inv.coins) : 0;
+
   if (inv.loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -49,7 +54,7 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {/* Encumbrance + Speed */}
-      <WeightBar items={inv.items} />
+      <WeightBar items={inv.items} coinWeight={coinWeight} />
 
       {/* Coins */}
       <CoinPurse coins={inv.coins} isOwner={isOwner} onCoinChange={inv.handleCoinChange} />

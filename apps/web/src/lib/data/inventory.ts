@@ -128,3 +128,38 @@ export async function deleteInventoryItem(
 ): Promise<void> {
   await supabase.from('character_inventory').delete().eq('id', id);
 }
+
+/** Sum of armor_ac_bonus over a character's equipped items. */
+export async function fetchEquippedArmorBonus(
+  supabase: SupabaseClient,
+  characterId: string,
+): Promise<number> {
+  const { data } = await supabase
+    .from('character_inventory')
+    .select('armor_ac_bonus')
+    .eq('character_id', characterId)
+    .eq('location', 'equipped');
+  return (data ?? []).reduce(
+    (sum, r: Record<string, unknown>) => sum + ((r.armor_ac_bonus as number) ?? 0),
+    0,
+  );
+}
+
+/** Batched: equipped armor bonus per character id (one query for the roster). */
+export async function fetchEquippedArmorBonuses(
+  supabase: SupabaseClient,
+  characterIds: string[],
+): Promise<Record<string, number>> {
+  if (characterIds.length === 0) return {};
+  const { data } = await supabase
+    .from('character_inventory')
+    .select('character_id, armor_ac_bonus')
+    .in('character_id', characterIds)
+    .eq('location', 'equipped');
+  const map: Record<string, number> = {};
+  for (const r of (data ?? []) as Record<string, unknown>[]) {
+    const id = r.character_id as string;
+    map[id] = (map[id] ?? 0) + ((r.armor_ac_bonus as number) ?? 0);
+  }
+  return map;
+}

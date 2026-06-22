@@ -3,15 +3,16 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import type { Character } from '@dolmenwood/types';
-import { calculateAC, getAttackBonus } from '@dolmenwood/rules-engine';
+import { calculateAC, getAttackBonus, getKindredACBonus } from '@dolmenwood/rules-engine';
 import { HPBar } from '@/components/ui/HPBar';
 
 interface CharacterCardProps {
   character: Character;
+  armorBonus?: number;
   onDelete: (id: string) => Promise<unknown>;
 }
 
-export function CharacterCard({ character, onDelete }: CharacterCardProps) {
+export function CharacterCard({ character, armorBonus = 0, onDelete }: CharacterCardProps) {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -21,8 +22,8 @@ export function CharacterCard({ character, onDelete }: CharacterCardProps) {
 
   const ac = calculateAC({
     dexScore: character.abilityScores.dex,
-    armorBonus: 0, // TODO: compute from equipped inventory
-    kindredACBonus: 0, // TODO: from kindred data
+    armorBonus,
+    kindredACBonus: getKindredACBonus(character.kindred),
     classACBonus: 0,
     shieldBonus: 0,
   });

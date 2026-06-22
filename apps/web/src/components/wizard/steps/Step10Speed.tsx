@@ -14,14 +14,14 @@ const TIERS: { speed: 10 | 20 | 30 | 40; label: string }[] = [
 // Simplified equipped weight estimate — will be computed from inventory later
 const ESTIMATED_WEIGHT = 200;
 
-export function Step10Speed() {
+export function Step10Speed({ basePath = '/characters/new/auto' }: { basePath?: string }) {
   const router = useRouter();
   const speed = calculateSpeed(ESTIMATED_WEIGHT);
 
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh' }}>
       <WizardProgress step={10} totalSteps={13} title="Speed"
-        onBack={() => router.push('/characters/new/auto/9')} />
+        onBack={() => router.push(`${basePath}/9`)} />
       <div style={{ padding: '1rem', maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{ fontSize: '4rem', fontWeight: '800', color: 'var(--color-primary)', lineHeight: 1 }}>
@@ -59,7 +59,7 @@ export function Step10Speed() {
           })}
         </div>
 
-        <button onClick={() => router.push('/characters/new/auto/11')} style={primaryBtn}>
+        <button onClick={() => router.push(`${basePath}/11`)} style={primaryBtn}>
           Continue →
         </button>
       </div>

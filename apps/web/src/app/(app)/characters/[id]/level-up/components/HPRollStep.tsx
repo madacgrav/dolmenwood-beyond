@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { Character } from '@dolmenwood/types';
 import { AnimatedDie } from '@/components/wizard/AnimatedDie';
+import { useOptionalRules } from '@/hooks/use-optional-rules';
 import {
   getAbilityModifier,
   getHitDie,
@@ -26,6 +27,7 @@ export function HPRollStep({
   const hitDie = parseInt(getHitDie(character.characterClass).slice(1), 10);
   const conMod = getAbilityModifier(character.abilityScores.con);
 
+  const [rules] = useOptionalRules();
   const [roll, setRoll] = useState<number | null>(null);
   const [rolling, setRolling] = useState(false);
   const [done, setDone] = useState(false);
@@ -49,6 +51,12 @@ export function HPRollStep({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const total = roll !== null ? Math.max(1, roll + conMod) : null;
+
+  function reroll() {
+    const rolled = rollDie(hitDie as DieType);
+    setRoll(rolled);
+    onHpGain(Math.max(1, rolled + conMod));
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
@@ -89,6 +97,21 @@ export function HPRollStep({
         <div style={{ fontSize: '1rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
           Rolling…
         </div>
+      )}
+
+      {done && rules.hpRerollLowRolls && roll !== null && roll <= 2 && (
+        <button
+          onClick={reroll}
+          style={{
+            width: '100%', padding: '0.875rem',
+            backgroundColor: 'var(--color-surface)', color: 'var(--color-gold)',
+            border: '1px solid var(--color-gold)', borderRadius: '10px',
+            fontFamily: 'var(--font-display), Georgia, serif',
+            fontSize: '0.95rem', fontWeight: '700', cursor: 'pointer', minHeight: '44px',
+          }}
+        >
+          Bad luck — re-roll
+        </button>
       )}
 
       <button

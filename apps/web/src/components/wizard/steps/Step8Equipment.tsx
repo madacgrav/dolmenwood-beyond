@@ -29,7 +29,7 @@ function classItemsFor(cls: string): string[] {
   return CLASS_STARTING_ITEMS[cls] ?? ['Dagger', 'Travelling clothes'];
 }
 
-export function Step8Equipment() {
+export function Step8Equipment({ basePath = '/characters/new/auto' }: { basePath?: string }) {
   const router = useRouter();
   const { characterClass, kindred } = useWizardStore();
   const [items, setItems] = useState<string[]>([]);
@@ -68,7 +68,7 @@ export function Step8Equipment() {
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh' }}>
       <WizardProgress step={8} totalSteps={13} title="Starting Equipment"
-        onBack={() => router.push('/characters/new/auto/7')} />
+        onBack={() => router.push(`${basePath}/7`)} />
       <div style={{ padding: '1rem', maxWidth: '500px', margin: '0 auto' }}>
 
         {/* Mode toggle */}
@@ -138,7 +138,7 @@ export function Step8Equipment() {
         )}
 
         {(rolled || buyMode) && (
-          <button onClick={() => router.push('/characters/new/auto/9')} style={primaryBtn}>
+          <button onClick={() => router.push(`${basePath}/9`)} style={primaryBtn}>
             Continue →
           </button>
         )}

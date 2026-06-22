@@ -5,7 +5,7 @@ import { useWizardStore } from '@/stores/wizard-store';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
 import { getAbilityModifier, getKindredACBonus, calculateAC } from '@dolmenwood/rules-engine';
 
-export function Step9AC() {
+export function Step9AC({ basePath = '/characters/new/auto' }: { basePath?: string }) {
   const router = useRouter();
   const { abilityScores, kindred } = useWizardStore();
   const dexMod = getAbilityModifier(abilityScores.dex);
@@ -24,7 +24,7 @@ export function Step9AC() {
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh' }}>
       <WizardProgress step={9} totalSteps={13} title="Armour Class"
-        onBack={() => router.push('/characters/new/auto/8')} />
+        onBack={() => router.push(`${basePath}/8`)} />
       <div style={{ padding: '1rem', maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <div style={{ fontSize: '4rem', fontWeight: '800', color: 'var(--color-primary)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
@@ -60,7 +60,7 @@ export function Step9AC() {
           </div>
         </div>
 
-        <button onClick={() => router.push('/characters/new/auto/10')} style={primaryBtn}>
+        <button onClick={() => router.push(`${basePath}/10`)} style={primaryBtn}>
           Continue →
         </button>
       </div>
