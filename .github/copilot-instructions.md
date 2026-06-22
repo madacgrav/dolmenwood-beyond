@@ -26,9 +26,12 @@ dolmenwood-beyond/
 │   │   │   ├── (auth)/        # sign-in, sign-up (no layout chrome)
 │   │   │   ├── (app)/         # authenticated app shell
 │   │   │   │   ├── characters/    # roster + [id] sheet + [id]/level-up
-│   │   │   │   ├── characters/new/    # mode-select, auto/[step], manual/[step]
+│   │   │   │   ├── characters/new/    # mode-select; auto, manual (both complete), import
 │   │   │   │   ├── news/          # WordPress blog feed + [slug]
-│   │   │   │   ├── campaign/      # stub (coming soon)
+│   │   │   │   ├── campaign/      # Party overview / Bank / Schedule tabs (referee + player views)
+│   │   │   │   ├── dice/          # quick dice roller
+│   │   │   │   ├── party/         # ⚠ orphan stub — NOT nav-linked; superseded by campaign/
+│   │   │   │   ├── admin/         # admin dashboard (is_admin only)
 │   │   │   │   └── settings/
 │   │   │   └── api/health/    # health check endpoint
 │   │   ├── components/
@@ -66,6 +69,15 @@ dolmenwood-beyond/
 ├── infra/azure/               # Bicep IaC (main.bicep + 4 modules)
 └── .github/workflows/         # ci.yml, deploy-azure.yml, deploy-prod.yml
 ```
+
+### Implementation Status
+
+- **Character creation** — Auto, Manual, and Import paths are all complete (all 13 steps).
+- **Character sheet** — Stats / Combat / Inventory / Magic / Notes tabs implemented, including inline dice rollers (skills, weapons, saves), the start-battle ammo tracker, the inventory restock tool, and spell-slot / preparation tracking.
+- **Campaign** — Party overview (referee + player views), Bank (referee payouts), and Schedule (sessions + RSVP + month calendar) are wired end-to-end via Supabase RPCs.
+- **Optional rules** (Settings) — sub-par re-roll, HP low-roll re-roll, and coin-weight encumbrance toggles are wired to behavior.
+- **PWA** — real 192×512 PNG icons (no longer an SVG placeholder).
+- **Known orphan** — `app/(app)/party/` is an unused stub, **not** linked in `BottomNav`. The bottom nav links Characters / News / Campaign / Dice / Settings (+ Admin when `is_admin`).
 
 ---
 
