@@ -392,6 +392,6 @@ No store/DB; ephemeral client state only.
 ---
 
 ## Final regression pass
-- [ ] `pnpm typecheck` (all packages) passes
-- [ ] `pnpm test` (rules-engine + web) passes
-- [ ] `pnpm --filter @dolmenwood/web build` passes
+- [x] `pnpm typecheck` (all packages) passes
+- [x] `pnpm test` (rules-engine + web) passes — rules-engine 148, web 34
+- [x] `pnpm --filter @dolmenwood/web build` passes
