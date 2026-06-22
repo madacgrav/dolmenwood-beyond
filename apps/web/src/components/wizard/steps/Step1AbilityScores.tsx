@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { roll3d6, getAbilityModifier } from '@dolmenwood/rules-engine';
 import type { AbilityScores } from '@dolmenwood/types';
 import { useWizardStore } from '@/stores/wizard-store';
+import { useOptionalRules } from '@/hooks/use-optional-rules';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
 import { AnimatedDie } from '@/components/wizard/AnimatedDie';
 import { ABILITY_KEYS, ABILITY_LABELS, isSubpar, primaryBtn, secondaryBtn } from '@/components/wizard/shared';
@@ -17,6 +18,7 @@ function rollScores(): AbilityScores {
 export function Step1AbilityScores() {
   const router = useRouter();
   const { setAbilityScores } = useWizardStore();
+  const [rules] = useOptionalRules();
 
   const [setA, setSetA] = useState<AbilityScores>(rollScores);
   const [setB, setSetB] = useState<AbilityScores | null>(null);
@@ -70,7 +72,7 @@ export function Step1AbilityScores() {
       <div style={{ padding: '1rem', maxWidth: '500px', margin: '0 auto' }}>
 
         {/* Sub-par warning */}
-        {subpar && (
+        {subpar && rules.subParReroll && (
           <div style={{
             padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem',
             backgroundColor: 'color-mix(in srgb, var(--color-gold) 15%, transparent)',

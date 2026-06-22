@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateSpeed } from '../speed';
+import { calculateSpeed, calculateCoinWeight } from '../speed';
 
 describe('calculateSpeed', () => {
   it('returns 40 for 0 coins (unencumbered)', () => {
@@ -32,5 +32,19 @@ describe('calculateSpeed', () => {
 
   it('returns 10 for extreme weight', () => {
     expect(calculateSpeed(9999)).toBe(10);
+  });
+});
+
+describe('calculateCoinWeight', () => {
+  it('returns 0 for an empty purse', () => {
+    expect(calculateCoinWeight({ gp: 0, sp: 0, cp: 0 })).toBe(0);
+  });
+
+  it('counts each coin as 1 weight unit', () => {
+    expect(calculateCoinWeight({ gp: 100, sp: 50, cp: 10 })).toBe(160);
+  });
+
+  it('includes platinum (pp) when present', () => {
+    expect(calculateCoinWeight({ gp: 10, sp: 0, cp: 0, pp: 5 })).toBe(15);
   });
 });

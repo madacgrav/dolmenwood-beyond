@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
+import { useOptionalRules } from '@/hooks/use-optional-rules';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
 import { getAbilityModifier, rollDie, getHitDie } from '@dolmenwood/rules-engine';
 import type { DieType } from '@dolmenwood/rules-engine';
@@ -14,9 +15,12 @@ export function ManualStep7HP() {
   const dieSides = parseInt(hitDie.replace('d', ''), 10) as DieType;
   const conMod = getAbilityModifier(abilityScores.con);
   const [hp, setHp] = useState<number>(Math.max(1, Math.floor(dieSides / 2) + 1 + conMod));
+  const [rules] = useOptionalRules();
+  const [lastRoll, setLastRoll] = useState<number | null>(null);
 
   function rollHP() {
     const rolled = rollDie(dieSides);
+    setLastRoll(rolled);
     setHp(Math.max(1, rolled + conMod));
   }
 
@@ -66,6 +70,16 @@ export function ManualStep7HP() {
         >
           🎲 Roll {hitDie}
         </button>
+
+        {rules.hpRerollLowRolls && lastRoll !== null && lastRoll <= 2 && (
+          <div style={{
+            padding: '0.75rem', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'center',
+            backgroundColor: 'color-mix(in srgb, var(--color-gold) 15%, transparent)',
+            border: '1px solid var(--color-gold)', color: 'var(--color-gold)', fontSize: '0.875rem',
+          }}>
+            Bad luck — roll again?
+          </div>
+        )}
 
         <button
           onClick={handleContinue}

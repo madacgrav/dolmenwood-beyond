@@ -201,8 +201,8 @@ function reroll() {
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/rules-engine test` passes (new `calculateCoinWeight` cases)
-- [ ] `pnpm --filter @dolmenwood/web typecheck` passes
+- [x] `pnpm --filter @dolmenwood/rules-engine test` passes (new `calculateCoinWeight` cases)
+- [x] `pnpm --filter @dolmenwood/web typecheck` passes
 #### Manual (Settings → Optional Rules)
 - [ ] Enable **Coin Weight** → Inventory tab carried-weight/speed change with coins on hand.
 - [ ] Disable **Sub-Par Re-roll** → low-roll banner no longer appears on step 1 (auto+manual).

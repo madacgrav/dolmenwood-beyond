@@ -4,6 +4,7 @@ import { primaryBtn, secondaryBtn } from '@/components/wizard/shared';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
+import { useOptionalRules } from '@/hooks/use-optional-rules';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
 import { rollDie, getAbilityModifier, getHitDie } from '@dolmenwood/rules-engine';
 import type { DieType } from '@dolmenwood/rules-engine';
@@ -12,6 +13,7 @@ import { AnimatedDie } from '@/components/wizard/AnimatedDie';
 export function Step7HP() {
   const router = useRouter();
   const { characterClass, abilityScores, hpMax, setHpMax } = useWizardStore();
+  const [rules] = useOptionalRules();
   const hitDie = characterClass ? getHitDie(characterClass) : 'd6';
   const dieSides = parseInt(hitDie.replace('d', ''), 10) as DieType;
   const conMod = getAbilityModifier(abilityScores.con);
@@ -56,7 +58,7 @@ export function Step7HP() {
           )}
         </div>
 
-        {isBadRoll && !rolling && (
+        {isBadRoll && rules.hpRerollLowRolls && !rolling && (
           <div style={{
             padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem',
             backgroundColor: 'color-mix(in srgb, var(--color-gold) 15%, transparent)',
@@ -74,7 +76,7 @@ export function Step7HP() {
               <button onClick={() => router.push('/characters/new/auto/8')} style={primaryBtn}>
                 Accept {finalHP} HP →
               </button>
-              {isBadRoll && <button onClick={handleRoll} style={secondaryBtn}>Re-roll</button>}
+              {isBadRoll && rules.hpRerollLowRolls && <button onClick={handleRoll} style={secondaryBtn}>Re-roll</button>}
             </>
           )}
         </div>

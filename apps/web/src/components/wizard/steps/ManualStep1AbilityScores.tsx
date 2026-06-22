@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
+import { useOptionalRules } from '@/hooks/use-optional-rules';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
 import { getAbilityModifier, roll3d6 } from '@dolmenwood/rules-engine';
 import type { AbilityScores } from '@dolmenwood/types';
@@ -14,6 +15,7 @@ const ABILITIES: { key: keyof AbilityScores; label: string }[] =
 export function ManualStep1AbilityScores() {
   const router = useRouter();
   const { abilityScores, setAbilityScores } = useWizardStore();
+  const [rules] = useOptionalRules();
   const [scores, setScores] = useState<AbilityScores>(abilityScores);
   // Separate string state so partial input (e.g. typing "1" toward "15") isn't clamped mid-keystroke
   const [inputValues, setInputValues] = useState<Record<keyof AbilityScores, string>>({
@@ -143,7 +145,7 @@ export function ManualStep1AbilityScores() {
           })}
         </div>
 
-        {subpar && (
+        {subpar && rules.subParReroll && (
           <div style={{
             marginTop: '1rem', padding: '0.75rem',
             backgroundColor: 'color-mix(in srgb, var(--color-danger) 10%, transparent)',

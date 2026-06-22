@@ -4,14 +4,16 @@ import type { InventoryItem as DBInventoryItem } from '@/lib/data/inventory';
 
 interface Props {
   items: DBInventoryItem[];
+  coinWeight?: number;
 }
 
 /** Encumbrance + Speed card. Tiny items don't count toward carried weight. */
-export function WeightBar({ items }: Props) {
-  const totalWeight = items.reduce((sum, item) => {
+export function WeightBar({ items, coinWeight = 0 }: Props) {
+  const itemWeight = items.reduce((sum, item) => {
     if (item.location === 'tiny') return sum;
     return sum + (item.weight_coins * item.quantity);
   }, 0);
+  const totalWeight = itemWeight + coinWeight;
   const speed = calculateSpeed(totalWeight);
   const speedColor = speed >= 40 ? 'var(--color-primary)' : speed >= 30 ? 'var(--color-text)' : speed >= 20 ? 'var(--color-gold)' : 'var(--color-danger)';
   const maxWeight = 800;
