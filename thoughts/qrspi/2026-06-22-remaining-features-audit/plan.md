@@ -288,7 +288,7 @@ setArmorByCharacter(await fetchEquippedArmorBonuses(supabase, mapped.map(c => c.
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web typecheck` + `build` pass
+- [x] `pnpm --filter @dolmenwood/web typecheck` + `build` pass
 #### Manual
 - [ ] Equip an armour item (with an AC bonus) in the Inventory tab; the Combat tab AC
   increases by that bonus, and the roster card shows the **same** AC.

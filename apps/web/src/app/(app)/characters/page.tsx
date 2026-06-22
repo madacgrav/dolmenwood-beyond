@@ -8,7 +8,7 @@ import { CharacterCard } from '@/components/characters/CharacterCard';
 type SortOption = 'recently_viewed' | 'name' | 'level' | 'class';
 
 export default function CharactersPage() {
-  const { characters, loading, error, deleteCharacter } = useCharacters();
+  const { characters, armorByCharacter, loading, error, deleteCharacter } = useCharacters();
   const [sort, setSort] = useState<SortOption>('recently_viewed');
 
   const sorted = [...characters].sort((a, b) => {
@@ -124,6 +124,7 @@ export default function CharactersPage() {
             <CharacterCard
               key={character.id}
               character={character}
+              armorBonus={armorByCharacter[character.id] ?? 0}
               onDelete={deleteCharacter}
             />
           ))}

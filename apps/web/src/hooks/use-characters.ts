@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { listCharacters, deleteCharacter as deleteCharacterQuery } from '@/lib/data/characters';
+import { fetchEquippedArmorBonuses } from '@/lib/data/inventory';
 import type { Character } from '@dolmenwood/types';
 
 export function useCharacters() {
   const [characters, setCharacters] = useState<Character[]>([]);
+  const [armorByCharacter, setArmorByCharacter] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,6 +21,7 @@ export function useCharacters() {
         setError(error);
       } else {
         setCharacters(mapped);
+        setArmorByCharacter(await fetchEquippedArmorBonuses(supabase, mapped.map(c => c.id)));
       }
       setLoading(false);
     }
@@ -46,5 +49,5 @@ export function useCharacters() {
     return error;
   }
 
-  return { characters, loading, error, deleteCharacter };
+  return { characters, armorByCharacter, loading, error, deleteCharacter };
 }

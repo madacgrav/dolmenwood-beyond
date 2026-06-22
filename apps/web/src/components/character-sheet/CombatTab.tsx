@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import type { Character } from '@dolmenwood/types';
-import { getAttackBonus, getSaveTargets, calculateAC, getHitDie, getAbilityModifier } from '@dolmenwood/rules-engine';
+import { getAttackBonus, getSaveTargets, calculateAC, getHitDie, getAbilityModifier, getKindredACBonus } from '@dolmenwood/rules-engine';
 import { createClient } from '@/lib/supabase/client';
-import { listEquippedWeapons, type EquippedWeapon } from '@/lib/data/inventory';
+import { listEquippedWeapons, fetchEquippedArmorBonus, type EquippedWeapon } from '@/lib/data/inventory';
 import { ConditionsSection } from './combat/ConditionsSection';
 import { ArmourClassSection } from './combat/ArmourClassSection';
 import { AttackSection } from './combat/AttackSection';
@@ -27,12 +27,14 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const [weapons, setWeapons] = useState<EquippedWeapon[]>([]);
   const [hasRangedWeapon, setHasRangedWeapon] = useState(false);
+  const [equippedArmorBonus, setEquippedArmorBonus] = useState(0);
 
   useEffect(() => {
     listEquippedWeapons(supabase, characterId).then(ws => {
       setWeapons(ws);
       setHasRangedWeapon(ws.some(w => RANGED_WEAPON_PATTERNS.test(w.item_name)));
     });
+    fetchEquippedArmorBonus(supabase, characterId).then(setEquippedArmorBonus);
   }, [characterId, supabase]);
 
   const ammo = useAmmoTracking(supabase, characterId);
@@ -43,11 +45,10 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
   const strMod = getAbilityModifier(character.abilityScores.str);
   const dexMod = getAbilityModifier(character.abilityScores.dex);
 
-  const equippedArmorBonus = 0; // updated when armor items are read
   const ac = calculateAC({
     dexScore: character.abilityScores.dex,
     armorBonus: equippedArmorBonus,
-    kindredACBonus: 0,
+    kindredACBonus: getKindredACBonus(character.kindred),
     classACBonus: 0,
     shieldBonus: 0,
   });
