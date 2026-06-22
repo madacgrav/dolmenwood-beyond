@@ -383,7 +383,7 @@ No store/DB; ephemeral client state only.
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web typecheck` + `build` pass
+- [x] `pnpm --filter @dolmenwood/web typecheck` + `build` pass
 #### Manual
 - [ ] Dice tab reachable from BottomNav; tapping a die shows a result and appends history.
 - [ ] Notation like `2d6` rolls; invalid input is ignored without crashing.

@@ -13,6 +13,7 @@ const BASE_NAV_ITEMS: NavItem[] = [
   { href: '/characters', label: 'Characters', icon: '🏠' },
   { href: '/news', label: 'News', icon: '📜' },
   { href: '/campaign', label: 'Campaign', icon: '⚔️' },
+  { href: '/dice', label: 'Dice', icon: '🎲' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
