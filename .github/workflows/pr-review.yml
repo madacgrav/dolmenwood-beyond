@@ -76,6 +76,8 @@ jobs:
     needs: [developer-architect, devops, security, qa]
     if: always()
     steps:
+      - uses: actions/checkout@v4
+
       - name: Post consolidation summary
         env:
           GH_TOKEN: ${{ github.token }}
@@ -110,3 +112,21 @@ jobs:
           } > summary.md
 
           gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file summary.md
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: findings-*
+          path: findings
+          merge-multiple: true
+
+      - name: Post consolidated review
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ls findings/*.json >/dev/null 2>&1; then
+            node .github/scripts/synthesize-findings.mjs findings > consolidated.md
+            gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file consolidated.md
+          else
+            echo "No findings artifacts to consolidate."
+          fi

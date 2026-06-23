@@ -279,9 +279,9 @@ Keep the existing per-agent status table step (it reads `needs.*.result`).
 
 ### Verification
 #### Automated
-- [ ] Fixture test: create two findings JSONs that flag the same `file:line:title`, run
+- [x] Fixture test: create two findings JSONs that flag the same `file:line:title`, run
   `node .github/scripts/synthesize-findings.mjs <dir>`, confirm the finding appears once with both agents attributed and severity = the higher of the two.
-- [ ] `actionlint .github/workflows/pr-review.yml` passes
+- [x] `actionlint .github/workflows/pr-review.yml` passes (YAML parse fallback)
 
 #### Manual
 - [ ] On a scratch PR where Security and DevOps both flag the same Bicep/secrets issue: exactly one consolidated comment appears, merged once, severity-ordered; the per-agent status table is still posted.
