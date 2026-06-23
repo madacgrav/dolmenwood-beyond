@@ -556,8 +556,8 @@ export async function markNotificationRead(
 
 ### Verification
 #### Automated
-- [ ] `npx supabase db reset` applies cleanly
-- [ ] `pnpm --filter web typecheck` / `lint` / `build` pass
+- [x] `npx supabase db reset` applies cleanly
+- [x] `pnpm --filter web typecheck` / `lint` / `build` pass
 #### Manual
 - [ ] Confirming a date (Phase 3 flow) creates exactly one unread notification per participant
 - [ ] The bell badge shows the unread count; opening the panel lists "Session confirmed: <title>"
