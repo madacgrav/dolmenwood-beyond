@@ -11,6 +11,10 @@ interface AnimatedDieProps {
 
 const DIE_FACES: Record<number, string> = { 1: '⚀', 2: '⚁', 3: '⚂', 4: '⚃', 5: '⚄', 6: '⚅' };
 
+// 8 frames × 80ms interval (see useEffect below). The shake runs for this long
+// before the die snaps to its final value.
+export const DICE_ROLL_DURATION_MS = 640;
+
 export function AnimatedDie({ value, sides = 6, rolling = false, size = 'md' }: AnimatedDieProps) {
   const [displayValue, setDisplayValue] = useState<number | null>(value);
   const [animating, setAnimating] = useState(false);
