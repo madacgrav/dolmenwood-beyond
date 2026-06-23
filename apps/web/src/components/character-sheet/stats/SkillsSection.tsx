@@ -47,8 +47,10 @@ export function SkillsSection({ characterClass, level, kindred }: Props) {
             ) : results[skill.name] ? (
               <span style={{
                 padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700',
-                backgroundColor: results[skill.name]!.pass ? '#1a4a1a' : '#4a1a1a',
-                color: results[skill.name]!.pass ? '#4ade80' : '#f87171',
+                backgroundColor: results[skill.name]!.pass
+                  ? 'color-mix(in srgb, var(--color-primary) 12%, var(--color-bg))'
+                  : 'color-mix(in srgb, var(--color-danger) 12%, var(--color-bg))',
+                color: results[skill.name]!.pass ? 'var(--color-primary)' : 'var(--color-danger)',
               }}>
                 {results[skill.name]!.roll} {results[skill.name]!.pass ? '✓' : '✗'}
               </span>
