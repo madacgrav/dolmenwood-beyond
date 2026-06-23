@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
 import { rollDie, rollDamage, type DieType } from '@dolmenwood/rules-engine';
 import type { EquippedWeapon } from '@/lib/data/inventory';
+import { AnimatedDie } from '@/components/wizard/AnimatedDie';
+import { useDiceRoll } from '@/hooks/use-dice-roll';
 import { formatMod, sectionHead } from './shared';
 
 interface AttackResult { attackRoll: number; attackTotal: number; damageRoll: number; damageDice: string; }
@@ -14,23 +15,27 @@ interface Props {
 }
 
 export function AttackSection({ weapons, attackBonus, strMod, dexMod }: Props) {
-  const [attackResults, setAttackResults] = useState<Partial<Record<string, AttackResult>>>({});
-  const [genericAttack, setGenericAttack] = useState<AttackResult | null>(null);
+  const { results, rollingKeys, faceValues, roll } = useDiceRoll<AttackResult>();
 
   function rollWeaponAttack(weapon: EquippedWeapon, isMelee: boolean) {
-    const mod = isMelee ? strMod : dexMod;
-    const attackRoll = rollDie(20 as DieType);
-    const attackTotal = attackRoll + attackBonus + mod;
-    const damageDice = weapon.weapon_damage_dice ?? '1d6';
-    const damageRoll = rollDamage(damageDice + (isMelee && strMod !== 0 ? (strMod >= 0 ? `+${strMod}` : `${strMod}`) : ''));
-    setAttackResults(prev => ({ ...prev, [weapon.id]: { attackRoll, attackTotal, damageRoll, damageDice } }));
+    roll(weapon.id, () => {
+      const mod = isMelee ? strMod : dexMod;
+      const attackRoll = rollDie(20 as DieType);
+      const attackTotal = attackRoll + attackBonus + mod;
+      const damageDice = weapon.weapon_damage_dice ?? '1d6';
+      const damageRoll = rollDamage(damageDice + (isMelee && strMod !== 0 ? (strMod >= 0 ? `+${strMod}` : `${strMod}`) : ''));
+      return { face: attackRoll, result: { attackRoll, attackTotal, damageRoll, damageDice } };
+    });
   }
 
   function rollGenericAttack(isMelee: boolean) {
-    const mod = isMelee ? strMod : dexMod;
-    const attackRoll = rollDie(20 as DieType);
-    const attackTotal = attackRoll + attackBonus + mod;
-    setGenericAttack({ attackRoll, attackTotal, damageRoll: 0, damageDice: '' });
+    const key = isMelee ? 'generic-melee' : 'generic-ranged';
+    roll(key, () => {
+      const mod = isMelee ? strMod : dexMod;
+      const attackRoll = rollDie(20 as DieType);
+      const attackTotal = attackRoll + attackBonus + mod;
+      return { face: attackRoll, result: { attackRoll, attackTotal, damageRoll: 0, damageDice: '' } };
+    });
   }
 
   return (
@@ -39,7 +44,7 @@ export function AttackSection({ weapons, attackBonus, strMod, dexMod }: Props) {
       {weapons.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {weapons.map(w => {
-            const result = attackResults[w.id];
+            const result = results[w.id];
             const isMissile = !!(w.weapon_damage_dice && w.item_name.toLowerCase().match(/bow|crossbow|sling|throwing/));
             const mod = isMissile ? dexMod : strMod;
             const modLabel = isMissile ? 'DEX' : 'STR';
@@ -63,7 +68,11 @@ export function AttackSection({ weapons, attackBonus, strMod, dexMod }: Props) {
                     🎲 Roll
                   </button>
                 </div>
-                {result && (
+                {rollingKeys[w.id] ? (
+                  <div style={{ marginTop: '0.625rem' }}>
+                    <AnimatedDie value={faceValues[w.id] ?? null} sides={20} rolling size="sm" />
+                  </div>
+                ) : result && (
                   <div style={{ marginTop: '0.625rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <span style={{
                       fontSize: '0.85rem', fontWeight: '700', padding: '0.25rem 0.625rem',
@@ -90,6 +99,7 @@ export function AttackSection({ weapons, attackBonus, strMod, dexMod }: Props) {
           {(['melee', 'ranged'] as const).map(type => {
             const isMelee = type === 'melee';
             const mod = isMelee ? strMod : dexMod;
+            const key = isMelee ? 'generic-melee' : 'generic-ranged';
             return (
               <div key={type} style={{ flex: 1, backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '0.875rem', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>{type}</div>
@@ -106,9 +116,13 @@ export function AttackSection({ weapons, attackBonus, strMod, dexMod }: Props) {
                 >
                   🎲 Roll d20
                 </button>
-                {genericAttack && (
+                {rollingKeys[key] ? (
+                  <div style={{ marginTop: '0.375rem', display: 'flex', justifyContent: 'center' }}>
+                    <AnimatedDie value={faceValues[key] ?? null} sides={20} rolling size="sm" />
+                  </div>
+                ) : results[key] && (
                   <div style={{ marginTop: '0.375rem', fontSize: '0.85rem', fontWeight: '700', color: 'var(--color-primary)' }}>
-                    → {genericAttack.attackTotal}
+                    → {results[key]!.attackTotal}
                   </div>
                 )}
               </div>
