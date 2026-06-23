@@ -338,8 +338,8 @@ export async function setAvailability(
 
 ### Verification
 #### Automated
-- [ ] `npx supabase db reset` applies cleanly
-- [ ] `pnpm --filter web typecheck` / `lint` / `build` pass
+- [x] `npx supabase db reset` applies cleanly
+- [x] `pnpm --filter web typecheck` / `lint` / `build` pass
 #### Manual
 - [ ] Each participant can toggle Available/Busy; choice persists after refetch
 - [ ] List shows who approved and "✅ N / M available" with correct M (members + referee)

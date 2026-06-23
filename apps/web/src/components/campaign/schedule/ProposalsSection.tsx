@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { loadProposals, createProposal, deleteProposal, type Proposal } from '@/lib/data/proposals';
+import { loadProposals, createProposal, deleteProposal, setAvailability, type Proposal } from '@/lib/data/proposals';
 import { ProposalForm, type ProposalFormField } from '@/components/campaign/schedule/ProposalForm';
 import { ProposalList } from '@/components/campaign/schedule/ProposalList';
 import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
@@ -79,6 +79,11 @@ export function ProposalsSection({ campaignId, userId, isReferee }: {
     }
   }
 
+  async function handleAvailability(proposalId: string, available: boolean) {
+    const { error } = await setAvailability(supabase, proposalId, available);
+    if (!error) await refetch();
+  }
+
   async function handleConfirmDelete() {
     if (!deletingProposal) return;
     setDeleting(true);
@@ -130,6 +135,7 @@ export function ProposalsSection({ campaignId, userId, isReferee }: {
         userId={userId}
         isReferee={isReferee}
         onDelete={setDeletingProposal}
+        onAvail={handleAvailability}
       />
 
       {deletingProposal && (

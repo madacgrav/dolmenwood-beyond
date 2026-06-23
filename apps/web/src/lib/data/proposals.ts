@@ -2,6 +2,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type ProposalStatus = 'open' | 'confirmed' | 'cancelled';
 
+export interface ProposalAvailability {
+  account_id: string;
+  display_name: string;
+  available: boolean;
+}
+
 export interface Proposal {
   id: string;
   campaign_id: string;
@@ -11,7 +17,8 @@ export interface Proposal {
   status: ProposalStatus;
   confirmed_session_id: string | null;
   created_by: string;
-  // availability + participant_count added in Phase 2
+  availability: ProposalAvailability[];
+  participant_count: number;
 }
 
 /** Proposals for a campaign via the membership-guarded RPC. */
@@ -39,5 +46,14 @@ export async function deleteProposal(
   supabase: SupabaseClient, id: string,
 ): Promise<{ error: { message: string } | null }> {
   const { error } = await supabase.from('date_proposals').delete().eq('id', id);
+  return { error };
+}
+
+export async function setAvailability(
+  supabase: SupabaseClient, proposalId: string, available: boolean,
+): Promise<{ error: { message: string } | null }> {
+  const { error } = await supabase.rpc('set_proposal_availability', {
+    p_proposal_id: proposalId, p_available: available,
+  });
   return { error };
 }
