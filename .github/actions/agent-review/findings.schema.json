@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "agent": { "type": "string" },
+    "summary": { "type": "string" },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "severity": { "type": "string", "enum": ["critical", "warning", "suggestion"] },
+          "file": { "type": "string" },
+          "line": { "type": ["integer", "null"] },
+          "title": { "type": "string" },
+          "detail": { "type": "string" },
+          "suggestion": { "type": "string" }
+        },
+        "required": ["severity", "file", "line", "title", "detail", "suggestion"]
+      }
+    }
+  },
+  "required": ["agent", "summary", "findings"]
+}

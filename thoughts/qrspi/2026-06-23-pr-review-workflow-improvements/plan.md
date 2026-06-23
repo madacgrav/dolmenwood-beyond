@@ -196,10 +196,10 @@ display name. Keep each persona's domain checklist unchanged.
 
 ### Verification
 #### Automated
-- [ ] `actionlint .github/workflows/*.yml` passes
-- [ ] `node -e "JSON.parse(require('fs').readFileSync('.github/actions/agent-review/findings.schema.json'))"` exits 0
-- [ ] `node .github/scripts/render-findings.mjs <(echo '{"agent":"X","summary":"s","findings":[{"severity":"warning","file":"a.ts","line":1,"title":"t","detail":"d","suggestion":""}]}')` prints markdown
-- [ ] `git grep -n "ai-inference\|openai/gpt-4o" .github/` returns nothing
+- [x] `actionlint .github/workflows/*.yml` passes (YAML parse fallback — actionlint not installed locally)
+- [x] `node -e "JSON.parse(require('fs').readFileSync('.github/actions/agent-review/findings.schema.json'))"` exits 0
+- [x] `node .github/scripts/render-findings.mjs <(echo '{"agent":"X","summary":"s","findings":[{"severity":"warning","file":"a.ts","line":1,"title":"t","detail":"d","suggestion":""}]}')` prints markdown
+- [x] `git grep -n "ai-inference\|openai/gpt-4o" .github/` returns nothing
 
 #### Manual
 - [ ] On a scratch PR: each of the 4 reviewer jobs runs on Claude, posts a comment, and uploads a `findings-<agent>.json` artifact that validates against the schema (download and check with `jq`).

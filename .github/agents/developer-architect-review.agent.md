@@ -69,3 +69,21 @@ Structure your review as:
 ```
 
 If there are no issues, say so explicitly. Be specific — reference file paths and line numbers. Do not repeat the PR diff back to the reviewer.
+
+## Structured Output (required)
+
+Report your review through the `report_findings` tool — do not write the review as
+prose. Populate the tool input as:
+
+- `agent`: `"🏗️ Developer Architect"`
+- `summary`: one or two sentences (the gist of your "Looks Good" / overall read).
+- `findings`: one entry per issue or suggestion, each with:
+  - `severity`: \`critical\`/\`warning\` for items you would have put under "Issues Found", \`suggestion\` for "Suggestions".
+  - `file`: the path the finding is about (use the most relevant changed file).
+  - `line`: the line number when known, otherwise `null`.
+  - `title`: a short one-line summary.
+  - `detail`: why it matters.
+  - `suggestion`: a concrete fix, or an empty string if none.
+
+Apply the same domain checklist described above to decide what to report. If nothing
+is wrong, return an empty `findings` array with a `summary` saying so.

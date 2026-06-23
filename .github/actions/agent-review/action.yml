@@ -1,11 +1,15 @@
 name: Agent PR Review
 description: >-
-  Gather PR data, run an AI review agent against the diff, and post the
-  result as a PR comment. Shared by all reviewer jobs in pr-review.yml.
+  Gather PR data, run a Claude review agent against the diff, post the
+  structured result as a PR comment, and upload the findings as an artifact.
+  Shared by all reviewer jobs in pr-review.yml.
 
 inputs:
   agent-file:
     description: Path to the agent system-prompt markdown file
+    required: true
+  agent-name:
+    description: Short identifier for this reviewer (e.g. security) — names the artifact/findings file
     required: true
   sleep:
     description: Seconds to wait before calling the model (rate-limit stagger)
@@ -14,47 +18,43 @@ inputs:
   github-token:
     description: Token used for gh CLI calls
     required: true
+  anthropic-api-key:
+    description: Anthropic API key used to call the Messages API
+    required: true
 
 runs:
   using: composite
   steps:
     - name: Gather PR data
-      id: pr
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        # Truncate diff to stay within model token limits.
-        # Write the full diff to a file first, then truncate — piping
-        # straight into `head -c` makes `head` close the pipe early on
-        # large diffs, so `gh` dies with SIGPIPE (exit 141) and pipefail
-        # fails the step.
+        set -euo pipefail
         gh pr diff ${{ github.event.pull_request.number }} > pr.full.diff
-        head -c 12000 pr.full.diff > pr.diff
 
-        FILES=$(gh pr view ${{ github.event.pull_request.number }} \
-          --json files --jq '[.files[].path] | join(", ")')
-        echo "files=$FILES" >> $GITHUB_OUTPUT
+        # Claude's large context lets us pass much more than the old 12K cap.
+        # For very large PRs, fall back to per-file diffs (split on the
+        # `diff --git` boundary and cap each) so we never cut mid-line across
+        # the whole diff. csplit operates on the already-fetched diff, so this
+        # needs no base ref.
+        if [ "$(wc -c < pr.full.diff)" -gt 120000 ]; then
+          : > pr.diff
+          if csplit -s -z -f _diffpart_ pr.full.diff '/^diff --git /' '{*}' 2>/dev/null; then
+            for part in _diffpart_*; do
+              head -c 20000 "$part" >> pr.diff
+              echo >> pr.diff
+            done
+            rm -f _diffpart_*
+          else
+            head -c 120000 pr.full.diff > pr.diff
+          fi
+        else
+          cp pr.full.diff pr.diff
+        fi
 
-        DIFF_DELIM=$(openssl rand -hex 16)
-        {
-          echo "diff<<${DIFF_DELIM}"
-          cat pr.diff
-          echo
-          echo "${DIFF_DELIM}"
-        } >> $GITHUB_OUTPUT
-
-    - name: Load agent system prompt
-      id: agent
-      shell: bash
-      run: |
-        AGENT_DELIM=$(openssl rand -hex 16)
-        {
-          echo "system<<${AGENT_DELIM}"
-          cat ${{ inputs.agent-file }}
-          echo
-          echo "${AGENT_DELIM}"
-        } >> $GITHUB_OUTPUT
+        gh pr view ${{ github.event.pull_request.number }} \
+          --json files --jq '[.files[].path] | join(", ")' > files.txt
 
     - name: Rate limit buffer
       if: inputs.sleep != '0'
@@ -62,28 +62,48 @@ runs:
       run: sleep ${{ inputs.sleep }}
 
     - name: Run review
-      id: review
-      uses: actions/ai-inference@v1
-      with:
-        model: openai/gpt-4o
-        max-tokens: 800
-        system-prompt: ${{ steps.agent.outputs.system }}
-        prompt: |
-          Review this pull request for Dolmenwood Beyond.
-
-          **PR title:** ${{ github.event.pull_request.title }}
-          **Description:** ${{ github.event.pull_request.body || '(none)' }}
-          **Changed files:** ${{ steps.pr.outputs.files }}
-
-          **Diff:**
-          ```diff
-          ${{ steps.pr.outputs.diff }}
-          ```
-
-    - name: Post review comment
       shell: bash
       env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
         GH_TOKEN: ${{ inputs.github-token }}
-        BODY: ${{ steps.review.outputs.response }}
+        AGENT_FILE: ${{ inputs.agent-file }}
+        AGENT_NAME: ${{ inputs.agent-name }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        PR_BODY: ${{ github.event.pull_request.body }}
       run: |
-        gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
+        set -euo pipefail
+
+        PROMPT=$(printf 'Review this pull request for Dolmenwood Beyond.\n\nPR title: %s\nDescription: %s\nChanged files: %s\n\nReturn your findings via the report_findings tool. Use severity critical/warning/suggestion; set line to null when a finding is not line-specific; suggestion may be an empty string.\n\nDiff:\n```diff\n%s\n```' \
+          "$PR_TITLE" "${PR_BODY:-(none)}" "$(cat files.txt)" "$(cat pr.diff)")
+
+        jq -n \
+          --arg model "claude-sonnet-4-6" \
+          --arg system "$(cat "$AGENT_FILE")" \
+          --arg prompt "$PROMPT" \
+          --argjson schema "$(cat .github/actions/agent-review/findings.schema.json)" \
+          '{model:$model, max_tokens:4000, system:$system,
+            tools:[{name:"report_findings", description:"Report structured code-review findings.", input_schema:$schema, strict:true}],
+            tool_choice:{type:"tool", name:"report_findings"},
+            messages:[{role:"user", content:$prompt}]}' > body.json
+
+        curl -sS https://api.anthropic.com/v1/messages \
+          -H "x-api-key: $ANTHROPIC_API_KEY" \
+          -H "anthropic-version: 2023-06-01" \
+          -H "content-type: application/json" \
+          -d @body.json > resp.json
+
+        # Extract the forced tool input (the ReviewOutput object)
+        jq '(.content[] | select(.type=="tool_use") | .input) // empty' resp.json > "findings-$AGENT_NAME.json"
+        if [ ! -s "findings-$AGENT_NAME.json" ]; then
+          echo "::error::No findings produced by $AGENT_NAME"; jq '.' resp.json; exit 1
+        fi
+
+        node .github/scripts/render-findings.mjs "findings-$AGENT_NAME.json" > comment.md
+        gh pr comment "$PR_NUMBER" --body-file comment.md
+
+    - name: Upload findings artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: findings-${{ inputs.agent-name }}
+        path: findings-${{ inputs.agent-name }}.json
