@@ -181,7 +181,7 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
       )}
 
       {campaignId && (
-        <ProposalsSection campaignId={campaignId} userId={userId} isReferee={isReferee} />
+        <ProposalsSection campaignId={campaignId} userId={userId} isReferee={isReferee} onConfirmed={refetch} />
       )}
 
       {showForm ? (

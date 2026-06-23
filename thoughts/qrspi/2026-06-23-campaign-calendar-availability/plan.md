@@ -446,8 +446,8 @@ $$;
 
 ### Verification
 #### Automated
-- [ ] `npx supabase db reset` applies cleanly
-- [ ] `pnpm --filter web typecheck` / `lint` / `build` pass
+- [x] `npx supabase db reset` applies cleanly
+- [x] `pnpm --filter web typecheck` / `lint` / `build` pass
 #### Manual
 - [ ] In a campaign with N participants, the Nth "Available" flips the proposal to Confirmed and creates exactly one new session visible in the session list/calendar
 - [ ] A partially-approved proposal creates no session

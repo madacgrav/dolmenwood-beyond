@@ -7,8 +7,8 @@ import { ProposalForm, type ProposalFormField } from '@/components/campaign/sche
 import { ProposalList } from '@/components/campaign/schedule/ProposalList';
 import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
 
-export function ProposalsSection({ campaignId, userId, isReferee }: {
-  campaignId: string; userId: string; isReferee: boolean;
+export function ProposalsSection({ campaignId, userId, isReferee, onConfirmed }: {
+  campaignId: string; userId: string; isReferee: boolean; onConfirmed?: () => void;
 }) {
   const supabase = createClient();
   const [proposals, setProposals] = useState<Proposal[]>([]);
@@ -81,7 +81,11 @@ export function ProposalsSection({ campaignId, userId, isReferee }: {
 
   async function handleAvailability(proposalId: string, available: boolean) {
     const { error } = await setAvailability(supabase, proposalId, available);
-    if (!error) await refetch();
+    if (!error) {
+      await refetch();
+      // A full approval may have created a session; refresh the parent's sessions.
+      onConfirmed?.();
+    }
   }
 
   async function handleConfirmDelete() {

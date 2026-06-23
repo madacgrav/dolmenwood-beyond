@@ -35,6 +35,7 @@ export function ProposalList({ proposals, userId, isReferee, onDelete, onAvail }
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {ordered.map(proposal => {
         const canManage = proposal.created_by === userId || isReferee;
+        const isConfirmed = proposal.status === 'confirmed';
         const myAvailable = proposal.availability.find(a => a.account_id === userId)?.available ?? null;
         const approved = proposal.availability.filter(a => a.available).length;
         const approverNames = proposal.availability.filter(a => a.available).map(a => a.display_name);
@@ -82,7 +83,13 @@ export function ProposalList({ proposals, userId, isReferee, onDelete, onAvail }
               ✅ {approved} / {proposal.participant_count} available
               {approverNames.length > 0 && ` · ${approverNames.join(', ')}`}
             </div>
-            <AvailabilityControl available={myAvailable} onSet={available => onAvail(proposal.id, available)} />
+            {isConfirmed ? (
+              <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: '700' }}>
+                ✓ Confirmed
+              </div>
+            ) : (
+              <AvailabilityControl available={myAvailable} onSet={available => onAvail(proposal.id, available)} />
+            )}
           </div>
         );
       })}
