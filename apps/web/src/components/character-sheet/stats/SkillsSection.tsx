@@ -1,8 +1,10 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { Kindred, CharacterClass } from '@dolmenwood/types';
 import { getAllSkills, rollDie } from '@dolmenwood/rules-engine';
 import type { SkillEntry } from '@dolmenwood/rules-engine';
+import { AnimatedDie } from '@/components/wizard/AnimatedDie';
+import { useDiceRoll } from '@/hooks/use-dice-roll';
 import { sectionHead } from './shared';
 
 interface Props {
@@ -16,12 +18,14 @@ export function SkillsSection({ characterClass, level, kindred }: Props) {
     () => getAllSkills(characterClass, level, kindred),
     [characterClass, level, kindred]
   );
-  const [skillRolls, setSkillRolls] = useState<Record<string, { roll: number; pass: boolean } | undefined>>({});
+  const { results, rollingKeys, faceValues, roll } = useDiceRoll<{ roll: number; pass: boolean }>();
 
   function rollSkill(skill: SkillEntry) {
-    const roll = rollDie(6);
-    // Dolmenwood skills: roll d6, succeed if result >= target number
-    setSkillRolls(prev => ({ ...prev, [skill.name]: { roll, pass: roll >= skill.target } }));
+    roll(skill.name, () => {
+      const r = rollDie(6);
+      // Dolmenwood skills: roll d6, succeed if result >= target number
+      return { face: r, result: { roll: r, pass: r >= skill.target } };
+    });
   }
 
   return (
@@ -38,15 +42,19 @@ export function SkillsSection({ characterClass, level, kindred }: Props) {
                 {7 - skill.target}-in-6 (need {skill.target}+) {skill.isUniversal ? '· Universal' : '· Class'}
               </div>
             </div>
-            {skillRolls[skill.name] && (
+            {rollingKeys[skill.name] ? (
+              <AnimatedDie value={faceValues[skill.name] ?? null} sides={6} rolling size="sm" />
+            ) : results[skill.name] ? (
               <span style={{
                 padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700',
-                backgroundColor: skillRolls[skill.name]!.pass ? '#1a4a1a' : '#4a1a1a',
-                color: skillRolls[skill.name]!.pass ? '#4ade80' : '#f87171',
+                backgroundColor: results[skill.name]!.pass
+                  ? 'color-mix(in srgb, var(--color-primary) 12%, var(--color-bg))'
+                  : 'color-mix(in srgb, var(--color-danger) 12%, var(--color-bg))',
+                color: results[skill.name]!.pass ? 'var(--color-primary)' : 'var(--color-danger)',
               }}>
-                {skillRolls[skill.name]!.roll} {skillRolls[skill.name]!.pass ? '✓' : '✗'}
+                {results[skill.name]!.roll} {results[skill.name]!.pass ? '✓' : '✗'}
               </span>
-            )}
+            ) : null}
             <button
               onClick={() => rollSkill(skill)}
               style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: '6px', cursor: 'pointer', color: 'var(--color-gold)', fontSize: '1.1rem', padding: '0.25rem 0.5rem', minHeight: '44px', minWidth: '44px' }}

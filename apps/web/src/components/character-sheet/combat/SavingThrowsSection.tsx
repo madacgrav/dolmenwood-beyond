@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
 import { rollDie, type DieType } from '@dolmenwood/rules-engine';
+import { AnimatedDie } from '@/components/wizard/AnimatedDie';
+import { useDiceRoll } from '@/hooks/use-dice-roll';
 import { sectionHead } from './shared';
 
 const SAVE_NAMES = [
@@ -33,13 +34,15 @@ const ResultBadge = ({ pass, roll, target }: { pass: boolean; roll: number; targ
 );
 
 export function SavingThrowsSection({ saves, readOnly }: Props) {
-  const [saveRolls, setSaveRolls] = useState<Partial<Record<SaveKey, RollResult>>>({});
+  const { results, rollingKeys, faceValues, roll, clear } = useDiceRoll<RollResult>();
 
   function rollSave(key: SaveKey) {
     if (!saves) return;
     const target = saves[key] ?? 15;
-    const roll = rollDie(20 as DieType);
-    setSaveRolls(prev => ({ ...prev, [key]: { roll, passed: roll >= target, target } }));
+    roll(key, () => {
+      const r = rollDie(20 as DieType);
+      return { face: r, result: { roll: r, passed: r >= target, target } };
+    });
   }
 
   return (
@@ -48,7 +51,6 @@ export function SavingThrowsSection({ saves, readOnly }: Props) {
       <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', overflow: 'hidden' }}>
         {SAVE_NAMES.map(({ key, label }, i) => {
           const target = saves[key] ?? 15;
-          const result = saveRolls[key];
           return (
             <button
               key={key}
@@ -67,8 +69,10 @@ export function SavingThrowsSection({ saves, readOnly }: Props) {
             >
               <span style={{ fontSize: '0.85rem', color: 'var(--color-text)' }}>{label}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                {result ? (
-                  <ResultBadge pass={result.passed} roll={result.roll} target={target} />
+                {rollingKeys[key] ? (
+                  <AnimatedDie value={faceValues[key] ?? null} sides={20} rolling size="sm" />
+                ) : results[key] ? (
+                  <ResultBadge pass={results[key]!.passed} roll={results[key]!.roll} target={results[key]!.target} />
                 ) : (
                   <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-primary)', fontVariantNumeric: 'tabular-nums' }}>
                     {target}+
@@ -79,9 +83,9 @@ export function SavingThrowsSection({ saves, readOnly }: Props) {
           );
         })}
       </div>
-      {Object.keys(saveRolls).length > 0 && !readOnly && (
+      {Object.keys(results).length > 0 && !readOnly && (
         <button
-          onClick={() => setSaveRolls({})}
+          onClick={() => clear()}
           style={{ marginTop: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--color-text-muted)', padding: '0.25rem' }}
         >
           ↺ Clear rolls
