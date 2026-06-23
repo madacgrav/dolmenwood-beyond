@@ -1,5 +1,7 @@
 'use client';
 
+import { DateTimePicker } from '@/components/campaign/schedule/DateTimePicker';
+
 export type ProposalFormField = 'title' | 'scheduledAt' | 'notes';
 
 interface Props {
@@ -49,12 +51,7 @@ export function ProposalForm({ title, scheduledAt, notes, error, loading, mode, 
       />
 
       <label style={labelStyle}>Date &amp; Time</label>
-      <input
-        type="datetime-local"
-        value={scheduledAt}
-        onChange={e => onChange('scheduledAt', e.target.value)}
-        style={{ ...inputStyle, marginBottom: '0.75rem' }}
-      />
+      <DateTimePicker value={scheduledAt} onChange={value => onChange('scheduledAt', value)} />
 
       <label style={labelStyle}>Notes (optional)</label>
       <textarea

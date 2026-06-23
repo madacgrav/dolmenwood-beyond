@@ -589,8 +589,8 @@ Clicking a day calls `onSelect(cell.date)`. Internal `month` state seeded from `
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter web typecheck` / `lint` / `build` pass
-- [ ] `pnpm --filter web test` passes
+- [x] `pnpm --filter web typecheck` / `lint` / `build` pass
+- [x] `pnpm --filter web test` passes
 #### Manual
 - [ ] Opening the proposal form and the session form shows the calendar-pick button + time input (no raw datetime-local)
 - [ ] Picking a day in the modal + a time fills the field; submitting creates the correct `scheduled_at` (verify the saved date/time matches what was picked)
