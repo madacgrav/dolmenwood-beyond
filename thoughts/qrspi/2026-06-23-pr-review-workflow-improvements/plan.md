@@ -390,7 +390,7 @@ Code session.
 
 ### Verification
 #### Automated
-- [ ] `node .github/scripts/synthesize-findings.mjs <dir-with-two-fixtures>` prints a consolidated review (same script the command calls).
+- [x] `node .github/scripts/synthesize-findings.mjs <dir-with-two-fixtures>` prints a consolidated review (same script the command calls).
 
 #### Manual
 - [ ] On a branch with changes, run `/review` → a consolidated, severity-ranked review prints, driven by the four persona files; confirm no GitHub API calls were made and no `ANTHROPIC_API_KEY` was required.
