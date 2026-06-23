@@ -9,6 +9,7 @@ import { SessionList } from '@/components/campaign/schedule/SessionList';
 import { SessionForm, type SessionFormField } from '@/components/campaign/schedule/SessionForm';
 import { SessionCalendar } from '@/components/campaign/schedule/SessionCalendar';
 import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
+import { ProposalsSection } from '@/components/campaign/schedule/ProposalsSection';
 
 function firstOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -177,6 +178,10 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
+      )}
+
+      {campaignId && (
+        <ProposalsSection campaignId={campaignId} userId={userId} isReferee={isReferee} onConfirmed={refetch} />
       )}
 
       {showForm ? (

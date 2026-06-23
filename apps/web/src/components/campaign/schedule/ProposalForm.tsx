@@ -2,7 +2,7 @@
 
 import { DateTimePicker } from '@/components/campaign/schedule/DateTimePicker';
 
-export type SessionFormField = 'title' | 'scheduledAt' | 'notes';
+export type ProposalFormField = 'title' | 'scheduledAt' | 'notes';
 
 interface Props {
   title: string;
@@ -11,7 +11,7 @@ interface Props {
   error: string;
   loading: boolean;
   mode: 'create' | 'edit';
-  onChange: (field: SessionFormField, value: string) => void;
+  onChange: (field: ProposalFormField, value: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
 }
@@ -28,7 +28,7 @@ const labelStyle = {
   display: 'block', marginBottom: '0.25rem',
 };
 
-export function SessionForm({ title, scheduledAt, notes, error, loading, mode, onChange, onSubmit, onCancel }: Props) {
+export function ProposalForm({ title, scheduledAt, notes, error, loading, mode, onChange, onSubmit, onCancel }: Props) {
   return (
     <div style={{
       backgroundColor: 'var(--color-surface)',
@@ -37,7 +37,7 @@ export function SessionForm({ title, scheduledAt, notes, error, loading, mode, o
       padding: '1rem',
     }}>
       <h3 style={{ fontFamily: 'var(--font-display), Georgia, serif', color: 'var(--color-text)', margin: '0 0 0.875rem', fontSize: '1rem' }}>
-        {mode === 'create' ? 'New Session' : 'Edit Session'}
+        {mode === 'create' ? 'Propose a Date' : 'Edit Proposal'}
       </h3>
 
       <label style={labelStyle}>Title</label>
@@ -45,7 +45,7 @@ export function SessionForm({ title, scheduledAt, notes, error, loading, mode, o
         type="text"
         value={title}
         onChange={e => onChange('title', e.target.value)}
-        placeholder="e.g. Session 12 — The Witch's Hut"
+        placeholder="e.g. Next session — pick a night"
         autoFocus
         style={{ ...inputStyle, marginBottom: '0.75rem' }}
       />
@@ -57,7 +57,7 @@ export function SessionForm({ title, scheduledAt, notes, error, loading, mode, o
       <textarea
         value={notes}
         onChange={e => onChange('notes', e.target.value)}
-        placeholder="Location, what to prep, etc."
+        placeholder="Any context for this proposed date."
         rows={3}
         style={{ ...inputStyle, minHeight: '64px', resize: 'vertical', marginBottom: '0.75rem' }}
       />
@@ -79,7 +79,7 @@ export function SessionForm({ title, scheduledAt, notes, error, loading, mode, o
             opacity: loading ? 0.6 : 1, minHeight: '44px',
           }}
         >
-          {loading ? 'Saving…' : mode === 'create' ? 'Create' : 'Save'}
+          {loading ? 'Saving…' : mode === 'create' ? 'Propose' : 'Save'}
         </button>
         <button
           onClick={onCancel}
