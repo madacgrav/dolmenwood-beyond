@@ -25,11 +25,33 @@ concurrency:
 # jobs (rather than a matrix) so the consolidation summary keeps a per-agent status
 # row. Sleeps stagger the model calls to avoid rate limiting.
 jobs:
+  # Gate: the reviewers stay disabled until the ANTHROPIC_API_KEY secret exists.
+  # Once the secret is added in repo settings, this turns "true" and the workflow
+  # activates automatically — no edit needed. To force-disable regardless of the
+  # secret, change the line below to `echo "enabled=false"`.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::ANTHROPIC_API_KEY is not set — PR review agents are disabled until it is added in repo settings."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
   setup:
     runs-on: ubuntu-latest
+    needs: gate
     if: >-
-      github.event_name == 'pull_request' ||
-      (github.event.issue.pull_request && startsWith(github.event.comment.body, '/review'))
+      needs.gate.outputs.enabled == 'true' &&
+      (github.event_name == 'pull_request' ||
+       (github.event.issue.pull_request && startsWith(github.event.comment.body, '/review')))
     outputs:
       pr: ${{ steps.r.outputs.pr }}
       sha: ${{ steps.r.outputs.sha }}
