@@ -3,39 +3,75 @@ name: PR Review Agents
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened]
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
 
 permissions:
   pull-requests: write
   contents: read
 
 concurrency:
-  group: pr-review-${{ github.event.pull_request.number }}
+  group: pr-review-${{ github.event.pull_request.number || github.event.issue.number }}
   cancel-in-progress: true
 
-# The four reviewer jobs share the composite action in
-# .github/actions/agent-review (gather diff → run agent → post comment).
-# They stay separate jobs (rather than a matrix) so the consolidation
-# summary keeps a per-agent status row. Sleeps stagger the model calls
-# to avoid rate limiting.
+# Reviews run automatically when a PR is opened/reopened, and on demand when a
+# maintainer comments "/review" (so later pushes only re-review when asked — this
+# controls Claude cost). The `setup` job resolves the PR number + head SHA used by
+# every downstream job; if it is skipped (event didn't match), all reviewers skip.
+#
+# The four reviewer jobs share the composite action in .github/actions/agent-review
+# (gather diff → run Claude → post comment + upload findings). They stay separate
+# jobs (rather than a matrix) so the consolidation summary keeps a per-agent status
+# row. Sleeps stagger the model calls to avoid rate limiting.
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event.issue.pull_request && startsWith(github.event.comment.body, '/review'))
+    outputs:
+      pr: ${{ steps.r.outputs.pr }}
+      sha: ${{ steps.r.outputs.sha }}
+    steps:
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR=${{ github.event.pull_request.number }}
+          else
+            PR=${{ github.event.issue.number }}
+          fi
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+          SHA=$(gh pr view "$PR" --repo ${{ github.repository }} --json headRefOid --jq .headRefOid)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
   developer-architect:
     name: 🏗️ Developer Architect Review
     runs-on: ubuntu-latest
+    needs: setup
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
       - uses: ./.github/actions/agent-review
         with:
           agent-name: developer-architect
           agent-file: .github/agents/developer-architect-review.agent.md
           github-token: ${{ github.token }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          pr-number: ${{ needs.setup.outputs.pr }}
 
   devops:
     name: 🚀 DevOps Review
     runs-on: ubuntu-latest
+    needs: setup
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
       - uses: ./.github/actions/agent-review
         with:
           agent-name: devops
@@ -43,12 +79,16 @@ jobs:
           sleep: '20'
           github-token: ${{ github.token }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          pr-number: ${{ needs.setup.outputs.pr }}
 
   security:
     name: 🔒 Security Review
     runs-on: ubuntu-latest
+    needs: setup
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
       - uses: ./.github/actions/agent-review
         with:
           agent-name: security
@@ -56,12 +96,16 @@ jobs:
           sleep: '40'
           github-token: ${{ github.token }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          pr-number: ${{ needs.setup.outputs.pr }}
 
   qa:
     name: 🧪 QA Review
     runs-on: ubuntu-latest
+    needs: setup
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
       - uses: ./.github/actions/agent-review
         with:
           agent-name: qa
@@ -69,25 +113,27 @@ jobs:
           sleep: '60'
           github-token: ${{ github.token }}
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          pr-number: ${{ needs.setup.outputs.pr }}
 
   consolidate:
     name: 📋 Consolidate Reviews
     runs-on: ubuntu-latest
-    needs: [developer-architect, devops, security, qa]
-    if: always()
+    needs: [setup, developer-architect, devops, security, qa]
+    if: always() && needs.setup.result == 'success'
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
 
       - name: Post consolidation summary
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUM: ${{ needs.setup.outputs.pr }}
           DEV_RESULT: ${{ needs.developer-architect.result }}
           DEVOPS_RESULT: ${{ needs.devops.result }}
           SEC_RESULT: ${{ needs.security.result }}
           QA_RESULT: ${{ needs.qa.result }}
         run: |
-          PR_NUM=${{ github.event.pull_request.number }}
-
           status_icon() {
             case $1 in
               success) echo "✅" ;;
@@ -111,7 +157,7 @@ jobs:
             echo "Review the individual agent comments above and address the feedback."
           } > summary.md
 
-          gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file summary.md
+          gh pr comment "$PR_NUM" --repo ${{ github.repository }} --body-file summary.md
 
       - uses: actions/download-artifact@v4
         with:
@@ -123,10 +169,11 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUM: ${{ needs.setup.outputs.pr }}
         run: |
           if ls findings/*.json >/dev/null 2>&1; then
             node .github/scripts/synthesize-findings.mjs findings > consolidated.md
-            gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file consolidated.md
+            gh pr comment "$PR_NUM" --repo ${{ github.repository }} --body-file consolidated.md
           else
             echo "No findings artifacts to consolidate."
           fi

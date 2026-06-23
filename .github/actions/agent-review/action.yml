@@ -11,6 +11,9 @@ inputs:
   agent-name:
     description: Short identifier for this reviewer (e.g. security) — names the artifact/findings file
     required: true
+  pr-number:
+    description: The pull request number to review
+    required: true
   sleep:
     description: Seconds to wait before calling the model (rate-limit stagger)
     required: false
@@ -29,9 +32,10 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
       run: |
         set -euo pipefail
-        gh pr diff ${{ github.event.pull_request.number }} > pr.full.diff
+        gh pr diff "$PR_NUMBER" > pr.full.diff
 
         # Claude's large context lets us pass much more than the old 12K cap.
         # For very large PRs, fall back to per-file diffs (split on the
@@ -53,8 +57,9 @@ runs:
           cp pr.full.diff pr.diff
         fi
 
-        gh pr view ${{ github.event.pull_request.number }} \
-          --json files --jq '[.files[].path] | join(", ")' > files.txt
+        gh pr view "$PR_NUMBER" --json files --jq '[.files[].path] | join(", ")' > files.txt
+        gh pr view "$PR_NUMBER" --json title --jq '.title' > title.txt
+        gh pr view "$PR_NUMBER" --json body --jq '.body // ""' > body.txt
 
     - name: Rate limit buffer
       if: inputs.sleep != '0'
@@ -68,14 +73,12 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
         AGENT_FILE: ${{ inputs.agent-file }}
         AGENT_NAME: ${{ inputs.agent-name }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-        PR_TITLE: ${{ github.event.pull_request.title }}
-        PR_BODY: ${{ github.event.pull_request.body }}
+        PR_NUMBER: ${{ inputs.pr-number }}
       run: |
         set -euo pipefail
 
         PROMPT=$(printf 'Review this pull request for Dolmenwood Beyond.\n\nPR title: %s\nDescription: %s\nChanged files: %s\n\nReturn your findings via the report_findings tool. Use severity critical/warning/suggestion; set line to null when a finding is not line-specific; suggestion may be an empty string.\n\nDiff:\n```diff\n%s\n```' \
-          "$PR_TITLE" "${PR_BODY:-(none)}" "$(cat files.txt)" "$(cat pr.diff)")
+          "$(cat title.txt)" "$(cat body.txt)" "$(cat files.txt)" "$(cat pr.diff)")
 
         jq -n \
           --arg model "claude-sonnet-4-6" \

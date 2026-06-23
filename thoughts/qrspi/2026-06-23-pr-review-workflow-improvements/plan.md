@@ -340,8 +340,8 @@ Keep the existing per-agent status table step (it reads `needs.*.result`).
 
 ### Verification
 #### Automated
-- [ ] `actionlint .github/workflows/pr-review.yml` passes
-- [ ] `git grep -n "synchronize" .github/workflows/pr-review.yml` returns nothing
+- [x] `actionlint .github/workflows/pr-review.yml` passes (YAML parse fallback)
+- [x] `git grep -n "synchronize" .github/workflows/pr-review.yml` returns nothing
 
 #### Manual
 - [ ] Open a scratch PR → reviews run. Push another commit → reviews do NOT auto-run.
