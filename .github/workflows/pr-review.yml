@@ -63,99 +63,12 @@ jobs:
           sleep: '60'
           github-token: ${{ github.token }}
 
-  # Blogger differs from the other reviewers: it only runs when blog
-  # files changed, and it reviews the post content rather than the diff.
-  blogger:
-    name: ✍️ Blogger Review
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check for blog file changes
-        id: blog
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Find any docs/blog/*.md files added or modified in this PR
-          BLOG_FILES=$(gh pr view ${{ github.event.pull_request.number }} \
-            --json files --jq '[.files[].path] | .[] | select(startswith("docs/blog/") and endswith(".md"))' \
-            | head -2)
-
-          if [ -z "$BLOG_FILES" ]; then
-            echo "has_blogs=false" >> $GITHUB_OUTPUT
-          else
-            echo "has_blogs=true" >> $GITHUB_OUTPUT
-            # Read the full content of the first changed blog file
-            FIRST_FILE=$(echo "$BLOG_FILES" | head -1)
-            echo "first_file=$FIRST_FILE" >> $GITHUB_OUTPUT
-            BLOG_DELIM=$(openssl rand -hex 16)
-            {
-              echo "content<<${BLOG_DELIM}"
-              cat "$FIRST_FILE"
-              echo
-              echo "${BLOG_DELIM}"
-            } >> $GITHUB_OUTPUT
-          fi
-
-      - name: Load agent system prompt
-        id: agent
-        if: steps.blog.outputs.has_blogs == 'true'
-        run: |
-          AGENT_DELIM=$(openssl rand -hex 16)
-          {
-            echo "system<<${AGENT_DELIM}"
-            cat .github/agents/blogger-review.agent.md
-            echo
-            echo "${AGENT_DELIM}"
-          } >> $GITHUB_OUTPUT
-
-      - name: Rate limit buffer
-        if: steps.blog.outputs.has_blogs == 'true'
-        run: sleep 80
-
-      - name: Run review
-        id: review
-        if: steps.blog.outputs.has_blogs == 'true'
-        uses: actions/ai-inference@v1
-        with:
-          model: openai/gpt-4o
-          max-tokens: 800
-          system-prompt: ${{ steps.agent.outputs.system }}
-          prompt: |
-            Review this blog post for Dolmenwood Beyond.
-
-            **PR title:** ${{ github.event.pull_request.title }}
-            **Blog file:** ${{ steps.blog.outputs.first_file }}
-
-            **Full blog post content:**
-            ```markdown
-            ${{ steps.blog.outputs.content }}
-            ```
-
-      - name: Post review comment
-        if: steps.blog.outputs.has_blogs == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          BODY: ${{ steps.review.outputs.response }}
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --body "$BODY"
-
   consolidate:
     name: 📋 Consolidate Reviews
     runs-on: ubuntu-latest
-    needs: [developer-architect, devops, security, qa, blogger]
+    needs: [developer-architect, devops, security, qa]
     if: always()
     steps:
-      - name: Ensure auto-implement label exists
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh label create "auto-implement" \
-            --repo ${{ github.repository }} \
-            --color "7057ff" \
-            --description "Trigger automatic implementation of agent review suggestions" \
-            2>/dev/null || true
-
       - name: Post consolidation summary
         env:
           GH_TOKEN: ${{ github.token }}
@@ -163,7 +76,6 @@ jobs:
           DEVOPS_RESULT: ${{ needs.devops.result }}
           SEC_RESULT: ${{ needs.security.result }}
           QA_RESULT: ${{ needs.qa.result }}
-          BLOG_RESULT: ${{ needs.blogger.result }}
         run: |
           PR_NUM=${{ github.event.pull_request.number }}
 
@@ -186,13 +98,8 @@ jobs:
             echo "| 🚀 DevOps | $(status_icon $DEVOPS_RESULT) ${DEVOPS_RESULT} |"
             echo "| 🔒 Security | $(status_icon $SEC_RESULT) ${SEC_RESULT} |"
             echo "| 🧪 QA | $(status_icon $QA_RESULT) ${QA_RESULT} |"
-            echo "| ✍️ Blogger | $(status_icon $BLOG_RESULT) ${BLOG_RESULT} |"
             echo ""
-            echo "Review the individual agent comments above, then choose how to proceed:"
-            echo "- Add the \`auto-implement\` label to automatically apply the suggestions to this branch"
-            echo "- Or address the feedback manually"
-            echo ""
-            echo "> ⚠️ Auto-implement generates a best-effort patch. Always review the resulting commit before merging."
+            echo "Review the individual agent comments above and address the feedback."
           } > summary.md
 
           gh pr comment $PR_NUM --repo ${{ github.repository }} --body-file summary.md
