@@ -316,6 +316,9 @@ Security-definer RPC for atomic level-up. Validates character ownership, monoton
 ### `award_xp(p_character_id uuid, p_gain int) → int`
 Security-definer RPC for referees. Validates the caller is a referee for a campaign the character belongs to, increments XP atomically, and returns the new XP total.
 
+### `get_campaign_roster(p_campaign_id uuid) → json`
+Security-definer RPC returning the full participant list of a campaign — members plus the referee, each exactly once — as `[{account_id, display_name, is_referee}]` ordered by display name. Guarded by member-or-referee participation; exists because RLS prevents players from enumerating `campaign_members` directly.
+
 ---
 
 ## Local Development
