@@ -2,12 +2,14 @@
 
 import { formatSessionDate } from '@/lib/format';
 import type { RsvpStatus, Session } from '@/lib/data/schedule';
+import { splitRoster, type RosterMember } from '@/lib/data/roster';
 import { RsvpControl } from '@/components/campaign/schedule/RsvpControl';
 
 interface SessionListProps {
   sessions: Session[];
   userId: string;
   isReferee: boolean;
+  roster: RosterMember[];
   onRsvp: (sessionId: string, status: RsvpStatus) => void;
   onEdit: (session: Session) => void;
   onDelete: (session: Session) => void;
@@ -25,14 +27,7 @@ function sortSessions(sessions: Session[]): Session[] {
   return [...upcoming, ...past];
 }
 
-function tally(session: Session): { yes: number; no: number; maybe: number } {
-  return session.rsvps.reduce(
-    (acc, r) => { acc[r.status] += 1; return acc; },
-    { yes: 0, no: 0, maybe: 0 },
-  );
-}
-
-export function SessionList({ sessions, userId, isReferee, onRsvp, onEdit, onDelete }: SessionListProps) {
+export function SessionList({ sessions, userId, isReferee, roster, onRsvp, onEdit, onDelete }: SessionListProps) {
   if (sessions.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
@@ -49,7 +44,11 @@ export function SessionList({ sessions, userId, isReferee, onRsvp, onEdit, onDel
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {ordered.map(session => {
         const isPast = new Date(session.scheduled_at).getTime() < now;
-        const counts = tally(session);
+        const responses = session.rsvps.map(r => ({ account_id: r.account_id, status: r.status }));
+        const { groups, notResponded } = splitRoster(roster, responses);
+        const yes = groups.yes ?? [];
+        const maybe = groups.maybe ?? [];
+        const no = groups.no ?? [];
         const myStatus = session.rsvps.find(r => r.account_id === userId)?.status ?? null;
         const canManage = session.created_by === userId || isReferee;
         return (
@@ -103,8 +102,11 @@ export function SessionList({ sessions, userId, isReferee, onRsvp, onEdit, onDel
               </div>
             )}
 
-            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.6rem', marginBottom: '0.4rem' }}>
-              ✅ {counts.yes} · ❔ {counts.maybe} · ❌ {counts.no}
+            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.6rem', marginBottom: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              {yes.length > 0 && <div>✅ Yes: {yes.map(m => m.display_name).join(', ')}</div>}
+              {maybe.length > 0 && <div>❔ Maybe: {maybe.map(m => m.display_name).join(', ')}</div>}
+              {no.length > 0 && <div>❌ No: {no.map(m => m.display_name).join(', ')}</div>}
+              {notResponded.length > 0 && <div>⏳ Not yet responded: {notResponded.map(m => m.display_name).join(', ')}</div>}
             </div>
             <RsvpControl status={myStatus} onSet={status => onRsvp(session.id, status)} />
           </div>

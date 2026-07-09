@@ -259,9 +259,9 @@ const no = groups.no ?? [];
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web test` passes
-- [ ] `pnpm --filter @dolmenwood/web typecheck` passes (no unused `tally`/`counts` references remain)
-- [ ] `pnpm --filter @dolmenwood/web lint` passes
+- [x] `pnpm --filter @dolmenwood/web test` passes (43/43)
+- [x] `pnpm --filter @dolmenwood/web typecheck` passes (no unused `tally`/`counts` references remain)
+- [x] `pnpm --filter @dolmenwood/web lint` passes
 
 #### Manual
 - [ ] A confirmed session with mixed RSVPs shows Yes / Maybe / No / Not-yet-responded by name

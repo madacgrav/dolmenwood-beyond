@@ -268,6 +268,7 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
               : sessions}
             userId={userId}
             isReferee={isReferee}
+            roster={roster}
             onRsvp={handleRsvp}
             onEdit={handleEdit}
             onDelete={setDeletingSession}
