@@ -313,8 +313,8 @@ Add a comment: pre-Cosmos trigger; replaced post-migration by an Azure Function 
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web typecheck|lint|test` still pass (no code change, but confirm nothing broke)
-- [ ] Bicep validates (`az bicep build --file infra/azure/main.bicep` or the CI what-if step)
+- [x] `pnpm --filter @dolmenwood/web typecheck|lint|test` still pass (42/42)
+- [x] Bicep validates (`az bicep build --file infra/azure/main.bicep` — OK)
 
 #### Manual
 - [ ] Set the three Key Vault secrets + GH repo secret/var; run the workflow via `workflow_dispatch` → route returns counts; a real email is delivered end-to-end in the deployed environment

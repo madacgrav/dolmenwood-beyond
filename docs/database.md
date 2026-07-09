@@ -26,6 +26,8 @@ Supabase-hosted PostgreSQL. Row Level Security (RLS) is enabled on **all** table
 | `20260512000016_portrait_storage.sql` | Supabase Storage `portraits` bucket + initial RLS policies |
 | `20260512000017_mounts_and_referee_rls.sql` | Add `character_id` column to `mounts`; referee read-only RLS on retainers, spell_slots |
 | `20260512000018_portrait_rls_fix.sql` | Replace portrait RLS with path-ownership enforcement (`{userId}/{charId}/...`) |
+| `20260709000030_notification_contact_prefs.sql` | `phone` + per-channel notification opt-in columns on `accounts` |
+| `20260709000031_notification_deliveries.sql` | `notification_deliveries` outbound-send outbox (service-role only) |
 
 ---
 
@@ -73,6 +75,11 @@ Extends `auth.users` (1:1 via FK on `id`). Created automatically by `handle_new_
 | `role` | text | `'player'` or `'referee'` |
 | `display_name` | text | User's chosen display name |
 | `invite_code` | text | 6-char unique code from `generate_invite_code()` |
+| `phone` | text nullable | E.164-style number for SMS/WhatsApp (not yet used for sending) |
+| `email_opt_in` | boolean | Outbound email notifications; default `true` |
+| `sms_opt_in` | boolean | Default `false`; SMS sending not yet implemented |
+| `whatsapp_opt_in` | boolean | Default `false`; WhatsApp sending not yet implemented |
+| `whatsapp_consent_at` | timestamptz nullable | Stamped when `whatsapp_opt_in` is enabled |
 | `created_at` | timestamptz | |
 | `updated_at` | timestamptz | |
 
@@ -288,6 +295,26 @@ Reference table of 97 equipment items from the Dolmenwood Player's Book. Read-on
 | `damage_dice` | text | Weapons only, e.g. `'1d8'` |
 | `ac_bonus` | int | Armour only |
 | `notes` | text | Any special rules |
+
+---
+
+### `public.notification_deliveries`
+Outbound-send outbox: one row per (notification, channel). Enqueued and sent by the app-level dispatch module (`apps/web/src/lib/notifications/dispatch.ts`) via the service-role client — deliberately not driven by a Postgres trigger, since the project plans to migrate off Supabase.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `notification_id` | uuid | FK → `notifications.id` (cascade) |
+| `channel` | text | `'email'`, `'sms'`, or `'whatsapp'` |
+| `status` | text | `'pending'`, `'sent'`, or `'failed'` |
+| `sent_at` | timestamptz nullable | |
+| `error` | text nullable | Provider error on failure |
+| `attempts` | int | Send attempts (retry policy TBD) |
+| `created_at` | timestamptz | |
+
+`UNIQUE (notification_id, channel)` makes enqueueing idempotent.
+
+**RLS**: enabled with no user policies — service-role access only.
 
 ---
 

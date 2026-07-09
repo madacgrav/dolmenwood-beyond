@@ -74,13 +74,30 @@ SUPABASE_ACCESS_TOKEN          # Supabase CLI access token (for migrations)
 SUPABASE_DB_URL                # IPv4 pooler connection string for migrations
                                # Format: postgresql://postgres.<ref>:<password>@aws-1-<region>.pooler.supabase.com:5432/postgres
                                # (Use the Supavisor session-mode URL, NOT the direct IPv6 URL)
+NOTIFICATIONS_DRAIN_SECRET     # Shared secret for the scheduled notification drain
+                               # (same value as the notifications-drain-secret Key Vault secret)
 ```
 
 In your GitHub repo → Settings → Variables → Actions:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL       # Your Supabase project URL (non-secret, used as a var)
+APP_URL                        # Deployed base URL, e.g. https://dolmenwood-prod-web.azurewebsites.net
+                               # (used by notifications-drain.yml to reach /api/notifications/drain)
 ```
+
+### 4b. Outbound notification secrets (Key Vault)
+
+Email notifications are sent via [Resend](https://resend.com). After the first Bicep deploy, set:
+
+```bash
+KV_NAME="dolmenwood-prod-kv"
+az keyvault secret set --vault-name $KV_NAME --name "resend-api-key" --value "YOUR_RESEND_KEY"
+az keyvault secret set --vault-name $KV_NAME --name "resend-from" --value "notifications@your-verified-domain.com"
+az keyvault secret set --vault-name $KV_NAME --name "notifications-drain-secret" --value "$(openssl rand -hex 32)"
+```
+
+The `notifications-drain.yml` workflow curls `POST /api/notifications/drain` every 5 minutes; the app enqueues and sends pending notifications (see `apps/web/src/lib/notifications/dispatch.ts`). The `RESEND_FROM` address must belong to a domain verified in Resend (SPF/DKIM). This cron is the pre-Cosmos trigger mechanism — after the planned Cosmos DB migration it is replaced by an Azure Function on the Cosmos change feed.
 
 ### 5. Deploy infrastructure for the first time
 

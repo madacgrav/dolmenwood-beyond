@@ -102,6 +102,18 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
           value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/wordpress-username/)'
         }
         {
+          name: 'RESEND_API_KEY'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/resend-api-key/)'
+        }
+        {
+          name: 'RESEND_FROM'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/resend-from/)'
+        }
+        {
+          name: 'NOTIFICATIONS_DRAIN_SECRET'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/notifications-drain-secret/)'
+        }
+        {
           name: 'NODE_ENV'
           value: 'production'
         }
