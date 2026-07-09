@@ -267,18 +267,19 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ### Verification
 #### Automated
-- [ ] `supabase db reset` applies `...031`
-- [ ] `pnpm --filter @dolmenwood/web test` passes (channel-selection test green)
-- [ ] `pnpm --filter @dolmenwood/web typecheck` passes
-- [ ] `pnpm --filter @dolmenwood/web lint` passes
+- [x] `supabase db reset` applies `...031`
+- [x] `pnpm --filter @dolmenwood/web test` passes (42/42, channel-selection test green)
+- [x] `pnpm --filter @dolmenwood/web typecheck` passes
+- [x] `pnpm --filter @dolmenwood/web lint` passes
 
 #### Manual (dev server + psql fixtures)
-- [ ] Insert a test account (email_opt_in=true) + a `notifications` row (kind='date_confirmed', recent `created_at`) via psql
-- [ ] `curl -XPOST localhost:3000/api/notifications/drain -H "x-drain-secret: <secret>"` → JSON `{ enqueued>=1, ... }`; one `email` row appears in `notification_deliveries`
-- [ ] **Re-run the curl → `enqueued` count unchanged in the table, no duplicate delivery row (idempotent)**
-- [ ] A second account with `email_opt_in=false` produces no delivery row
-- [ ] Missing/wrong `x-drain-secret` → 401; unset env → 500
-- [ ] With a real free-tier `RESEND_API_KEY` + `RESEND_FROM=onboarding@resend.dev` and a `to` = your own Resend account email, the delivery row transitions to `sent` and the email arrives (without a key, it transitions to `failed` — which still proves the pipeline runs and records status)
+- [x] Insert a test account (email_opt_in=true) + a `notifications` row via psql — done (opt-in + opt-out fixtures)
+- [x] Drain curl → `{enqueued:1, failed:1}`; exactly one `email` row in `notification_deliveries` (failed with "requires RESEND_API_KEY" since no key configured — pipeline + status recording proven)
+- [x] **Re-run → still exactly 1 delivery row, nothing re-sent (idempotent via unique key; failed is terminal)**
+- [x] Account with `email_opt_in=false` produced no delivery row
+- [x] Missing/wrong `x-drain-secret` → 401 (unset-env 500 not separately exercised)
+- [ ] With a real free-tier `RESEND_API_KEY` + `RESEND_FROM=onboarding@resend.dev`, the delivery row transitions to `sent` and the email arrives — requires user's Resend account
+> Local-env note: this local Supabase stack's default ACLs give API roles no table privileges (anon/authenticated/service_role had only TRUNCATE/REFERENCES/TRIGGER — a local CLI anomaly; production works). Fixed locally with `grant select, insert, update, delete on all tables in schema public to anon, authenticated, service_role;`. No migration change made — no existing migration grants table privileges and prod relies on standard Supabase default ACLs.
 
 ---
 
