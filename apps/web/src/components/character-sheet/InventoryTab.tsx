@@ -62,7 +62,6 @@ export function InventoryTab({ characterId, readOnly = false }: Props) {
 
       {/* Bank Balance */}
       <BankPanel
-        supabase={inv.supabase}
         characterId={characterId}
         bankBalance={inv.bankBalance}
         coinsGp={inv.coins.gp}

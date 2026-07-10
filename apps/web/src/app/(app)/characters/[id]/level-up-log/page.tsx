@@ -1,20 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { fetchLevelUpLog, type LevelUpLogEntry as LevelUpEntry } from '@/lib/api/level-up';
 import type { LevelUpChange } from '@dolmenwood/types';
-
-interface LevelUpEntry {
-  id: string;
-  character_id: string;
-  from_level: number;
-  to_level: number;
-  hp_roll: number;
-  hp_roll_final: number;
-  changes: LevelUpChange[];
-  timestamp: string;
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -36,7 +25,6 @@ function formatChange(c: LevelUpChange) {
 export default function LevelUpLogPage() {
   const params = useParams();
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
   const rawId = params.id;
   const id = Array.isArray(rawId) ? (rawId[0] ?? '') : (rawId ?? '');
 
@@ -48,17 +36,10 @@ export default function LevelUpLogPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [{ data: char, error: charErr }, { data: log, error: logErr }] = await Promise.all([
-          supabase.from('characters').select('name').eq('id', id).single(),
-          supabase.from('level_up_logs')
-            .select('*')
-            .eq('character_id', id)
-            .order('timestamp', { ascending: false }),
-        ]);
-        if (charErr) throw new Error(charErr.message);
-        if (logErr) throw new Error(logErr.message);
-        setCharacterName((char as { name: string } | null)?.name ?? '');
-        setEntries((log ?? []) as LevelUpEntry[]);
+        const data = await fetchLevelUpLog(id);
+        if (!data) throw new Error('Failed to load level-up history');
+        setCharacterName(data.characterName);
+        setEntries(data.entries);
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : 'Failed to load level-up history');
       } finally {
@@ -66,7 +47,7 @@ export default function LevelUpLogPage() {
       }
     }
     load();
-  }, [id, supabase]);
+  }, [id]);
 
   return (
     <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-bg)', paddingBottom: '5rem' }}>

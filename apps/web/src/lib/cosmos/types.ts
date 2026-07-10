@@ -1,4 +1,4 @@
-import type { AbilityScores, SessionNote, PersonOfNote } from '@dolmenwood/types';
+import type { AbilityScores, SessionNote, PersonOfNote, LevelUpChange } from '@dolmenwood/types';
 
 /**
  * Cosmos DB document shapes, one interface per container. These are the
@@ -63,6 +63,25 @@ export interface SpellbookEntryDoc {
   notes: string | null;
 }
 
+/** Signed bank ledger entry: positive = deposit into bank, negative = payout. */
+export interface BankLedgerEntryDoc {
+  id: string;
+  amountGp: number;
+  description: string;
+  performedBy: string;
+  createdAt: string;
+}
+
+export interface LevelUpLogDoc {
+  id: string;
+  fromLevel: number;
+  toLevel: number;
+  timestamp: string;
+  changes: LevelUpChange[];
+  hpRoll: number;
+  hpRollFinal: number;
+}
+
 /** Container `characters`, partition key `/ownerId`. The character aggregate —
  *  later phases embed inventory, spells, bank ledger, and level-up logs here. */
 export interface CharacterDoc {
@@ -92,11 +111,13 @@ export interface CharacterDoc {
   coinsGp: number;
   coinsSp: number;
   coinsCp: number;
-  /** Optional: absent on documents created before phase 3b — default to []. */
+  /** Optional: absent on documents created before phases 3b/4 — default to []. */
   inventory?: InventoryEntryDoc[];
   spellSlots?: SpellSlotDoc[];
   spellPreparations?: SpellPrepDoc[];
   spellbook?: SpellbookEntryDoc[];
+  bankLedger?: BankLedgerEntryDoc[];
+  levelUpLogs?: LevelUpLogDoc[];
   createdAt: string;
   updatedAt: string;
   /** Cosmos system property — used for optimistic-concurrency replaces. */

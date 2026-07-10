@@ -1,31 +1,28 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState, useCallback } from 'react';
 import {
   listInventory,
   updateItemLocation,
   deleteInventoryItem,
   type InventoryItem as DBInventoryItem,
 } from '@/lib/api/inventory';
-import { fetchBankBalance as fetchBankBalanceQuery } from '@/lib/data/bank';
+import { fetchBankBalance as fetchBankBalanceQuery } from '@/lib/api/bank';
 import { fetchCoins, saveCoins as saveCoinsQuery, type Coins } from '@/lib/api/characters';
 
 /**
  * Core inventory tab state: items, coin purse, and bank balance. Item
  * mutations apply optimistic local updates alongside the server write,
  * matching the original inline behavior.
- * (supabase remains only for the bank balance — replaced in phase 4.)
  */
 export function useInventory(characterId: string) {
-  const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState<DBInventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [coins, setCoins] = useState<Coins>({ gp: 0, sp: 0, cp: 0 });
   const [bankBalance, setBankBalance] = useState(0);
 
   const fetchBankBalance = useCallback(async () => {
-    setBankBalance(await fetchBankBalanceQuery(supabase, characterId));
-  }, [characterId, supabase]);
+    setBankBalance(await fetchBankBalanceQuery(characterId));
+  }, [characterId]);
 
   useEffect(() => {
     async function fetchAll() {
@@ -65,7 +62,6 @@ export function useInventory(characterId: string) {
   }
 
   return {
-    supabase,
     items, setItems,
     loading,
     coins, setCoins,

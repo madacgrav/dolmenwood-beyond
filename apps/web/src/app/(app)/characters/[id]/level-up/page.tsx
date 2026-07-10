@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { fetchCharacter as fetchCharacterData } from '@/lib/api/characters';
-import { levelUpCharacter } from '@/lib/data/level-up';
+import { levelUpCharacter } from '@/lib/api/level-up';
 import type { Character } from '@dolmenwood/types';
 import {
   getXPThresholdForNextLevel,
@@ -29,8 +28,6 @@ const STEP_LABELS: Record<LevelUpStep, string> = {
 export default function LevelUpPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
-
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<LevelUpStep>('check');
@@ -61,7 +58,7 @@ export default function LevelUpPage() {
     const threshold = getXPThresholdForNextLevel(character.characterClass, character.level);
 
     try {
-      const errorMessage = await levelUpCharacter(supabase, {
+      const errorMessage = await levelUpCharacter({
         characterId: id,
         newLevel,
         hpGain,

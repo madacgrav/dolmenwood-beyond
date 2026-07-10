@@ -22,18 +22,20 @@ export type { NewCharacterInput };
 const characters = () => getContainer('characters');
 
 /**
- * Owner-scoped read-modify-write with optimistic concurrency: replace fails
- * on a stale ETag (someone else wrote between our read and write) and the
- * mutation is re-applied to a fresh read. Shared by every character-doc
- * mutation (inventory, spells, banking, level-up in later phases).
+ * Read-modify-write with optimistic concurrency: replace fails on a stale
+ * ETag (someone else wrote between our read and write) and the whole
+ * fetch → authorize → mutate cycle re-runs against a fresh read. Shared by
+ * every character-doc mutation (inventory, spells, banking, level-up).
+ *
+ * `fetchAuthorized` must return the doc only after asserting the caller may
+ * mutate it — ownership for most operations, owner-or-referee for banking.
  */
-export async function mutateOwnedCharacterDoc(
-  characterId: string,
+export async function mutateCharacterDoc(
+  fetchAuthorized: () => Promise<CharacterDoc>,
   mutate: (doc: CharacterDoc) => void,
 ): Promise<CharacterDoc> {
-  const me = await requireAccountId();
   for (let attempt = 0; ; attempt++) {
-    const doc = await assertCharacterOwner(me, characterId);
+    const doc = await fetchAuthorized();
     mutate(doc);
     doc.updatedAt = new Date().toISOString();
     try {
@@ -47,6 +49,15 @@ export async function mutateOwnedCharacterDoc(
       throw e;
     }
   }
+}
+
+/** Owner-scoped variant — the common case. */
+export async function mutateOwnedCharacterDoc(
+  characterId: string,
+  mutate: (doc: CharacterDoc) => void,
+): Promise<CharacterDoc> {
+  const me = await requireAccountId();
+  return mutateCharacterDoc(() => assertCharacterOwner(me, characterId), mutate);
 }
 
 // ── Queries ───────────────────────────────────────────────────────────────────

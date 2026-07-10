@@ -360,11 +360,11 @@ export async function levelUp(characterId: string, input: LevelUpInput): Promise
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes, incl. a concurrency test: two racing deposits (stale ETag → 412 → retry) net exactly one applied each, never double
-- [ ] payout by a non-referee rejected; over-balance payout rejected; non-monotonic level rejected
+- [x] `pnpm test` passes (74 web tests incl. 9 new; racing-deposits 412-retry test nets exactly one entry each — also exposed and fixed a fake-fidelity bug: reads must clone, not share references)
+- [x] payout by non-referee → 403; over-balance payout → 400; deposit over purse → 400; non-monotonic/out-of-range/XP-gated level-up → 400; referee overview forbidden for players
 #### Manual
-- [ ] Deposit/payout adjusts coins + appends ledger; balance correct
-- [ ] Level-up bumps level/HP and writes a log visible in the level-up log page
+- [x] Live-Cosmos E2E: player deposit 40gp → purse 60/balance 40; player payout 403; referee overdraw 400; referee payout 30 → purse 90/balance 10; referee overview lists it; player denied `/api/bank`
+- [x] Level-up (xp 2100 ≥ threshold 2000) → level 2, hp 13/13, log entry (1→2, hp_roll_final 5); level-skip attempt → 400
 
 ---
 

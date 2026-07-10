@@ -1,10 +1,8 @@
 'use client';
 import { useState } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { recordBankTransaction } from '@/lib/data/bank';
+import { recordBankTransaction } from '@/lib/api/bank';
 
 interface Props {
-  supabase: SupabaseClient;
   characterId: string;
   bankBalance: number;
   coinsGp: number;
@@ -14,7 +12,7 @@ interface Props {
 }
 
 /** Bank balance card with the owner-only deposit form. */
-export function BankPanel({ supabase, characterId, bankBalance, coinsGp, isOwner, onDeposited }: Props) {
+export function BankPanel({ characterId, bankBalance, coinsGp, isOwner, onDeposited }: Props) {
   const [showDeposit, setShowDeposit] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositDesc, setDepositDesc] = useState('');
@@ -29,7 +27,7 @@ export function BankPanel({ supabase, characterId, bankBalance, coinsGp, isOwner
     setDepositError('');
 
     const newGp = coinsGp - amount;
-    const txError = await recordBankTransaction(supabase, {
+    const txError = await recordBankTransaction({
       characterId,
       amountGp: amount,
       description: depositDesc.trim() || 'Deposit',
