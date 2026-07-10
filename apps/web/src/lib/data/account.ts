@@ -14,6 +14,10 @@ export type Account = {
   email: string;
   role: string;
   invite_code: string;
+  phone: string | null;
+  email_opt_in: boolean;
+  sms_opt_in: boolean;
+  whatsapp_opt_in: boolean;
 };
 
 export async function fetchAccount(
@@ -22,7 +26,7 @@ export async function fetchAccount(
 ): Promise<Account | null> {
   const { data } = await supabase
     .from('accounts')
-    .select('display_name, email, role, invite_code')
+    .select('display_name, email, role, invite_code, phone, email_opt_in, sms_opt_in, whatsapp_opt_in')
     .eq('id', userId)
     .single();
   return (data as Account) ?? null;
@@ -37,6 +41,18 @@ export async function updateDisplayName(
     .from('accounts')
     .update({ display_name: displayName })
     .eq('id', userId);
+  return error ? error.message : null;
+}
+
+export async function updateNotificationPrefs(
+  supabase: SupabaseClient,
+  userId: string,
+  prefs: { phone?: string | null; email_opt_in?: boolean; sms_opt_in?: boolean; whatsapp_opt_in?: boolean },
+): Promise<string | null> {
+  const patch: Record<string, unknown> = { ...prefs };
+  // Enabling WhatsApp is an explicit consent event — timestamp it.
+  if (prefs.whatsapp_opt_in === true) patch.whatsapp_consent_at = new Date().toISOString();
+  const { error } = await supabase.from('accounts').update(patch).eq('id', userId);
   return error ? error.message : null;
 }
 

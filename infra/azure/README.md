@@ -16,7 +16,10 @@ GitHub Actions (OIDC)
             │     ├── supabase-service-role-key
             │     ├── wordpress-api-url
             │     ├── wordpress-app-password
-            │     └── wordpress-username
+            │     ├── wordpress-username
+            │     ├── resend-api-key
+            │     ├── resend-from
+            │     └── notifications-drain-secret
             ├── Log Analytics Workspace
             └── Application Insights
 ```
@@ -62,7 +65,15 @@ az keyvault secret set --vault-name $KV_NAME --name "supabase-service-role-key" 
 az keyvault secret set --vault-name $KV_NAME --name "wordpress-api-url" --value "YOUR_VALUE"
 az keyvault secret set --vault-name $KV_NAME --name "wordpress-app-password" --value "YOUR_VALUE"
 az keyvault secret set --vault-name $KV_NAME --name "wordpress-username" --value "YOUR_VALUE"
+# Outbound notifications (email via Resend; drain route shared secret)
+az keyvault secret set --vault-name $KV_NAME --name "resend-api-key" --value "YOUR_VALUE"
+az keyvault secret set --vault-name $KV_NAME --name "resend-from" --value "notifications@your-verified-domain.com"
+az keyvault secret set --vault-name $KV_NAME --name "notifications-drain-secret" --value "$(openssl rand -hex 32)"
 ```
+
+For the scheduled notification drain (`notifications-drain.yml`), also add:
+- GitHub secret `NOTIFICATIONS_DRAIN_SECRET` — same value as the Key Vault secret
+- GitHub variable `APP_URL` — deployed base URL, e.g. `https://dolmenwood-prod-web.azurewebsites.net`
 
 ### 5. Deploy
 

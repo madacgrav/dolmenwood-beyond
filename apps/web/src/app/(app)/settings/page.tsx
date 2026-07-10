@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { fetchAccount } from '@/lib/data/account';
 import type { Account } from '@/lib/data/account';
 import { ProfileSection } from './components/ProfileSection';
+import { NotificationsSection } from './components/NotificationsSection';
 import { InviteCodeSection } from './components/InviteCodeSection';
 import { AppearanceSection } from './components/AppearanceSection';
 import { OfflineModeSection } from './components/OfflineModeSection';
@@ -49,6 +50,7 @@ export default function SettingsPage() {
         setDisplayName={setDisplayName}
         onAccountChange={setAccount}
       />
+      <NotificationsSection supabase={supabase} account={account} onAccountChange={setAccount} />
       <InviteCodeSection account={account} />
       <AppearanceSection />
       <OfflineModeSection />

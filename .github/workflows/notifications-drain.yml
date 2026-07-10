@@ -1,0 +1,33 @@
+name: Drain Notifications
+
+# Scheduled trigger for the outbound-notification outbox. The app-level
+# dispatch module (apps/web/src/lib/notifications/dispatch.ts) does the
+# actual enqueue + send; this workflow just pokes the drain endpoint.
+#
+# NOTE: this cron is the pre-Cosmos trigger mechanism. After the planned
+# Cosmos DB migration it is replaced by an Azure Function bound to the
+# Cosmos change feed calling the same drainNotifications module.
+#
+# Requires:
+#   vars.APP_URL                          — deployed app base URL (e.g. https://dolmenwood-prod-web.azurewebsites.net)
+#   secrets.NOTIFICATIONS_DRAIN_SECRET    — must match the app's NOTIFICATIONS_DRAIN_SECRET setting
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  drain:
+    name: Drain notification outbox
+    runs-on: ubuntu-latest
+    steps:
+      - name: Drain notifications
+        run: |
+          RESPONSE=$(curl -fsS -X POST "${{ vars.APP_URL }}/api/notifications/drain" \
+            -H "x-drain-secret: ${{ secrets.NOTIFICATIONS_DRAIN_SECRET }}")
+          echo "Drain result: $RESPONSE"
+          echo "### Notification Drain" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          echo "$RESPONSE" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
