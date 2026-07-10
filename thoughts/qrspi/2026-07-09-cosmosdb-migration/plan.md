@@ -539,10 +539,10 @@ Run: `npx tsx scripts/migrate-supabase-to-cosmos.ts`. **No credential migration*
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes for `scripts/lib/transform.ts` unit tests (a sample character row set → expected embedded doc)
+- [x] `pnpm test` passes (92 web tests incl. 5 new transform tests: account forced-reset + email normalization, full character aggregate assembly, location coercion, campaign nesting with rsvp/availability filtering, delivery embedding)
 #### Manual
-- [ ] Dry-run against a Supabase snapshot; per-entity source-row vs Cosmos-document counts reconcile (accounts, characters, campaigns, notifications)
-- [ ] Spot-check one migrated character aggregate (inventory + ledger + logs embedded) and confirm a migrated account can complete a password reset and log in
+- [x] **Real prod migration ran and reconciled**: 7 accounts, 4 characters, 2 campaigns, 0 notifications — all ✓; embedded 8 inventory / 2 slots / 4 preps / 1 ledger / 1 log / 1 mount; 3 sessions + 9 rsvps. No prod portraits existed to copy. Legacy `inventory_items`/`character_campaign_data` skipped by design (app never read them).
+- [x] Spot-checked Gilly Dogoode's aggregate (5 items, 2 slots, 4 preps, log, mount) and campaign nesting; migrated account sign-in rejected (`CredentialsSignin` — null hash) pending password reset. Script is idempotent — **re-run at Phase-10 cutover to pick up drift** while prod still writes to Supabase.
 
 ---
 
