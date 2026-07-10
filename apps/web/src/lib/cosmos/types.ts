@@ -4,6 +4,26 @@
  * bridged by the mappers in lib/data/mappers/.
  */
 
+/** Container `accounts`, partition key `/id`. */
+export interface AccountDoc {
+  id: string;
+  email: string;
+  role: 'player' | 'referee';
+  displayName: string;
+  inviteCode: string;
+  isAdmin: boolean;
+  phone: string | null;
+  emailOptIn: boolean;
+  smsOptIn: boolean;
+  whatsappOptIn: boolean;
+  whatsappConsentAt: string | null;
+  /** null ⇒ account must go through the password-reset flow (e.g. migrated from Supabase). */
+  passwordHash: string | null;
+  requiresPasswordReset: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Container `catalog_items`, partition key `/itemType`. */
 export interface CatalogItemDoc {
   id: string;

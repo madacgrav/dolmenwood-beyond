@@ -1,11 +1,16 @@
 import { create } from 'zustand';
-import type { User } from '@supabase/supabase-js';
+
+interface SessionUser {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+}
 
 interface AuthState {
-  user: User | null;
+  user: SessionUser | null;
   role: 'player' | 'referee' | null;
   isLoading: boolean;
-  setUser: (user: User | null) => void;
+  setUser: (user: SessionUser | null) => void;
   setRole: (role: 'player' | 'referee' | null) => void;
   setLoading: (loading: boolean) => void;
   signOut: () => void;

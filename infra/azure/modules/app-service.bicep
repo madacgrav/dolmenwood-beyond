@@ -91,6 +91,18 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
           name: 'COSMOS_KEY'
           value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/cosmos-key/)'
         }
+        {
+          name: 'AUTH_SECRET'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/auth-secret/)'
+        }
+        {
+          name: 'AUTH_URL'
+          value: 'https://${name}.azurewebsites.net'
+        }
+        {
+          name: 'AUTH_TRUST_HOST'
+          value: 'true'
+        }
         // Secrets pulled from Key Vault via managed identity
         {
           name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY'

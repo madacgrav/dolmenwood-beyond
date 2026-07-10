@@ -1,13 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { updateDisplayName } from '@/lib/data/account';
 import type { Account } from '@/lib/data/account';
 import { sectionStyle, sectionHeaderStyle, inputStyle } from './styles';
 
 interface ProfileSectionProps {
-  supabase: SupabaseClient;
   account: Account | null;
   displayName: string;
   setDisplayName: (value: string) => void;
@@ -15,7 +12,6 @@ interface ProfileSectionProps {
 }
 
 export function ProfileSection({
-  supabase,
   account,
   displayName,
   setDisplayName,
@@ -29,11 +25,13 @@ export function ProfileSection({
     if (!account) return;
     setSavingName(true);
     setSaveNameMsg('');
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const error = await updateDisplayName(supabase, user.id, displayName);
+    const res = await fetch('/api/account', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ display_name: displayName }),
+    });
     setSavingName(false);
-    if (error) {
+    if (!res.ok) {
       setSaveNameMsg('Failed to save.');
     } else {
       onAccountChange((prev) => prev ? { ...prev, display_name: displayName } : prev);
@@ -45,7 +43,11 @@ export function ProfileSection({
   async function handleChangePassword() {
     if (!account?.email) return;
     setResetSent(false);
-    await supabase.auth.resetPasswordForEmail(account.email);
+    await fetch('/api/auth/reset-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: account.email }),
+    });
     setResetSent(true);
     setTimeout(() => setResetSent(false), 4000);
   }

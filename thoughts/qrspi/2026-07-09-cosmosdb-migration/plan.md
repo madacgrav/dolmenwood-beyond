@@ -195,12 +195,12 @@ export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|ico
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes, incl. new unit tests for `createAccount` (unique invite code, bcrypt hash) and Auth.js `authorize` (rejects null hash)
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` passes (54 web tests incl. 12 new: createAccount/verifyPassword/setPassword/deleteAccount cascade + reset-token roundtrip/forgery/expiry)
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm build` pass (middleware edge bundle compiles via the shared/full config split)
 #### Manual
-- [ ] Sign up → an `accounts` doc appears in Cosmos with a 6-char `inviteCode` and bcrypt `passwordHash`
-- [ ] Sign in sets a session cookie; sign out clears it; middleware redirects unauthenticated users to `/sign-in`
-- [ ] Forgot-password sends an email via Resend; the reset link sets a new password and logs in
+- [x] Sign up → `accounts` doc in Cosmos with 6-char `inviteCode` + bcrypt hash (verified via curl against live Cosmos)
+- [x] Sign in: wrong password → CredentialsSignin; correct → session; `/api/account` 401 without session; middleware 307s `/characters` → `/sign-in`; DELETE cascades and the deleted account can no longer sign in
+- [ ] Forgot-password email via Resend + reset link (needs `RESEND_API_KEY` locally or the deployed app — not exercised yet; token create/verify covered by unit tests)
 
 ---
 

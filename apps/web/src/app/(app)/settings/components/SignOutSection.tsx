@@ -1,18 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { signOut } from 'next-auth/react';
 
-interface SignOutSectionProps {
-  supabase: SupabaseClient;
-}
-
-export function SignOutSection({ supabase }: SignOutSectionProps) {
-  const router = useRouter();
-
+export function SignOutSection() {
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.push('/sign-in');
+    await signOut({ callbackUrl: '/sign-in' });
   }
 
   return (

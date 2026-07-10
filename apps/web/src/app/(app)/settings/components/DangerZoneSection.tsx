@@ -1,18 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { deleteAccount } from '@/lib/data/account';
+import { signOut } from 'next-auth/react';
 import { sectionStyle, sectionHeaderStyle } from './styles';
 import { DeleteAccountModal } from './DeleteAccountModal';
 
-interface DangerZoneSectionProps {
-  supabase: SupabaseClient;
-}
-
-export function DangerZoneSection({ supabase }: DangerZoneSectionProps) {
-  const router = useRouter();
+export function DangerZoneSection() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -22,11 +15,13 @@ export function DangerZoneSection({ supabase }: DangerZoneSectionProps) {
     setDeleting(true);
     setDeleteError('');
     try {
-      const error = await deleteAccount(supabase);
-      if (error) throw new Error(error);
-      // Sign out — ignore errors since the account is already deleted
-      await supabase.auth.signOut().catch(() => undefined);
-      router.push('/sign-in');
+      const res = await fetch('/api/account', { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error ?? 'Failed to delete account');
+      }
+      // Clear the session — the account behind it is already gone.
+      await signOut({ callbackUrl: '/sign-in' });
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : 'Failed to delete account');
       setDeleting(false);

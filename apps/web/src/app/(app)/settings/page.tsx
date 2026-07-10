@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { fetchAccount } from '@/lib/data/account';
 import type { Account } from '@/lib/data/account';
 import { ProfileSection } from './components/ProfileSection';
 import { NotificationsSection } from './components/NotificationsSection';
@@ -17,25 +15,22 @@ import { DangerZoneSection } from './components/DangerZoneSection';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
 
   const [account, setAccount] = useState<Account | null>(null);
   const [displayName, setDisplayName] = useState('');
 
   useEffect(() => {
     async function loadAccount() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/sign-in'); return; }
-
-      const data = await fetchAccount(supabase, user.id);
-      if (data) {
-        setAccount(data);
-        setDisplayName(data.display_name ?? '');
-      }
+      const res = await fetch('/api/account');
+      if (res.status === 401) { router.push('/sign-in'); return; }
+      if (!res.ok) return;
+      const data: Account = await res.json();
+      setAccount(data);
+      setDisplayName(data.display_name ?? '');
     }
 
     loadAccount();
-  }, [router, supabase]);
+  }, [router]);
 
   return (
     <div style={{ padding: '1.25rem', paddingTop: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
@@ -44,20 +39,19 @@ export default function SettingsPage() {
       </h1>
 
       <ProfileSection
-        supabase={supabase}
         account={account}
         displayName={displayName}
         setDisplayName={setDisplayName}
         onAccountChange={setAccount}
       />
-      <NotificationsSection supabase={supabase} account={account} onAccountChange={setAccount} />
+      <NotificationsSection account={account} onAccountChange={setAccount} />
       <InviteCodeSection account={account} />
       <AppearanceSection />
       <OfflineModeSection />
       <OptionalRulesSection />
-      <DataSection supabase={supabase} />
-      <SignOutSection supabase={supabase} />
-      <DangerZoneSection supabase={supabase} />
+      <DataSection />
+      <SignOutSection />
+      <DangerZoneSection />
     </div>
   );
 }

@@ -1,26 +1,22 @@
 import { BottomNav } from '@/components/layout/BottomNav';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { createClient } from '@/lib/supabase/server';
+import { auth } from '@/lib/auth/config';
+import { fetchAccountDoc } from '@/lib/data/account';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await auth();
 
   let isAdmin = false;
-  if (user) {
-    const { data } = await supabase
-      .from('accounts')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single();
-    isAdmin = (data as { is_admin: boolean } | null)?.is_admin ?? false;
+  if (session?.user?.id) {
+    const account = await fetchAccountDoc(session.user.id);
+    isAdmin = account?.isAdmin ?? false;
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
-      {user && (
+      {session && (
         <header style={{
           position: 'fixed', top: 0, left: 0, right: 0, height: '52px', zIndex: 50,
           backgroundColor: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)',
@@ -29,9 +25,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <NotificationBell />
         </header>
       )}
-      <main style={{ flex: 1, paddingTop: user ? '52px' : 0, paddingBottom: '80px' }}>{children}</main>
+      <main style={{ flex: 1, paddingTop: session ? '52px' : 0, paddingBottom: '80px' }}>{children}</main>
       <BottomNav isAdmin={isAdmin} />
     </div>
   );
 }
-

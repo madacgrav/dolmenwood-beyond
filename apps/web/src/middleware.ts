@@ -1,46 +1,23 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import NextAuth from 'next-auth';
+import { NextResponse } from 'next/server';
+import { authConfig } from '@/lib/auth/shared';
 
-const PUBLIC_ROUTES = ['/sign-in', '/sign-up', '/auth/callback', '/forgot-password'];
+const PUBLIC_ROUTES = ['/sign-in', '/sign-up', '/forgot-password', '/reset-password'];
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+const { auth } = NextAuth(authConfig);
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
+export default auth((request) => {
   const pathname = request.nextUrl.pathname;
   const isPublicRoute = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
 
-  if (!user && !isPublicRoute) {
+  if (!request.auth && !isPublicRoute) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
-  if (user && isPublicRoute) {
+  if (request.auth && isPublicRoute) {
     return NextResponse.redirect(new URL('/characters', request.url));
   }
-
-  return supabaseResponse;
-}
+});
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|api/).*)'],
