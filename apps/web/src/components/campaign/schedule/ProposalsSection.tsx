@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { loadProposals, createProposal, deleteProposal, setAvailability, type Proposal } from '@/lib/api/proposals';
+import type { RosterMember } from '@/lib/api/roster';
 import { ProposalForm, type ProposalFormField } from '@/components/campaign/schedule/ProposalForm';
 import { ProposalList } from '@/components/campaign/schedule/ProposalList';
 import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
 
-export function ProposalsSection({ campaignId, userId, isReferee, onConfirmed }: {
-  campaignId: string; userId: string; isReferee: boolean; onConfirmed?: () => void;
+export function ProposalsSection({ campaignId, userId, isReferee, roster, onConfirmed }: {
+  campaignId: string; userId: string; isReferee: boolean; roster: RosterMember[]; onConfirmed?: () => void;
 }) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
 
@@ -135,6 +136,7 @@ export function ProposalsSection({ campaignId, userId, isReferee, onConfirmed }:
         proposals={proposals}
         userId={userId}
         isReferee={isReferee}
+        roster={roster}
         onDelete={setDeletingProposal}
         onAvail={handleAvailability}
       />

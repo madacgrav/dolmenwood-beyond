@@ -226,6 +226,30 @@ export async function listMyCampaignNames(): Promise<{ id: string; name: string 
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/**
+ * Port of get_campaign_roster: the full participant list (members ∪
+ * referee) with display names, participant-guarded, ordered by display
+ * name, referee flagged and appearing exactly once.
+ */
+export async function getCampaignRoster(
+  campaignId: string,
+): Promise<{ account_id: string; display_name: string; is_referee: boolean }[]> {
+  const me = await requireAccountId();
+  const doc = await assertCampaignParticipant(campaignId, me);
+  const participantIds = [
+    doc.refereeId,
+    ...doc.members.map((m) => m.accountId).filter((id) => id !== doc.refereeId),
+  ];
+  const names = await displayNamesFor(participantIds);
+  return participantIds
+    .map((id) => ({
+      account_id: id,
+      display_name: names[id] ?? 'Unknown',
+      is_referee: id === doc.refereeId,
+    }))
+    .sort((a, b) => a.display_name.localeCompare(b.display_name));
+}
+
 /** Port of award_xp: referee-of-the-owner's-campaign only, never self. */
 export async function awardXP(characterId: string, gain: number): Promise<void> {
   if (!Number.isInteger(gain) || gain <= 0) throw badRequest('XP gain must be positive');

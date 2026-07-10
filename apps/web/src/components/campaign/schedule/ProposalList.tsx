@@ -2,12 +2,14 @@
 
 import { formatSessionDate } from '@/lib/format';
 import type { Proposal } from '@/lib/api/proposals';
+import { splitRoster, type RosterMember } from '@/lib/api/roster';
 import { AvailabilityControl } from '@/components/campaign/schedule/AvailabilityControl';
 
 interface ProposalListProps {
   proposals: Proposal[];
   userId: string;
   isReferee: boolean;
+  roster: RosterMember[];
   onDelete: (proposal: Proposal) => void;
   onAvail: (proposalId: string, available: boolean) => void;
 }
@@ -19,7 +21,7 @@ function sortProposals(proposals: Proposal[]): Proposal[] {
   );
 }
 
-export function ProposalList({ proposals, userId, isReferee, onDelete, onAvail }: ProposalListProps) {
+export function ProposalList({ proposals, userId, isReferee, roster, onDelete, onAvail }: ProposalListProps) {
   if (proposals.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--color-text-muted)' }}>
@@ -37,8 +39,11 @@ export function ProposalList({ proposals, userId, isReferee, onDelete, onAvail }
         const canManage = proposal.created_by === userId || isReferee;
         const isConfirmed = proposal.status === 'confirmed';
         const myAvailable = proposal.availability.find(a => a.account_id === userId)?.available ?? null;
-        const approved = proposal.availability.filter(a => a.available).length;
-        const approverNames = proposal.availability.filter(a => a.available).map(a => a.display_name);
+        const responses: { account_id: string; status: 'available' | 'busy' }[] =
+          proposal.availability.map(a => ({ account_id: a.account_id, status: a.available ? 'available' : 'busy' }));
+        const { groups, notResponded } = splitRoster(roster, responses);
+        const available = groups.available ?? [];
+        const busy = groups.busy ?? [];
         return (
           <div
             key={proposal.id}
@@ -79,9 +84,13 @@ export function ProposalList({ proposals, userId, isReferee, onDelete, onAvail }
               </div>
             )}
 
-            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.6rem', marginBottom: '0.4rem' }}>
-              ✅ {approved} / {proposal.participant_count} available
-              {approverNames.length > 0 && ` · ${approverNames.join(', ')}`}
+            <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.6rem', marginBottom: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <div>
+                ✅ Available ({available.length}/{proposal.participant_count})
+                {available.length > 0 && `: ${available.map(m => m.display_name).join(', ')}`}
+              </div>
+              {busy.length > 0 && <div>🚫 Busy: {busy.map(m => m.display_name).join(', ')}</div>}
+              {notResponded.length > 0 && <div>⏳ Not yet voted: {notResponded.map(m => m.display_name).join(', ')}</div>}
             </div>
             {isConfirmed ? (
               <div style={{ fontSize: '0.78rem', color: 'var(--color-primary)', fontWeight: '700' }}>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { loadSchedule, createSession, updateSession, deleteSession, setRsvp, type RsvpStatus, type Session } from '@/lib/api/schedule';
 import { listMyCampaignNames } from '@/lib/api/campaigns';
+import { loadRoster, type RosterMember } from '@/lib/api/roster';
 import { toDatetimeLocal } from '@/lib/format';
 import { sameDay } from '@/lib/calendar';
 import { SessionList } from '@/components/campaign/schedule/SessionList';
@@ -24,6 +25,7 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
   const [campaignId, setCampaignId] = useState('');
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [roster, setRoster] = useState<RosterMember[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Session form state (shared by create + edit)
@@ -72,6 +74,16 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
         setSessions(data);
         setLoading(false);
       }
+    })();
+    return () => { active = false; };
+  }, [campaignId]);
+
+  useEffect(() => {
+    if (!campaignId) return;
+    let active = true;
+    (async () => {
+      const data = await loadRoster(campaignId);
+      if (active) setRoster(data);
     })();
     return () => { active = false; };
   }, [campaignId]);
@@ -178,7 +190,7 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
       )}
 
       {campaignId && (
-        <ProposalsSection campaignId={campaignId} userId={userId} isReferee={isReferee} onConfirmed={refetch} />
+        <ProposalsSection campaignId={campaignId} userId={userId} isReferee={isReferee} roster={roster} onConfirmed={refetch} />
       )}
 
       {showForm ? (
@@ -253,6 +265,7 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
               : sessions}
             userId={userId}
             isReferee={isReferee}
+            roster={roster}
             onRsvp={handleRsvp}
             onEdit={handleEdit}
             onDelete={setDeletingSession}
