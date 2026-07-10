@@ -103,7 +103,7 @@ export async function listCatalogItems(): Promise<CatalogItemDoc[]> {
 #### Automated
 - [x] `pnpm install` succeeds; `pnpm typecheck` passes
 - [x] `az deployment group what-if ...` lists the Cosmos account + 5 containers
-- [x] `npx tsx scripts/seed-catalog.ts` completes; `SELECT VALUE COUNT(1) FROM c` on `catalog_items` = 97 (de-duplicated; local dev DB double-seeds the catalog via migration 000002 + seed.sql)
+- [x] `npx tsx scripts/seed-catalog.ts` completes; `catalog_items` seeded **from prod Supabase** — 97 docs, ids verified 1:1 against prod (so `catalog_item_id` references stay valid in Phase 9). Working pooler URL stored in Key Vault as `supabase-db-url`; GitHub secrets `SUPABASE_DB_URL`/`SUPABASE_DB_PASSWORD` updated after the password reset (pooler host is `aws-1-us-west-2`, not the `aws-0-...` from the docs).
 #### Manual
 - [x] `/api/catalog` verified end-to-end against the deployed Cosmos account (dev server): 97 items returned; add-item hook consumes this route
 
