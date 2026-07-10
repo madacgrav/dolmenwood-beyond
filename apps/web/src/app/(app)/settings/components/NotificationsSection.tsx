@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Account } from '@/lib/data/account';
+import { isValidE164 } from '@/lib/phone';
 import { sectionStyle, sectionHeaderStyle, inputStyle } from './styles';
 
 interface NotificationsSectionProps {
@@ -35,6 +36,11 @@ export function NotificationsSection({ account, onAccountChange }: Notifications
     setSaving(true);
     setSaveMsg('');
     const normalizedPhone = normalizePhone(phone);
+    if (normalizedPhone !== '' && !isValidE164(normalizedPhone)) {
+      setSaving(false);
+      setSaveMsg('Enter a valid number, e.g. +15551234567');
+      return;
+    }
     const prefs = {
       phone: normalizedPhone === '' ? null : normalizedPhone,
       email_opt_in: emailOptIn,
@@ -60,7 +66,7 @@ export function NotificationsSection({ account, onAccountChange }: Notifications
   const toggles = [
     { value: emailOptIn, set: setEmailOptIn, label: 'Email', desc: 'Session confirmations by email' },
     { value: smsOptIn, set: setSmsOptIn, label: 'SMS', desc: 'Text message notifications (coming soon)' },
-    { value: whatsappOptIn, set: setWhatsappOptIn, label: 'WhatsApp', desc: 'WhatsApp notifications (coming soon)' },
+    { value: whatsappOptIn, set: setWhatsappOptIn, label: 'WhatsApp', desc: 'WhatsApp notifications' },
   ];
 
   return (

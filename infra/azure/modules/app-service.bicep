@@ -130,6 +130,18 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
           value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/notifications-drain-secret/)'
         }
         {
+          name: 'TWILIO_ACCOUNT_SID'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/twilio-account-sid/)'
+        }
+        {
+          name: 'TWILIO_AUTH_TOKEN'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/twilio-auth-token/)'
+        }
+        {
+          name: 'TWILIO_WHATSAPP_FROM'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/twilio-whatsapp-from/)'
+        }
+        {
           name: 'NODE_ENV'
           value: 'production'
         }

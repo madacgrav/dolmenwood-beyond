@@ -352,8 +352,8 @@ channelsFor({ email_opt_in: true, sms_opt_in: true, whatsapp_opt_in: true, whats
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web typecheck && … lint && … test` all pass (channels + whatsapp suites green)
-- [ ] `channelsFor` returns `['email','whatsapp']` only with opt-in **and** consent; `['email']` when WhatsApp opted but not consented
+- [x] `pnpm --filter @dolmenwood/web typecheck && … lint && … test` all pass (channels + whatsapp suites green — 100/100)
+- [x] `channelsFor` returns `['email','whatsapp']` only with opt-in **and** consent; `['email']` when WhatsApp opted but not consented
 
 #### Manual
 - [ ] Join the Twilio WhatsApp sandbox with a test number; in Settings set that number + enable WhatsApp (stamps consent) → confirm/suggest a session → WhatsApp message received

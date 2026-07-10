@@ -3,6 +3,7 @@ import type { DeliveryDoc, NotificationDoc } from '@/lib/cosmos/types';
 import { fetchAccountDoc } from '@/lib/data/account';
 import { channelsFor, type Channel } from './channels';
 import { sendEmail } from './channels/email';
+import { sendWhatsApp } from './channels/whatsapp';
 
 /**
  * Trigger-agnostic dispatch: enqueue deliveries for recent notifications,
@@ -36,6 +37,7 @@ async function enqueue(): Promise<number> {
       email_opt_in: account.emailOptIn,
       sms_opt_in: account.smsOptIn,
       whatsapp_opt_in: account.whatsappOptIn,
+      whatsapp_consent_at: account.whatsappConsentAt,
     });
     const existing = new Set((note.deliveries ?? []).map((d) => d.channel));
     const missing = wanted.filter((c) => !existing.has(c));
@@ -82,6 +84,8 @@ async function sendPending(): Promise<{ sent: number; failed: number }> {
         if (!account) throw new Error('missing recipient account');
         if (delivery.channel === 'email') {
           await sendEmail(account.email, subjectFor(note.kind, note.body), note.body);
+        } else if (delivery.channel === 'whatsapp') {
+          await sendWhatsApp(account.phone ?? '', '', note.body);
         } else {
           throw new Error(`channel ${delivery.channel satisfies Channel} not implemented`);
         }
