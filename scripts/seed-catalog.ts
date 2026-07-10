@@ -40,7 +40,11 @@ async function main() {
 
   const pg = new Client({ connectionString: DB_URL });
   await pg.connect();
-  const { rows } = await pg.query<CatalogRow>('select * from public.catalog_items');
+  // distinct on (name): local dev has each item twice (migration 000002 seeds
+  // the catalog and seed.sql seeds it again on db reset with fresh UUIDs).
+  const { rows } = await pg.query<CatalogRow>(
+    'select distinct on (name) * from public.catalog_items order by name, id',
+  );
   await pg.end();
   console.log(`read ${rows.length} catalog_items from Postgres`);
 

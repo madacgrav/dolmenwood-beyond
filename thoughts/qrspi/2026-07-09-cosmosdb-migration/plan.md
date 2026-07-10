@@ -103,9 +103,9 @@ export async function listCatalogItems(): Promise<CatalogItemDoc[]> {
 #### Automated
 - [x] `pnpm install` succeeds; `pnpm typecheck` passes
 - [x] `az deployment group what-if ...` lists the Cosmos account + 5 containers
-- [ ] `npx tsx scripts/seed-catalog.ts` completes; `SELECT VALUE COUNT(1) FROM c` on `catalog_items` ≈ 90 *(needs the Cosmos account deployed first — run post-`deploy-infra`)*
+- [x] `npx tsx scripts/seed-catalog.ts` completes; `SELECT VALUE COUNT(1) FROM c` on `catalog_items` = 97 (de-duplicated; local dev DB double-seeds the catalog via migration 000002 + seed.sql)
 #### Manual
-- [ ] In the character sheet, "add item" search returns catalog rows (served from Cosmos via `/api/catalog`)
+- [x] `/api/catalog` verified end-to-end against the deployed Cosmos account (dev server): 97 items returned; add-item hook consumes this route
 
 ---
 
