@@ -18,6 +18,37 @@ export default async function NewsPage() {
       </div>
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          {[
+            {
+              href: 'https://necroticgnome.com/blogs/news/tagged/dolmenwood',
+              title: 'Dolmenwood News',
+              desc: 'Latest Dolmenwood posts from the official Necrotic Gnome blog.',
+            },
+            {
+              href: 'https://necroticgnome.com/blogs/news',
+              title: 'Necrotic Gnome Blog',
+              desc: 'News from the makers of Dolmenwood and Old-School Essentials.',
+            },
+          ].map(link => (
+            <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <article style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '12px',
+                padding: '1rem',
+                cursor: 'pointer',
+              }}>
+                <h2 style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: '1.1rem', color: 'var(--color-text)', margin: '0 0 0.25rem', lineHeight: 1.3 }}>
+                  {link.title} <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>↗</span>
+                </h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+                  {link.desc}
+                </p>
+              </article>
+            </a>
+          ))}
+        </div>
         {!hasWordPress ? (
           <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📜</div>

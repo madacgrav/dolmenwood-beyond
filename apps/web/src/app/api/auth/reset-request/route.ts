@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   if (account) {
     try {
       const token = await createResetToken(account.id);
-      const origin = new URL(request.url).origin;
+      const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
       const link = `${origin}/reset-password?token=${encodeURIComponent(token)}`;
       await sendEmail(
         account.email,
