@@ -1,8 +1,7 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Character } from '@dolmenwood/types';
 import { getAttackBonus, getSaveTargets, calculateAC, getHitDie, getAbilityModifier, getKindredACBonus } from '@dolmenwood/rules-engine';
-import { createClient } from '@/lib/supabase/client';
 import { listEquippedWeapons, fetchEquippedArmorBonus, type EquippedWeapon } from '@/lib/api/inventory';
 import { ConditionsSection } from './combat/ConditionsSection';
 import { ArmourClassSection } from './combat/ArmourClassSection';
@@ -24,7 +23,6 @@ interface Props {
 const RANGED_WEAPON_PATTERNS = /bow|crossbow|sling|dart|javelin|thrown/i;
 
 export function CombatTab({ character, characterId, readOnly = false }: Props) {
-  const supabase = useMemo(() => createClient(), []);
   const [weapons, setWeapons] = useState<EquippedWeapon[]>([]);
   const [hasRangedWeapon, setHasRangedWeapon] = useState(false);
   const [equippedArmorBonus, setEquippedArmorBonus] = useState(0);
@@ -38,8 +36,7 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
   }, [characterId]);
 
   const ammo = useAmmoTracking(characterId);
-  // supabase remains only for mounts — replaced in phase 5.
-  const mountsState = useMounts(supabase, characterId, character.characterClass);
+  const mountsState = useMounts(characterId, character.characterClass);
 
   const attackBonus = getAttackBonus(character.characterClass, character.level);
   const saves = getSaveTargets(character.characterClass, character.level);

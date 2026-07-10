@@ -1,6 +1,13 @@
 import { getContainer } from '@/lib/cosmos/client';
-import { getCurrentAccount } from '@/lib/auth/session';
-import { badRequest, fetchCharacterDocById, forbidden, notFound } from '@/lib/authz';
+import { getCurrentAccount, requireAccountId } from '@/lib/auth/session';
+import {
+  badRequest,
+  fetchCharacterDocById,
+  forbidden,
+  isRefereeOfAccount,
+  listCampaignsRefereedBy,
+  notFound,
+} from '@/lib/authz';
 import type { BankLedgerEntryDoc, CharacterDoc } from '@/lib/cosmos/types';
 import type { LedgerRow } from '@/lib/api/bank';
 import { mutateCharacterDoc } from './characters';
@@ -10,10 +17,9 @@ import { mutateCharacterDoc } from './characters';
  * transaction (ledger append + purse adjustment) is a single-document
  * write — the app-layer port of the `bank_transaction` RPC.
  *
- * Authorization mirrors the old bank_ledger RLS: deposits by the owner or
- * a referee, payouts by a referee only. The referee check is the global
- * `accounts.role` (matching the pre-campaign policies); phase 5 tightens
- * it to campaign-scoped.
+ * Authorization mirrors bank_transaction: deposits by the owner or the
+ * referee of a campaign the owner belongs to; payouts by that referee
+ * only (campaign-scoped, not the global account role).
  */
 
 const ledgerOf = (doc: CharacterDoc): BankLedgerEntryDoc[] => doc.bankLedger ?? [];
@@ -38,7 +44,7 @@ export async function fetchBankState(
   const me = await getCurrentAccount();
   const doc = await fetchCharacterDocById(characterId);
   if (!doc) throw notFound('character');
-  if (doc.ownerId !== me.id && me.role !== 'referee') throw forbidden();
+  if (doc.ownerId !== me.id && !(await isRefereeOfAccount(me.id, doc.ownerId))) throw forbidden();
   const ledger = [...ledgerOf(doc)]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .map((e) => entryToRow(characterId, e));
@@ -52,13 +58,13 @@ export async function recordBankTransaction(
 ): Promise<void> {
   if (!Number.isInteger(amountGp) || amountGp === 0) throw badRequest('amount must be a non-zero integer');
   const me = await getCurrentAccount();
-  const isReferee = me.role === 'referee';
 
   await mutateCharacterDoc(
     async () => {
       const doc = await fetchCharacterDocById(characterId);
       if (!doc) throw notFound('character');
-      // Deposits: owner or referee. Payouts: referee only.
+      // Deposits: owner or the owner's campaign referee. Payouts: that referee only.
+      const isReferee = doc.ownerId !== me.id && (await isRefereeOfAccount(me.id, doc.ownerId));
       if (amountGp > 0 && doc.ownerId !== me.id && !isReferee) throw forbidden();
       if (amountGp < 0 && !isReferee) throw forbidden();
       return doc;
@@ -98,13 +104,31 @@ export interface RefereeBankEntry {
   ledger: LedgerRow[];
 }
 
-/** Referee-only overview of every character's bank (port of the referee RLS read). */
+/** Referee overview: the banks of every character owned by members of my campaigns. */
 export async function refereeBankOverview(): Promise<RefereeBankEntry[]> {
-  const me = await getCurrentAccount();
-  if (me.role !== 'referee') throw forbidden();
-  const { resources } = await getContainer('characters')
-    .items.query<CharacterDoc>('SELECT * FROM c ORDER BY c.name')
-    .fetchAll();
+  const me = await requireAccountId();
+  const myCampaigns = await listCampaignsRefereedBy(me);
+  if (myCampaigns.length === 0) throw forbidden();
+  const memberIds = [
+    ...new Set(myCampaigns.flatMap((c) => c.members.map((m) => m.accountId))),
+  ].filter((id) => id !== me);
+
+  const container = getContainer('characters');
+  const perOwner = await Promise.all(
+    memberIds.map(async (ownerId) => {
+      const { resources } = await container.items
+        .query<CharacterDoc>(
+          {
+            query: 'SELECT * FROM c WHERE c.ownerId = @id',
+            parameters: [{ name: '@id', value: ownerId }],
+          },
+          { partitionKey: ownerId },
+        )
+        .fetchAll();
+      return resources;
+    }),
+  );
+  const resources = perOwner.flat().sort((a, b) => a.name.localeCompare(b.name));
   return resources.map((doc) => ({
     id: doc.id,
     name: doc.name,

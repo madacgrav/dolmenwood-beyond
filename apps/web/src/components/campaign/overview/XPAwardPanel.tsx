@@ -6,7 +6,7 @@ import {
   getKindredXPBonus,
   applyXPModifiers,
 } from '@dolmenwood/rules-engine';
-import type { CampaignData } from '@/lib/data/campaigns';
+import type { CampaignData } from '@/lib/api/campaigns';
 import { canLevelUpAfter } from './types';
 import type { XPAwardState } from './types';
 

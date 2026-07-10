@@ -415,11 +415,11 @@ export async function removePackAnimal(campaignId: string, mountId: string): Pro
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes (join dup-member → 409; `isCampaignReferee` true only for referee)
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` passes (82 web tests incl. 8 new: create/join/dup-join-400, awardXP self/outsider/unrelated-referee 403, referee visibility, pack-animal participant gate, retainer promote lifecycle, mount HP clamp). Tests migrated to a shared container-aware fake (`src/test/cosmos-fake.ts`).
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm build` pass
 #### Manual
-- [ ] Create campaign → invite code; join from account B; referee sees B's characters (cross-partition read); a non-member gets 403
-- [ ] Add/remove pack animals (party) and character mounts/retainers
+- [x] Live-Cosmos E2E: create campaign → invite code; join from Alice; duplicate join 400; referee roster shows her character (cross-partition hydration); referee reads her sheet (view-page path); self-award 403 / referee award +150 xp
+- [x] Pack animal add/remove; retainer add → promote clears the active list; bank re-verified campaign-scoped (referee payout + overview). Bonus: deleteAccount now cascades campaigns (refereed deleted, memberships removed) — verified all containers empty after cleanup. Admin dashboard ported off `get_admin_data` RPC (was unassigned in the plan).
 
 ---
 

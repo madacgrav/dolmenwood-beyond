@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState, useCallback } from 'react';
 import { applyXPModifiers } from '@dolmenwood/rules-engine';
 import {
   loadRefereeCampaigns,
@@ -9,8 +8,8 @@ import {
   awardXP,
   insertPackAnimal,
   removePackAnimal,
-} from '@/lib/data/campaigns';
-import type { CampaignData, PackAnimal, PackAnimalType } from '@/lib/data/campaigns';
+} from '@/lib/api/campaigns';
+import type { CampaignData, PackAnimal, PackAnimalType } from '@/lib/api/campaigns';
 import { defaultXPAward } from './types';
 import type { NewPackAnimalForm, XPAwardState } from './types';
 import { CampaignCreateForm } from './CampaignCreateForm';
@@ -19,8 +18,7 @@ import { MemberList } from './MemberList';
 import { XPAwardPanel } from './XPAwardPanel';
 import { PackAnimalsSection } from './PackAnimalsSection';
 
-export function RefereeView({ userId }: { userId: string }) {
-  const supabase = useMemo(() => createClient(), []);
+export function RefereeView(_props: { userId: string }) {
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -41,7 +39,7 @@ export function RefereeView({ userId }: { userId: string }) {
   }
 
   const loadCampaigns = useCallback(async () => {
-    const result = await loadRefereeCampaigns(supabase, userId);
+    const result = await loadRefereeCampaigns();
     if (!result) {
       setCampaigns([]);
       setLoading(false);
@@ -50,7 +48,7 @@ export function RefereeView({ userId }: { userId: string }) {
     setPackAnimals(result.packAnimals);
     setCampaigns(result.campaigns);
     setLoading(false);
-  }, [supabase, userId]);
+  }, []);
 
   useEffect(() => { loadCampaigns(); }, [loadCampaigns]);
 
@@ -60,7 +58,7 @@ export function RefereeView({ userId }: { userId: string }) {
     setCreateLoading(true);
     setCreateError('');
 
-    const { error } = await createCampaign(supabase, trimmed);
+    const { error } = await createCampaign(trimmed);
 
     if (error) {
       setCreateError(error.message);
@@ -106,7 +104,7 @@ export function RefereeView({ userId }: { userId: string }) {
         const gain = state.applyModifier
           ? applyXPModifiers(base, ch.character_class, ch.ability_scores, ch.kindred)
           : base;
-        return awardXP(supabase, ch.id, gain);
+        return awardXP(ch.id, gain);
       })
     );
 
@@ -134,8 +132,7 @@ export function RefereeView({ userId }: { userId: string }) {
   async function addPackAnimal(campaignId: string) {
     const animal = getAnimal(campaignId);
     if (!animal.name.trim()) return;
-    const data = await insertPackAnimal(supabase, {
-      ownerId: userId,
+    const data = await insertPackAnimal({
       campaignId,
       name: animal.name.trim(),
       mountType: animal.mount_type,
@@ -151,7 +148,7 @@ export function RefereeView({ userId }: { userId: string }) {
   async function deletePackAnimal(campaignId: string, animalId: string) {
     if (!confirm('Remove this pack animal?')) return;
     setPackAnimals(prev => ({ ...prev, [campaignId]: (prev[campaignId] ?? []).filter(a => a.id !== animalId) }));
-    await removePackAnimal(supabase, animalId);
+    await removePackAnimal(campaignId, animalId);
   }
 
   if (loading) {

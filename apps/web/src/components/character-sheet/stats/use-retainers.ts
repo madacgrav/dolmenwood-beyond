@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createCharacter } from '@/lib/api/characters';
 import {
   listActiveRetainers,
   insertRetainer,
@@ -8,10 +8,10 @@ import {
   deleteRetainer,
   markRetainerPromoted,
   type DBRetainer,
-} from '@/lib/data/retainers';
+} from '@/lib/api/retainers';
 import type { NewRetainerState } from './types';
 
-export function useRetainers(supabase: SupabaseClient, characterId: string, loyaltyBase: number) {
+export function useRetainers(characterId: string, loyaltyBase: number) {
   const [retainers, setRetainers] = useState<DBRetainer[]>([]);
   const [retainerLoading, setRetainerLoading] = useState(true);
   const [showAddRetainer, setShowAddRetainer] = useState(false);
@@ -27,18 +27,17 @@ export function useRetainers(supabase: SupabaseClient, characterId: string, loya
   const [promoteError, setPromoteError] = useState<string>('');
 
   useEffect(() => {
-    listActiveRetainers(supabase, characterId).then(data => {
+    listActiveRetainers(characterId).then(data => {
       setRetainers(data);
       setRetainerLoading(false);
     });
-  }, [characterId, supabase]);
+  }, [characterId]);
 
   async function addRetainer() {
     if (!newRetainer.name.trim()) return;
-    const data = await insertRetainer(supabase, {
+    const data = await insertRetainer(characterId, {
       ...newRetainer,
       name: newRetainer.name.trim(),
-      owner_character_id: characterId,
     });
     if (data) {
       setRetainers(prev => [...prev, data]);
@@ -54,34 +53,28 @@ export function useRetainers(supabase: SupabaseClient, characterId: string, loya
   async function promoteRetainer(r: DBRetainer) {
     setPromoteLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      // Intentionally NOT createCharacter() from lib/data/characters: that
-      // helper also writes sex/age/height/weight/background/portrait_url as
-      // explicit nulls and only selects 'id'. The promotion payload below is
-      // kept byte-for-byte identical to the original inline insert.
-      const { data: newChar, error: insertErr } = await supabase.from('characters').insert({
-        owner_id: user.id,
+      // Promotion creates a fresh PC from the retainer's combat stats; the
+      // owner comes from the session server-side.
+      const { id: newCharId, error: insertErr } = await createCharacter({
         name: r.name,
         kindred: r.kindred,
-        character_class: r.character_class,
+        characterClass: r.character_class,
+        alignment: 'neutral',
         level: r.level,
         xp: 0,
-        alignment: 'neutral',
-        ability_scores: { str: 10, int: 10, wis: 10, dex: 10, con: 10, cha: 10 },
-        hp_current: r.hp_current,
-        hp_max: r.hp_max,
-        is_active: true,
-      }).select().single();
-      if (insertErr || !newChar) {
-        setPromoteError(insertErr?.message ?? 'Failed to promote retainer. Please try again.');
+        abilityScores: { str: 10, int: 10, wis: 10, dex: 10, con: 10, cha: 10 },
+        hpCurrent: r.hp_current,
+        hpMax: r.hp_max,
+      });
+      if (insertErr || !newCharId) {
+        setPromoteError(insertErr ?? 'Failed to promote retainer. Please try again.');
         setPromoteLoading(false);
         return;
       }
-      await markRetainerPromoted(supabase, r.id);
+      await markRetainerPromoted(characterId, r.id);
       setRetainers(prev => prev.filter(x => x.id !== r.id));
       setPromotingRetainer(null);
-      setPromoteSuccess({ name: r.name, charId: (newChar as Record<string, string>).id! });
+      setPromoteSuccess({ name: r.name, charId: newCharId });
       setTimeout(() => setPromoteSuccess(null), 6000);
     } finally {
       setPromoteLoading(false);
@@ -99,13 +92,13 @@ export function useRetainers(supabase: SupabaseClient, characterId: string, loya
     if (!r) return;
     const hp = Math.max(0, Math.min(r.hp_max, r.hp_current + delta));
     setRetainers(prev => prev.map(x => x.id === id ? { ...x, hp_current: hp } : x));
-    await updateRetainerHPRow(supabase, id, hp);
+    await updateRetainerHPRow(characterId, id, hp);
   }
 
   async function dismissRetainer(id: string) {
     if (!confirm('Dismiss this retainer?')) return;
     setRetainers(prev => prev.filter(x => x.id !== id));
-    await deleteRetainer(supabase, id);
+    await deleteRetainer(characterId, id);
   }
 
   return {

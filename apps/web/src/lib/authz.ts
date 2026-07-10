@@ -1,5 +1,5 @@
 import { getContainer } from '@/lib/cosmos/client';
-import type { CharacterDoc } from '@/lib/cosmos/types';
+import type { CampaignDoc, CharacterDoc } from '@/lib/cosmos/types';
 
 /**
  * Authorization helpers — the app-code port of the RLS predicates.
@@ -35,6 +35,79 @@ export async function fetchCharacterDocById(characterId: string): Promise<Charac
     })
     .fetchAll();
   return resources[0] ?? null;
+}
+
+// ── Campaign authorization (port of is_campaign_member / is_campaign_referee) ──
+
+export async function fetchCampaignDoc(campaignId: string): Promise<CampaignDoc | null> {
+  try {
+    const { resource } = await getContainer('campaigns')
+      .item(campaignId, campaignId)
+      .read<CampaignDoc>();
+    return resource ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export const isCampaignMember = (doc: CampaignDoc, accountId: string): boolean =>
+  doc.members.some((m) => m.accountId === accountId);
+
+export const isCampaignReferee = (doc: CampaignDoc, accountId: string): boolean =>
+  doc.refereeId === accountId;
+
+export const isCampaignParticipant = (doc: CampaignDoc, accountId: string): boolean =>
+  isCampaignMember(doc, accountId) || isCampaignReferee(doc, accountId);
+
+/** 404 if the campaign doesn't exist, 403 if the caller is neither member nor referee. */
+export async function assertCampaignParticipant(
+  campaignId: string,
+  accountId: string,
+): Promise<CampaignDoc> {
+  const doc = await fetchCampaignDoc(campaignId);
+  if (!doc) throw notFound('campaign');
+  if (!isCampaignParticipant(doc, accountId)) throw forbidden();
+  return doc;
+}
+
+export async function listCampaignsRefereedBy(accountId: string): Promise<CampaignDoc[]> {
+  const { resources } = await getContainer('campaigns')
+    .items.query<CampaignDoc>({
+      query: 'SELECT * FROM c WHERE c.refereeId = @id ORDER BY c.createdAt DESC',
+      parameters: [{ name: '@id', value: accountId }],
+    })
+    .fetchAll();
+  return resources;
+}
+
+export async function listCampaignsWithMember(accountId: string): Promise<CampaignDoc[]> {
+  const { resources } = await getContainer('campaigns')
+    .items.query<CampaignDoc>({
+      query:
+        'SELECT * FROM c WHERE EXISTS (SELECT VALUE m FROM m IN c.members WHERE m.accountId = @id)',
+      parameters: [{ name: '@id', value: accountId }],
+    })
+    .fetchAll();
+  return resources;
+}
+
+/**
+ * True when `refereeId` referees a campaign that `targetAccountId` belongs
+ * to — the predicate behind referee visibility and the bank/award rules.
+ */
+export async function isRefereeOfAccount(
+  refereeId: string,
+  targetAccountId: string,
+): Promise<boolean> {
+  if (refereeId === targetAccountId) return false;
+  const campaigns = await listCampaignsRefereedBy(refereeId);
+  return campaigns.some((c) => isCampaignMember(c, targetAccountId));
+}
+
+/** Read access to a character: its owner, or a referee of a campaign the owner is in. */
+export async function canReadCharacter(accountId: string, doc: CharacterDoc): Promise<boolean> {
+  if (doc.ownerId === accountId) return true;
+  return isRefereeOfAccount(accountId, doc.ownerId);
 }
 
 /** 404 if the character doesn't exist, 403 if it belongs to someone else. */

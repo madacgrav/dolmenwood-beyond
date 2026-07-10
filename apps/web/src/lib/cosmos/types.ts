@@ -63,6 +63,39 @@ export interface SpellbookEntryDoc {
   notes: string | null;
 }
 
+/** Character-owned mount (Knights get full combat stats). */
+export interface MountEntryDoc {
+  id: string;
+  name: string;
+  mountType: string;
+  speed: number;
+  hasFullStats: boolean;
+  ac: number | null;
+  hpCurrent: number | null;
+  hpMax: number | null;
+  attackBonus: number | null;
+  morale: number | null;
+  createdAt: string;
+}
+
+export interface RetainerEntryDoc {
+  id: string;
+  name: string;
+  kindred: string;
+  characterClass: string;
+  level: number;
+  ac: number;
+  hpCurrent: number;
+  hpMax: number;
+  attackBonus: number;
+  morale: number;
+  loyalty: number;
+  wageType: 'daily' | 'share';
+  wageAmount: number;
+  isPromotedToPc: boolean;
+  createdAt: string;
+}
+
 /** Signed bank ledger entry: positive = deposit into bank, negative = payout. */
 export interface BankLedgerEntryDoc {
   id: string;
@@ -118,9 +151,33 @@ export interface CharacterDoc {
   spellbook?: SpellbookEntryDoc[];
   bankLedger?: BankLedgerEntryDoc[];
   levelUpLogs?: LevelUpLogDoc[];
+  mounts?: MountEntryDoc[];
+  retainers?: RetainerEntryDoc[];
   createdAt: string;
   updatedAt: string;
   /** Cosmos system property — used for optimistic-concurrency replaces. */
+  _etag?: string;
+}
+
+/** Party-owned pack animal, embedded on the campaign. */
+export interface PartyMountDoc {
+  id: string;
+  name: string;
+  mountType: string;
+  speed: number;
+  addedBy: string;
+  createdAt: string;
+}
+
+/** Container `campaigns`, partition key `/id`. */
+export interface CampaignDoc {
+  id: string;
+  name: string;
+  refereeId: string;
+  inviteCode: string;
+  members: { accountId: string; joinedAt: string }[];
+  partyMounts: PartyMountDoc[];
+  createdAt: string;
   _etag?: string;
 }
 

@@ -1,5 +1,5 @@
 'use client';
-import type { DBRetainer } from '@/lib/data/retainers';
+import type { DBRetainer } from '@/lib/api/retainers';
 
 interface Props {
   retainers: DBRetainer[];

@@ -1,6 +1,6 @@
 'use client';
 import type { Dispatch, SetStateAction } from 'react';
-import type { DBMount } from '@/lib/data/mounts';
+import type { DBMount } from '@/lib/api/mounts';
 import type { NewMountState } from './types';
 import { sectionHead } from './shared';
 import { MountCard } from './MountCard';

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { BankingTab } from '@/components/campaign/BankingTab';
 import { OverviewTab } from '@/components/campaign/OverviewTab';
 import { ScheduleTab } from '@/components/campaign/ScheduleTab';
@@ -16,14 +15,11 @@ export default function CampaignPage() {
 
   useEffect(() => {
     async function checkRole() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        const { data } = await supabase.from('accounts').select('role').eq('id', user.id).single();
-        if (data && (data as { role: string }).role === 'referee') {
-          setIsReferee(true);
-        }
+      const res = await fetch('/api/account');
+      if (res.ok) {
+        const account: { id: string; role: string } = await res.json();
+        setUserId(account.id);
+        setIsReferee(account.role === 'referee');
       }
       setLoading(false);
     }

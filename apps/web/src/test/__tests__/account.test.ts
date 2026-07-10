@@ -2,56 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import bcrypt from 'bcryptjs';
 import type { AccountDoc } from '@/lib/cosmos/types';
 
-// In-memory fake for the Cosmos containers the account module touches.
-const stores = new Map<string, Map<string, Record<string, unknown>>>();
+import { store, resetFake } from '@/test/cosmos-fake';
 
-function store(name: string) {
-  if (!stores.has(name)) stores.set(name, new Map());
-  return stores.get(name)!;
-}
-
-vi.mock('@/lib/cosmos/client', () => ({
-  getContainer: (name: string) => ({
-    item: (id: string) => ({
-      read: async () => ({ resource: store(name).get(id) }),
-      replace: async (doc: Record<string, unknown>) => {
-        store(name).set(id, doc);
-        return { resource: doc };
-      },
-      delete: async () => {
-        store(name).delete(id);
-      },
-    }),
-    items: {
-      create: async (doc: { id: string }) => {
-        store(name).set(doc.id, doc);
-        return { resource: doc };
-      },
-      query: (q: string | { query: string; parameters: { name: string; value: unknown }[] }) => ({
-        fetchAll: async () => {
-          const query = typeof q === 'string' ? q : q.query;
-          const params = typeof q === 'string' ? [] : q.parameters;
-          const param = (n: string) => params.find((p) => p.name === n)?.value;
-          const all = [...store(name).values()];
-          if (query.includes('c.email')) {
-            return { resources: all.filter((d) => d.email === param('@email')) };
-          }
-          if (query.includes('COUNT(1)') && query.includes('c.inviteCode')) {
-            return { resources: [all.filter((d) => d.inviteCode === param('@code')).length] };
-          }
-          if (query.includes('c.ownerId')) {
-            return { resources: all.filter((d) => d.ownerId === param('@id')) };
-          }
-          if (query.includes('c.accountId')) {
-            return { resources: all.filter((d) => d.accountId === param('@id')) };
-          }
-          return { resources: all };
-        },
-      }),
-    },
-  }),
-}));
-
+vi.mock('@/lib/cosmos/client', async () => await import('@/test/cosmos-fake'));
 import {
   createAccount,
   verifyPassword,
@@ -60,7 +13,7 @@ import {
   deleteAccount,
 } from '@/lib/data/account';
 
-beforeEach(() => stores.clear());
+beforeEach(() => resetFake());
 
 describe('createAccount', () => {
   it('creates an account with a bcrypt-verifiable hash and 6-char invite code', async () => {
@@ -118,6 +71,7 @@ describe('fetchAccount / deleteAccount', () => {
     const doc = await createAccount({ email: 'n@example.com', password: 'password1', role: 'referee', displayName: 'Narrator' });
     const account = await fetchAccount(doc.id);
     expect(account).toEqual({
+      id: doc.id,
       display_name: 'Narrator',
       email: 'n@example.com',
       role: 'referee',

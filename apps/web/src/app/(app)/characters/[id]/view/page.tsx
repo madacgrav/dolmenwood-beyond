@@ -25,19 +25,27 @@ export default function CharacterViewPage() {
   const id = params.id;
   const router = useRouter();
 
-  // TODO(phase5): these become live again when referee read-only access
-  // returns — until then the page only ever shows the loading skeleton.
-  const [character] = useState<CharacterWithNotes | null>(null);
-  const [loading] = useState(true);
+  const [character, setCharacter] = useState<CharacterWithNotes | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('stats');
 
   const fetchCharacter = useCallback(async () => {
-    // TODO(phase5): the server tier is owner-only until campaign authz lands,
-    // so a successful fetch means the viewer owns the character — send them
-    // to the editable sheet. Referee read-only access returns with campaigns.
-    const mapped = await fetchCharacterWithNotes(id);
+    // The server grants reads to the owner or a referee of the owner's
+    // campaign; anyone else gets null → back to the roster.
+    const [accountRes, mapped] = await Promise.all([
+      fetch('/api/account'),
+      fetchCharacterWithNotes(id),
+    ]);
     if (!mapped) { router.push('/characters'); return; }
-    router.replace(`/characters/${id}`);
+
+    const account: { id: string } | null = accountRes.ok ? await accountRes.json() : null;
+    if (account && mapped.ownerId === account.id) {
+      // Owners use the editable sheet.
+      router.replace(`/characters/${id}`);
+      return;
+    }
+    setCharacter(mapped);
+    setLoading(false);
   }, [id, router]);
 
   useEffect(() => { fetchCharacter(); }, [fetchCharacter]);

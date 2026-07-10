@@ -1,5 +1,5 @@
 'use client';
-import type { DBMount } from '@/lib/data/mounts';
+import type { DBMount } from '@/lib/api/mounts';
 
 interface Props {
   mount: DBMount;

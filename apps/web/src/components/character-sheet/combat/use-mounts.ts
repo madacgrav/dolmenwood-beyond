@@ -1,16 +1,15 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   listCharacterMounts,
   insertMount,
   updateMountHP,
   deleteMount as deleteMountRow,
   type DBMount,
-} from '@/lib/data/mounts';
+} from '@/lib/api/mounts';
 import type { NewMountState } from './types';
 
-export function useMounts(supabase: SupabaseClient, characterId: string, characterClass: string) {
+export function useMounts(characterId: string, characterClass: string) {
   const [mounts, setMounts] = useState<DBMount[]>([]);
   const [mountsLoading, setMountsLoading] = useState(true);
   const [showAddMount, setShowAddMount] = useState(false);
@@ -28,11 +27,11 @@ export function useMounts(supabase: SupabaseClient, characterId: string, charact
   const hpTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
-    listCharacterMounts(supabase, characterId).then(ms => {
+    listCharacterMounts(characterId).then(ms => {
       setMounts(ms);
       setMountsLoading(false);
     });
-  }, [characterId, supabase]);
+  }, [characterId]);
 
   function adjustMountHP(mount: DBMount, delta: number) {
     const current = mount.hp_current ?? 0;
@@ -41,7 +40,7 @@ export function useMounts(supabase: SupabaseClient, characterId: string, charact
     setMounts(prev => prev.map(m => m.id === mount.id ? { ...m, hp_current: next } : m));
     if (hpTimers.current[mount.id]) clearTimeout(hpTimers.current[mount.id]);
     hpTimers.current[mount.id] = setTimeout(async () => {
-      await updateMountHP(supabase, mount.id, next);
+      await updateMountHP(characterId, mount.id, next);
     }, 500);
   }
 
@@ -49,9 +48,6 @@ export function useMounts(supabase: SupabaseClient, characterId: string, charact
     if (!newMount.name.trim()) return;
     setMountSaving(true);
     const payload: Record<string, unknown> = {
-      owner_id: characterId,  // character UUID - matches RLS expectation
-      owner_type: 'character',
-      character_id: characterId,
       name: newMount.name.trim(),
       mount_type: newMount.mount_type,
       speed: newMount.speed,
@@ -64,7 +60,7 @@ export function useMounts(supabase: SupabaseClient, characterId: string, charact
       payload.attack_bonus = newMount.attack_bonus;
       payload.morale = newMount.morale;
     }
-    const data = await insertMount(supabase, payload);
+    const data = await insertMount(characterId, payload);
     if (data) {
       setMounts(prev => [...prev, data]);
       setShowAddMount(false);
@@ -85,7 +81,7 @@ export function useMounts(supabase: SupabaseClient, characterId: string, charact
   async function deleteMount(id: string) {
     if (!confirm('Remove this mount?')) return;
     setMounts(prev => prev.filter(m => m.id !== id));
-    await deleteMountRow(supabase, id);
+    await deleteMountRow(characterId, id);
   }
 
   return {

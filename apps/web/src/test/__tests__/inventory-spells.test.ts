@@ -1,65 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { CharacterDoc } from '@/lib/cosmos/types';
 
-/** Same in-memory ETag-aware container fake as characters-data.test.ts. */
-const docs = new Map<string, CharacterDoc & { _etag: string }>();
-let etagCounter = 0;
+import { store, resetFake } from '@/test/cosmos-fake';
+
+const docs = store('characters') as unknown as Map<string, CharacterDoc & { _etag: string }>;
 
 vi.mock('@/lib/auth/session', () => ({
   requireAccountId: async () => 'me-1',
 }));
 
-vi.mock('@/lib/cosmos/client', () => ({
-  getContainer: () => ({
-    item: (id: string, partitionKey?: string) => ({
-      // Point reads are partition-scoped in real Cosmos: a doc in another
-      // owner's partition is invisible (404), not returned.
-      // Clone on read: real Cosmos returns fresh deserialized objects, so
-      // mutations on a read doc never leak into the store before replace.
-      read: async () => {
-        const doc = docs.get(id);
-        return { resource: doc && doc.ownerId === partitionKey ? structuredClone(doc) : undefined };
-      },
-      replace: async (
-        doc: CharacterDoc,
-        opts?: { accessCondition?: { type: string; condition: string } },
-      ) => {
-        const stored = docs.get(doc.id);
-        if (!stored) throw Object.assign(new Error('not found'), { code: 404 });
-        if (opts?.accessCondition && opts.accessCondition.condition !== stored._etag) {
-          throw Object.assign(new Error('precondition failed'), { code: 412 });
-        }
-        const next = { ...doc, _etag: `etag-${++etagCounter}` };
-        docs.set(doc.id, next);
-        return { resource: next };
-      },
-      delete: async () => {
-        docs.delete(id);
-      },
-    }),
-    items: {
-      create: async (doc: CharacterDoc) => {
-        const next = { ...doc, _etag: `etag-${++etagCounter}` };
-        docs.set(doc.id, next);
-        return { resource: next };
-      },
-      query: (q: { query: string; parameters: { name: string; value: unknown }[] }) => ({
-        fetchAll: async () => {
-          const param = (n: string) => q.parameters.find((p) => p.name === n)?.value;
-          const all = [...docs.values()].map((d) => structuredClone(d));
-          if (q.query.includes('c.id = @id')) {
-            return { resources: all.filter((d) => d.id === param('@id')) };
-          }
-          if (q.query.includes('c.ownerId = @me')) {
-            return { resources: all.filter((d) => d.ownerId === param('@me')) };
-          }
-          return { resources: all };
-        },
-      }),
-    },
-  }),
-}));
-
+vi.mock('@/lib/cosmos/client', async () => await import('@/test/cosmos-fake'));
 import { createCharacter, listCharactersWithArmor } from '@/lib/data/characters';
 import {
   listInventory,
@@ -79,7 +29,7 @@ const INPUT = {
   hpMax: 4,
 };
 
-beforeEach(() => docs.clear());
+beforeEach(() => resetFake());
 
 describe('embedded inventory', () => {
   it('adds, patches, and removes entries inside the character doc', async () => {

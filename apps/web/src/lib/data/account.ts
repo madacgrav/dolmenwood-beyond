@@ -14,6 +14,7 @@ import type { AccountDoc } from '@/lib/cosmos/types';
  */
 
 export type Account = {
+  id: string;
   display_name: string;
   email: string;
   role: string;
@@ -35,6 +36,7 @@ const accounts = () => getContainer('accounts');
 
 function docToAccount(doc: AccountDoc): Account {
   return {
+    id: doc.id,
     display_name: doc.displayName,
     email: doc.email,
     role: doc.role,
@@ -164,10 +166,35 @@ export async function updateNotificationPrefs(
 
 /**
  * Port of delete_my_account(): the FK cascade becomes explicit deletes —
- * the account's characters and notifications go with it.
- * (Campaign membership cleanup lands with the campaigns container in Phase 5.)
+ * the account's characters, notifications, campaigns it referees, and its
+ * membership entries in other campaigns all go with it.
  */
 export async function deleteAccount(accountId: string): Promise<void> {
+  const campaigns = getContainer('campaigns');
+  const { resources: refereed } = await campaigns
+    .items.query<{ id: string }>({
+      query: 'SELECT c.id FROM c WHERE c.refereeId = @id',
+      parameters: [{ name: '@id', value: accountId }],
+    })
+    .fetchAll();
+  for (const c of refereed) await campaigns.item(c.id, c.id).delete();
+
+  const { resources: memberOf } = await campaigns
+    .items.query<{ id: string; members: { accountId: string; joinedAt: string }[] }>({
+      query:
+        'SELECT c.id, c.members FROM c WHERE EXISTS (SELECT VALUE m FROM m IN c.members WHERE m.accountId = @id)',
+      parameters: [{ name: '@id', value: accountId }],
+    })
+    .fetchAll();
+  for (const c of memberOf) {
+    const { resource: doc } = await campaigns.item(c.id, c.id).read<Record<string, unknown>>();
+    if (!doc) continue;
+    doc.members = (doc.members as { accountId: string }[]).filter(
+      (m) => m.accountId !== accountId,
+    );
+    await campaigns.item(c.id, c.id).replace(doc);
+  }
+
   const characters = getContainer('characters');
   const { resources: chars } = await characters
     .items.query<{ id: string }>({

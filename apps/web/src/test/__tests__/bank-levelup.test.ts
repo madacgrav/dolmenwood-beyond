@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { AccountDoc, CharacterDoc } from '@/lib/cosmos/types';
 
-/** ETag-aware fake with a switchable current account (owner vs referee). */
-const docs = new Map<string, CharacterDoc & { _etag: string }>();
-let etagCounter = 0;
-let failNextReplaceWith412 = false;
+import { store, fakeState, resetFake } from '@/test/cosmos-fake';
+
+const docs = store('characters') as unknown as Map<string, CharacterDoc & { _etag: string }>;
 
 const PLAYER = { id: 'player-1', role: 'player' } as AccountDoc;
 const REFEREE = { id: 'ref-1', role: 'referee' } as AccountDoc;
@@ -15,62 +14,7 @@ vi.mock('@/lib/auth/session', () => ({
   getCurrentAccount: async () => currentAccount,
 }));
 
-vi.mock('@/lib/cosmos/client', () => ({
-  getContainer: () => ({
-    item: (id: string, partitionKey?: string) => ({
-      // Clone on read: real Cosmos returns fresh deserialized objects, so
-      // mutations on a read doc never leak into the store before replace.
-      read: async () => {
-        const doc = docs.get(id);
-        return { resource: doc && doc.ownerId === partitionKey ? structuredClone(doc) : undefined };
-      },
-      replace: async (
-        doc: CharacterDoc,
-        opts?: { accessCondition?: { type: string; condition: string } },
-      ) => {
-        const stored = docs.get(doc.id);
-        if (!stored) throw Object.assign(new Error('not found'), { code: 404 });
-        if (failNextReplaceWith412) {
-          failNextReplaceWith412 = false;
-          stored._etag = `etag-${++etagCounter}`;
-          throw Object.assign(new Error('precondition failed'), { code: 412 });
-        }
-        if (opts?.accessCondition && opts.accessCondition.condition !== stored._etag) {
-          throw Object.assign(new Error('precondition failed'), { code: 412 });
-        }
-        const next = { ...doc, _etag: `etag-${++etagCounter}` };
-        docs.set(doc.id, next);
-        return { resource: next };
-      },
-      delete: async () => {
-        docs.delete(id);
-      },
-    }),
-    items: {
-      create: async (doc: CharacterDoc) => {
-        const next = { ...doc, _etag: `etag-${++etagCounter}` };
-        docs.set(doc.id, next);
-        return { resource: next };
-      },
-      query: (q: string | { query: string; parameters: { name: string; value: unknown }[] }) => ({
-        fetchAll: async () => {
-          const query = typeof q === 'string' ? q : q.query;
-          const params = typeof q === 'string' ? [] : q.parameters;
-          const param = (n: string) => params.find((p) => p.name === n)?.value;
-          const all = [...docs.values()].map((d) => structuredClone(d));
-          if (query.includes('c.id = @id')) {
-            return { resources: all.filter((d) => d.id === param('@id')) };
-          }
-          if (query.includes('c.ownerId = @me')) {
-            return { resources: all.filter((d) => d.ownerId === param('@me')) };
-          }
-          return { resources: all };
-        },
-      }),
-    },
-  }),
-}));
-
+vi.mock('@/lib/cosmos/client', async () => await import('@/test/cosmos-fake'));
 import { createCharacter } from '@/lib/data/characters';
 import { recordBankTransaction, fetchBankState, refereeBankOverview } from '@/lib/data/bank';
 import { levelUp, fetchLevelUpLog } from '@/lib/data/level-up';
@@ -89,12 +33,17 @@ async function makeCharacter(coinsGp = 100): Promise<string> {
   const { id } = await createCharacter(INPUT);
   const doc = docs.get(id)!;
   docs.set(id, { ...doc, coinsGp });
+  // The referee's authority is campaign-scoped: link REFEREE -> PLAYER.
+  store('campaigns').set('camp-1', {
+    id: 'camp-1', name: 'Test Campaign', refereeId: REFEREE.id, inviteCode: 'ABC234',
+    members: [{ accountId: PLAYER.id, joinedAt: new Date().toISOString() }],
+    partyMounts: [], createdAt: new Date().toISOString(), _etag: 'etag-camp',
+  });
   return id;
 }
 
 beforeEach(() => {
-  docs.clear();
-  failNextReplaceWith412 = false;
+  resetFake();
   currentAccount = PLAYER;
 });
 
@@ -133,7 +82,7 @@ describe('recordBankTransaction (port of bank_transaction RPC)', () => {
 
   it('retries a stale ETag: two racing deposits both land exactly once', async () => {
     const id = await makeCharacter(100);
-    failNextReplaceWith412 = true; // first replace loses the race and retries
+    fakeState.failNextReplaceWith412 = true; // first replace loses the race and retries
     await recordBankTransaction(id, 10, 'a');
     await recordBankTransaction(id, 20, 'b');
     const doc = docs.get(id)!;

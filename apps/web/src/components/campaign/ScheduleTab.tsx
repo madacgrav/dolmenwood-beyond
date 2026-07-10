@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { loadSchedule, createSession, updateSession, deleteSession, setRsvp, type RsvpStatus, type Session } from '@/lib/data/schedule';
+import { listMyCampaignNames } from '@/lib/api/campaigns';
 import { toDatetimeLocal } from '@/lib/format';
 import { sameDay } from '@/lib/calendar';
 import { SessionList } from '@/components/campaign/schedule/SessionList';
@@ -46,18 +47,17 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
   const [month, setMonth] = useState<Date>(() => firstOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  // Load campaigns the user owns or belongs to (RLS-scoped).
+  // Load campaigns the user owns or belongs to.
   useEffect(() => {
     async function loadCampaigns() {
-      const { data } = await supabase.from('campaigns').select('id, name').order('name');
-      const list = (data ?? []) as CampaignOption[];
+      const list: CampaignOption[] = await listMyCampaignNames();
       setCampaigns(list);
       const first = list[0];
       if (first) setCampaignId(first.id);
       else setLoading(false);
     }
     loadCampaigns();
-  }, [supabase]);
+  }, []);
 
   const refetch = useCallback(async () => {
     if (!campaignId) return;

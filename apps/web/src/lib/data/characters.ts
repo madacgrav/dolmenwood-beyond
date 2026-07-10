@@ -2,7 +2,13 @@ import type { Character, CharacterWithNotes } from '@dolmenwood/types';
 import { getContainer } from '@/lib/cosmos/client';
 import type { CharacterDoc } from '@/lib/cosmos/types';
 import { requireAccountId } from '@/lib/auth/session';
-import { assertCharacterOwner } from '@/lib/authz';
+import {
+  assertCharacterOwner,
+  canReadCharacter,
+  fetchCharacterDocById,
+  forbidden,
+  notFound,
+} from '@/lib/authz';
 import {
   docToCharacter,
   docToCharacterWithNotes,
@@ -98,9 +104,13 @@ async function listCharacterDocs(): Promise<CharacterDoc[]> {
   return resources;
 }
 
+/** Readable by the owner or a referee of a campaign the owner belongs to. */
 export async function fetchCharacterWithNotes(id: string): Promise<CharacterWithNotes> {
   const me = await requireAccountId();
-  return docToCharacterWithNotes(await assertCharacterOwner(me, id));
+  const doc = await fetchCharacterDocById(id);
+  if (!doc) throw notFound('character');
+  if (!(await canReadCharacter(me, doc))) throw forbidden();
+  return docToCharacterWithNotes(doc);
 }
 
 export async function updateCharacter(

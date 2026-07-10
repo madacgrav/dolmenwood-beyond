@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { loadPlayerCampaigns, joinCampaign } from '@/lib/data/campaigns';
-import type { CampaignData } from '@/lib/data/campaigns';
+import { useEffect, useState, useCallback } from 'react';
+import { loadPlayerCampaigns, joinCampaign } from '@/lib/api/campaigns';
+import type { CampaignData } from '@/lib/api/campaigns';
 import { JoinCampaignForm } from './JoinCampaignForm';
 import { PartyRoster } from './PartyRoster';
 
 export function PlayerView({ userId }: { userId: string }) {
-  const supabase = useMemo(() => createClient(), []);
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteCode, setInviteCode] = useState('');
@@ -17,9 +15,9 @@ export function PlayerView({ userId }: { userId: string }) {
   const [joinSuccess, setJoinSuccess] = useState('');
 
   const loadCampaigns = useCallback(async () => {
-    setCampaigns(await loadPlayerCampaigns(supabase, userId));
+    setCampaigns(await loadPlayerCampaigns());
     setLoading(false);
-  }, [supabase, userId]);
+  }, []);
 
   useEffect(() => { loadCampaigns(); }, [loadCampaigns]);
 
@@ -31,7 +29,7 @@ export function PlayerView({ userId }: { userId: string }) {
     setJoinError('');
     setJoinSuccess('');
 
-    const { data, error } = await joinCampaign(supabase, code);
+    const { data, error } = await joinCampaign(code);
 
     if (error) {
       setJoinError(error.message);

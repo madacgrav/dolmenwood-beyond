@@ -1,68 +1,93 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { requireAccountId } from '@/lib/auth/session';
+import { badRequest, canReadCharacter, fetchCharacterDocById, forbidden, notFound } from '@/lib/authz';
+import type { MountEntryDoc } from '@/lib/cosmos/types';
+import type { DBMount } from '@/lib/api/mounts';
+import { mutateOwnedCharacterDoc } from './characters';
 
 /**
- * Single source of truth for `mounts` rows.
- *
- * Rows are kept snake_case (matching the DB) because the combat UI
- * consumes them as-is; the shared type + queries here replace the
- * inline supabase calls that used to live in CombatTab.
+ * Server-only character mounts, embedded on the character doc. Reads allow
+ * the owner or a referee of the owner's campaign (matching the old RLS);
+ * mutations are owner-only.
  */
 
-export interface DBMount {
-  id: string;
-  owner_id: string;
-  owner_type: string;
-  character_id: string | null;
-  campaign_id: string | null;
+function entryToMount(characterId: string, m: MountEntryDoc): DBMount {
+  return {
+    id: m.id,
+    owner_id: characterId,
+    owner_type: 'character',
+    character_id: characterId,
+    campaign_id: null,
+    name: m.name,
+    mount_type: m.mountType,
+    speed: m.speed,
+    has_full_stats: m.hasFullStats,
+    ac: m.ac,
+    hp_current: m.hpCurrent,
+    hp_max: m.hpMax,
+    attack_bonus: m.attackBonus,
+    morale: m.morale,
+    created_at: m.createdAt,
+  };
+}
+
+export async function listCharacterMounts(characterId: string): Promise<DBMount[]> {
+  const me = await requireAccountId();
+  const doc = await fetchCharacterDocById(characterId);
+  if (!doc) throw notFound('character');
+  if (!(await canReadCharacter(me, doc))) throw forbidden();
+  return [...(doc.mounts ?? [])]
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((m) => entryToMount(characterId, m));
+}
+
+export interface NewMountInput {
   name: string;
   mount_type: string;
   speed: number;
   has_full_stats: boolean;
-  ac: number | null;
-  hp_current: number | null;
-  hp_max: number | null;
-  attack_bonus: number | null;
-  morale: number | null;
-  created_at: string;
+  ac?: number | null;
+  hp_current?: number | null;
+  hp_max?: number | null;
+  attack_bonus?: number | null;
+  morale?: number | null;
 }
 
-export async function listCharacterMounts(
-  supabase: SupabaseClient,
-  characterId: string,
-): Promise<DBMount[]> {
-  const { data } = await supabase
-    .from('mounts')
-    .select('*')
-    .eq('character_id', characterId)
-    .eq('owner_type', 'character')
-    .order('created_at');
-  return (data ?? []) as DBMount[];
-}
-
-export async function insertMount(
-  supabase: SupabaseClient,
-  payload: Record<string, unknown>,
-): Promise<DBMount | null> {
-  const { data, error } = await supabase
-    .from('mounts')
-    .insert(payload)
-    .select()
-    .single();
-  if (error || !data) return null;
-  return data as DBMount;
+export async function addMount(characterId: string, input: NewMountInput): Promise<DBMount> {
+  const name = String(input.name ?? '').trim();
+  if (!name) throw badRequest('name is required');
+  const entry: MountEntryDoc = {
+    id: crypto.randomUUID(),
+    name,
+    mountType: String(input.mount_type ?? 'Horse'),
+    speed: Number(input.speed) || 0,
+    hasFullStats: Boolean(input.has_full_stats),
+    ac: input.ac ?? null,
+    hpCurrent: input.hp_current ?? null,
+    hpMax: input.hp_max ?? null,
+    attackBonus: input.attack_bonus ?? null,
+    morale: input.morale ?? null,
+    createdAt: new Date().toISOString(),
+  };
+  await mutateOwnedCharacterDoc(characterId, (doc) => {
+    doc.mounts = [...(doc.mounts ?? []), entry];
+  });
+  return entryToMount(characterId, entry);
 }
 
 export async function updateMountHP(
-  supabase: SupabaseClient,
-  id: string,
+  characterId: string,
+  mountId: string,
   hpCurrent: number,
 ): Promise<void> {
-  await supabase.from('mounts').update({ hp_current: hpCurrent }).eq('id', id);
+  await mutateOwnedCharacterDoc(characterId, (doc) => {
+    const mount = (doc.mounts ?? []).find((m) => m.id === mountId);
+    if (!mount) throw notFound('mount');
+    mount.hpCurrent = Math.max(0, Number(hpCurrent) || 0);
+  });
 }
 
-export async function deleteMount(
-  supabase: SupabaseClient,
-  id: string,
-): Promise<void> {
-  await supabase.from('mounts').delete().eq('id', id);
+export async function removeMount(characterId: string, mountId: string): Promise<void> {
+  await mutateOwnedCharacterDoc(characterId, (doc) => {
+    doc.mounts = (doc.mounts ?? []).filter((m) => m.id !== mountId);
+  });
 }
