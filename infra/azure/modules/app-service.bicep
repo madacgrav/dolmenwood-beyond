@@ -100,6 +100,10 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
           value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/blob-connection-string/)'
         }
         {
+          name: 'SIGNALR_CONNECTION_STRING'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/signalr-connection-string/)'
+        }
+        {
           name: 'AUTH_URL'
           value: 'https://${name}.azurewebsites.net'
         }

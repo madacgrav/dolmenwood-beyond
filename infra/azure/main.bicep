@@ -73,6 +73,29 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
+// ---- SignalR (live character updates) ----
+module signalr 'modules/signalr.bicep' = {
+  name: 'signalr'
+  params: {
+    name: '${prefix}-signalr'
+    location: location
+    tags: tags
+  }
+}
+
+// ---- Change-feed Function (characters → SignalR) ----
+module characterFeed 'modules/function-app.bicep' = {
+  name: 'characterFeed'
+  params: {
+    name: '${prefix}-charfeed'
+    location: location
+    tags: tags
+    storageAccountName: storage.outputs.storageAccountName
+    cosmosAccountName: cosmos.outputs.accountName
+    signalrName: signalr.outputs.signalrName
+  }
+}
+
 // ---- App Service ----
 // Deploy with placeholder image first; GitHub Actions updates the image tag
 module appService 'modules/app-service.bicep' = {

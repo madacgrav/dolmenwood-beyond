@@ -47,6 +47,7 @@ var containers = [
   { name: 'characters', partitionKey: '/ownerId' }
   { name: 'campaigns', partitionKey: '/id' }
   { name: 'notifications', partitionKey: '/accountId' }
+  { name: 'leases', partitionKey: '/id' } // change-feed processor bookkeeping
 ]
 
 resource sqlContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-05-15' = [

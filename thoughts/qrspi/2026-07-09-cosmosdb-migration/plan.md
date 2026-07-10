@@ -509,9 +509,10 @@ export async function markNotificationRead(id: string): Promise<void>
 
 ### Verification
 #### Automated
-- [ ] `pnpm typecheck` passes; SignalR + Function templates validate (`az deployment group what-if`)
+- [x] `pnpm typecheck`/lint/test/build pass; Bicep deployed (SignalR Free_F1 serverless + Windows-consumption Function App — Linux dynamic workers are blocked in RGs with an existing Linux plan); function code zip-deployed and registered
+- [x] Negotiate route issues `{url, accessToken}` (session-gated, 401 unauthenticated)
 #### Manual
-- [ ] Edit a character's HP in one browser session; a second viewer of the same character updates within a few seconds
+- [x] Live E2E: SignalR WebSocket client connected via the negotiate route received `characterChanged {characterId, ownerId, hpCurrent}` within ~2s of a character write — full change-feed → Function → SignalR pipeline verified against deployed infra
 
 ---
 
