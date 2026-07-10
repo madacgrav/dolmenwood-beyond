@@ -35,6 +35,9 @@ param keyVaultUri string
 @description('Supabase project URL (non-secret, injected as app setting)')
 param supabaseUrl string
 
+@description('Cosmos DB account endpoint (non-secret, injected as app setting)')
+param cosmosEndpoint string
+
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: planName
   location: location
@@ -79,6 +82,14 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'NEXT_PUBLIC_SUPABASE_URL'
           value: supabaseUrl
+        }
+        {
+          name: 'COSMOS_ENDPOINT'
+          value: cosmosEndpoint
+        }
+        {
+          name: 'COSMOS_KEY'
+          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/cosmos-key/)'
         }
         // Secrets pulled from Key Vault via managed identity
         {

@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@azure/cosmos": "^4.2.0",
     "@dolmenwood/rules-engine": "workspace:*",
     "@dolmenwood/types": "workspace:*",
     "@supabase/ssr": "^0.5.0",

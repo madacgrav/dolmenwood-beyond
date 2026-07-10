@@ -29,13 +29,28 @@ export function useAddItem({ supabase, characterId, onItemAdded }: {
   useEffect(() => {
     if (addMode !== 'catalog') return;
     setCatalogLoading(true);
-    supabase.from('catalog_items').select('id, name, item_type, weight, cost_gp, weapon_damage_dice, armor_ac_bonus, notes')
-      .order('name')
-      .then(({ data }) => {
-        setCatalogItems((data ?? []) as CatalogItem[]);
+    // Catalog is served from Cosmos via the server route (no browser DB access).
+    fetch('/api/catalog')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((docs: {
+        id: string; name: string; itemType: string; weight: number;
+        costGp: number | null; weaponDamageDice: string | null;
+        armorAcBonus: number | null; notes: string | null;
+      }[]) => {
+        setCatalogItems(docs.map((d) => ({
+          id: d.id,
+          name: d.name,
+          item_type: d.itemType,
+          weight: d.weight,
+          cost_gp: d.costGp,
+          weapon_damage_dice: d.weaponDamageDice,
+          armor_ac_bonus: d.armorAcBonus,
+          notes: d.notes,
+        })));
         setCatalogLoading(false);
-      });
-  }, [addMode, supabase]);
+      })
+      .catch(() => setCatalogLoading(false));
+  }, [addMode]);
 
   function selectCatalogItem(cat: CatalogItem) {
     const mappedType = cat.item_type === 'armor' ? 'armour' : cat.item_type as ItemType;

@@ -53,6 +53,16 @@ module acr 'modules/container-registry.bicep' = {
   }
 }
 
+// ---- Cosmos DB (NoSQL) ----
+module cosmos 'modules/cosmos.bicep' = {
+  name: 'cosmos'
+  params: {
+    name: '${prefix}-cosmos'
+    location: location
+    tags: tags
+  }
+}
+
 // ---- App Service ----
 // Deploy with placeholder image first; GitHub Actions updates the image tag
 module appService 'modules/app-service.bicep' = {
@@ -77,6 +87,7 @@ module appService 'modules/app-service.bicep' = {
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     keyVaultUri: keyVaultUri
     supabaseUrl: supabaseUrl
+    cosmosEndpoint: cosmos.outputs.endpoint
   }
 }
 
@@ -98,4 +109,5 @@ output acrName string = acr.outputs.acrName
 output webAppName string = appService.outputs.webAppName
 output webAppUrl string = appService.outputs.webAppUrl
 output keyVaultName string = keyVault.outputs.keyVaultName
+output cosmosAccountName string = cosmos.outputs.accountName
 output appInsightsConnectionString string = monitoring.outputs.appInsightsConnectionString
