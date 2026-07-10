@@ -224,7 +224,7 @@ export interface NotificationDoc {
   id: string;
   accountId: string;
   campaignId: string | null;
-  kind: string;
+  kind: string; // 'date_confirmed' | 'date_suggested'
   body: string;
   relatedSessionId: string | null;
   read: boolean;

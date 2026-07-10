@@ -102,9 +102,16 @@ describe('proposal auto-confirm chain (port of set_proposal_availability v4)', (
     currentAccount = BOB;
     await setProposalAvailability(campId, proposalId, true);
 
-    // Referee hasn't approved — still open, no notifications
+    // Referee hasn't approved — still open; only the create-time suggestions
+    // exist (Alice proposed → referee + Bob notified, not Alice herself).
     expect((await loadProposals(campId))[0]!.status).toBe('open');
-    expect(store('notifications').size).toBe(0);
+    const kinds = () =>
+      [...store('notifications').values()].map((n) => (n as unknown as NotificationDoc).kind);
+    expect(kinds().filter((k) => k === 'date_confirmed')).toHaveLength(0);
+    expect(kinds().filter((k) => k === 'date_suggested')).toHaveLength(2);
+    const suggested = [...store('notifications').values()] as unknown as NotificationDoc[];
+    expect(new Set(suggested.map((n) => n.accountId))).toEqual(new Set([REFEREE.id, BOB.id]));
+    expect(suggested[0]!.body).toBe('New session date suggested: Next Friday?');
 
     currentAccount = REFEREE;
     await setProposalAvailability(campId, proposalId, true);
@@ -120,16 +127,20 @@ describe('proposal auto-confirm chain (port of set_proposal_availability v4)', (
     expect(sessions[0]!.created_by).toBe(ALICE.id);
     expect(sessions[0]!.id).toBe(confirmed.confirmed_session_id);
 
-    // One notification per participant
-    const notes = [...store('notifications').values()] as unknown as NotificationDoc[];
-    expect(notes).toHaveLength(3);
-    expect(new Set(notes.map((n) => n.accountId))).toEqual(new Set([REFEREE.id, ALICE.id, BOB.id]));
-    expect(notes[0]!.body).toBe('Session confirmed: Next Friday?');
+    // One confirmation notification per participant (plus the 2 suggestions)
+    const confirmedNotes = [...store('notifications').values()].filter(
+      (n) => (n as unknown as NotificationDoc).kind === 'date_confirmed',
+    ) as unknown as NotificationDoc[];
+    expect(confirmedNotes).toHaveLength(3);
+    expect(new Set(confirmedNotes.map((n) => n.accountId))).toEqual(
+      new Set([REFEREE.id, ALICE.id, BOB.id]),
+    );
+    expect(confirmedNotes[0]!.body).toBe('Session confirmed: Next Friday?');
 
     // A declined vote flipping later does not re-confirm or duplicate
     currentAccount = BOB;
     await setProposalAvailability(campId, proposalId, false);
-    expect(store('notifications').size).toBe(3);
+    expect(store('notifications').size).toBe(5); // 2 suggested + 3 confirmed
     expect(await getCampaignSchedule(campId)).toHaveLength(1);
   });
 });
@@ -169,15 +180,21 @@ describe('notification reads + dispatch (Cosmos outbox)', () => {
     await setProposalAvailability(campId, pid, true);
 
     const first = await drainNotifications();
-    expect(first.enqueued).toBe(2); // referee + alice; bob opted out
-    expect(first.sent).toBe(2);
+    // Referee: date_suggested + date_confirmed; Alice (proposer): date_confirmed
+    // only; Bob opted out of email entirely.
+    expect(first.enqueued).toBe(3);
+    expect(first.sent).toBe(3);
     expect(first.failed).toBe(0);
-    expect(sentEmails.map((e) => e.to).sort()).toEqual(['alice-1@example.com', 'ref-1@example.com']);
+    expect(sentEmails.map((e) => e.to).sort()).toEqual([
+      'alice-1@example.com',
+      'ref-1@example.com',
+      'ref-1@example.com',
+    ]);
 
     // Second drain: nothing new to enqueue or send
     const second = await drainNotifications();
     expect(second).toEqual({ enqueued: 0, sent: 0, failed: 0 });
-    expect(sentEmails).toHaveLength(2);
+    expect(sentEmails).toHaveLength(3);
   });
 
   it('a failing send marks the delivery failed without blocking others', async () => {
@@ -195,8 +212,8 @@ describe('notification reads + dispatch (Cosmos outbox)', () => {
     await setProposalAvailability(campId, pid, true);
 
     const result = await drainNotifications();
-    expect(result.failed).toBe(1); // alice's bounce
-    expect(result.sent).toBe(2); // referee + bob still delivered
+    expect(result.failed).toBe(1); // alice's bounce (her only note: date_confirmed)
+    expect(result.sent).toBe(4); // referee + bob: date_suggested + date_confirmed each
 
     const aliceNote = [...store('notifications').values()].find(
       (n) => (n as unknown as NotificationDoc).accountId === ALICE.id,

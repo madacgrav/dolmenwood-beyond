@@ -209,8 +209,8 @@ export async function createProposal(
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web test` passes (updated proposals-notifications suite green)
-- [ ] `pnpm --filter @dolmenwood/web typecheck && … lint` pass
+- [x] `pnpm --filter @dolmenwood/web test` passes (updated proposals-notifications suite green — 97/97)
+- [x] `pnpm --filter @dolmenwood/web typecheck && … lint` pass
 
 #### Manual
 - [ ] Create a proposal in a 3-person campaign as one member → the other 2 get a `date_suggested` bell notification; proposer gets none
