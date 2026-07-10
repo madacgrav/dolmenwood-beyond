@@ -17,7 +17,7 @@ interface Props {
   readOnly?: boolean;
 }
 
-export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) {
+export function InventoryTab({ characterId, readOnly = false }: Props) {
   const inv = useInventory(characterId);
 
   const addItemCtl = useAddItem({
@@ -36,7 +36,10 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
     saveCoins: inv.saveCoins,
   });
 
-  const isOwner = !readOnly && inv.currentUserId === ownerId;
+  // The character API is owner-scoped, so anyone on the editable sheet is the
+  // owner; readOnly covers the referee view. (Was a currentUserId === ownerId
+  // check against the Supabase session.)
+  const isOwner = !readOnly;
 
   const [rules] = useOptionalRules();
   const coinWeight = rules.coinWeightEnabled ? calculateCoinWeight(inv.coins) : 0;

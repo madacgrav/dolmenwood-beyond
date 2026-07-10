@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
-import { createClient } from '@/lib/supabase/client';
-import { createCharacter } from '@/lib/data/characters';
+import { createCharacter } from '@/lib/api/characters';
 
 export default function ManualCompletePage() {
   const router = useRouter();
@@ -27,11 +26,7 @@ export default function ManualCompletePage() {
     setSaving(true);
     setSaveError('');
 
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push('/sign-in'); return; }
-
-    const { id, error } = await createCharacter(supabase, user.id, {
+    const { id, error } = await createCharacter({
       name: displayName,
       sex: wizard.sex,
       age: wizard.age,

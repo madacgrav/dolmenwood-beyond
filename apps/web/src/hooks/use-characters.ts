@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { listCharacters, deleteCharacter as deleteCharacterQuery } from '@/lib/data/characters';
-import { fetchEquippedArmorBonuses } from '@/lib/data/inventory';
+import { listCharacters, deleteCharacter as deleteCharacterQuery } from '@/lib/api/characters';
 import type { Character } from '@dolmenwood/types';
 
 export function useCharacters() {
@@ -13,36 +11,26 @@ export function useCharacters() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-
     async function fetchCharacters() {
-      const { characters: mapped, error } = await listCharacters(supabase);
+      const { characters: mapped, error } = await listCharacters();
       if (error) {
         setError(error);
       } else {
         setCharacters(mapped);
-        setArmorByCharacter(await fetchEquippedArmorBonuses(supabase, mapped.map(c => c.id)));
+        // TODO(phase3b): equipped-armor AC bonuses come back with the
+        // embedded inventory; until then cards show unarmored AC.
+        setArmorByCharacter({});
       }
       setLoading(false);
     }
 
     fetchCharacters();
-
-    // Realtime subscription for live HP updates during play
-    const channel = supabase
-      .channel('characters')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'characters',
-      }, () => fetchCharacters())
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    // TODO(phase8): live HP updates return via Cosmos change feed → SignalR
+    // (replaced the Supabase realtime subscription that lived here).
   }, []);
 
   async function deleteCharacter(id: string) {
-    const error = await deleteCharacterQuery(createClient(), id);
+    const error = await deleteCharacterQuery(id);
     if (!error) {
       setCharacters(prev => prev.filter(c => c.id !== id));
     }

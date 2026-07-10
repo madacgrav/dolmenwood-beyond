@@ -35,7 +35,7 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
   const maxRetainers = getMaxRetainers(character.abilityScores.cha);
   const loyaltyBase = getRetainerLoyaltyBase(character.abilityScores.cha);
 
-  const languages = useLanguages(supabase, character.id, character.extraLanguages);
+  const languages = useLanguages(character.id, character.extraLanguages);
   const retainerState = useRetainers(supabase, character.id, loyaltyBase);
 
   return (

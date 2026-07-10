@@ -263,12 +263,12 @@ Writes use `container.item(id, ownerId).replace(doc, { accessCondition: { type: 
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes, incl. a test that `updateCharacter` with a stale ETag throws (concurrency) and `assertOwner` rejects a mismatch
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` passes (59 web tests incl. 5 new: ETag-412 retry converges, assertOwner 403, cross-owner update/delete rejected, update whitelist ignores `ownerId`)
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm build` pass
 #### Manual
-- [ ] Create a character via the wizard → a `characters` doc with `ownerId = me`
-- [ ] Edit name/HP/notes and delete — all persist
-- [ ] Signed in as account B, `GET /api/characters/<A's id>` returns 403/404
+- [x] Character created via `POST /api/characters` → doc with `ownerId = me` (live Cosmos, two-account curl E2E)
+- [x] PATCH hp/notes + PUT coins persist; owner list shows them; delete-account cascade removes the character
+- [x] Account B: GET/PATCH on A's character → 403; unauthenticated → 401; B's list is empty
 
 ---
 

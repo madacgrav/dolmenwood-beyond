@@ -8,7 +8,7 @@ import {
   type InventoryItem as DBInventoryItem,
 } from '@/lib/data/inventory';
 import { fetchBankBalance as fetchBankBalanceQuery } from '@/lib/data/bank';
-import { fetchCoins, saveCoins as saveCoinsQuery, type Coins } from '@/lib/data/characters';
+import { fetchCoins, saveCoins as saveCoinsQuery, type Coins } from '@/lib/api/characters';
 
 /**
  * Core inventory tab state: items, coin purse, bank balance, and the
@@ -30,12 +30,13 @@ export function useInventory(characterId: string) {
 
   useEffect(() => {
     async function fetchAll() {
-      const [{ data: { user } }, mapped, charCoins] = await Promise.all([
-        supabase.auth.getUser(),
+      const [mapped, charCoins] = await Promise.all([
         listInventory(supabase, characterId),
-        fetchCoins(supabase, characterId),
+        fetchCoins(characterId),
       ]);
-      setCurrentUserId(user?.id ?? null);
+      // TODO(phase3b): owner id comes back with the embedded-inventory API;
+      // until then the sheet renders as owner (the API is owner-scoped anyway).
+      setCurrentUserId(null);
       setItems(mapped);
       setCoins(charCoins);
       setLoading(false);
@@ -45,7 +46,7 @@ export function useInventory(characterId: string) {
   }, [characterId, supabase, fetchBankBalance]);
 
   async function saveCoins(updated: Coins) {
-    await saveCoinsQuery(supabase, characterId, updated);
+    await saveCoinsQuery(characterId, updated);
   }
 
   function handleCoinChange(coin: 'gp' | 'sp' | 'cp', value: string) {

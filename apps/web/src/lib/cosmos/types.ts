@@ -1,3 +1,5 @@
+import type { AbilityScores, SessionNote, PersonOfNote } from '@dolmenwood/types';
+
 /**
  * Cosmos DB document shapes, one interface per container. These are the
  * persistence-layer types — domain types stay in @dolmenwood/types and are
@@ -22,6 +24,41 @@ export interface AccountDoc {
   requiresPasswordReset: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Container `characters`, partition key `/ownerId`. The character aggregate —
+ *  later phases embed inventory, spells, bank ledger, and level-up logs here. */
+export interface CharacterDoc {
+  id: string;
+  ownerId: string;
+  name: string;
+  sex: string | null;
+  age: string | null;
+  height: string | null;
+  weight: string | null;
+  kindred: string;
+  characterClass: string;
+  alignment: string;
+  moonSign: string | null;
+  background: string | null;
+  level: number;
+  xp: number;
+  abilityScores: AbilityScores;
+  hpCurrent: number;
+  hpMax: number;
+  portraitUrl: string | null;
+  isActive: boolean;
+  extraLanguages: string[];
+  notes: string | null;
+  sessionNotes: SessionNote[];
+  peopleOfNote: PersonOfNote[];
+  coinsGp: number;
+  coinsSp: number;
+  coinsCp: number;
+  createdAt: string;
+  updatedAt: string;
+  /** Cosmos system property — used for optimistic-concurrency replaces. */
+  _etag?: string;
 }
 
 /** Container `catalog_items`, partition key `/itemType`. */
