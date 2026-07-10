@@ -26,6 +26,43 @@ export interface AccountDoc {
   updatedAt: string;
 }
 
+/** Embedded inventory entry (collapses the two legacy inventory tables). */
+export interface InventoryEntryDoc {
+  id: string;
+  itemName: string;
+  itemType: string;
+  quantity: number;
+  weightCoins: number;
+  notes: string | null;
+  location: 'equipped' | 'stowed' | 'tiny';
+  weaponDamageDice: string | null;
+  armorAcBonus: number | null;
+  catalogItemId: string | null;
+}
+
+export interface SpellSlotDoc {
+  id: string;
+  rank: number;
+  slotsTotal: number;
+  slotsUsed: number;
+}
+
+export interface SpellPrepDoc {
+  id: string;
+  slotRank: number;
+  spellName: string;
+  isCast: boolean;
+  createdAt: string;
+}
+
+export interface SpellbookEntryDoc {
+  id: string;
+  spellName: string;
+  spellLevel: number;
+  isMemorized: boolean;
+  notes: string | null;
+}
+
 /** Container `characters`, partition key `/ownerId`. The character aggregate —
  *  later phases embed inventory, spells, bank ledger, and level-up logs here. */
 export interface CharacterDoc {
@@ -55,6 +92,11 @@ export interface CharacterDoc {
   coinsGp: number;
   coinsSp: number;
   coinsCp: number;
+  /** Optional: absent on documents created before phase 3b — default to []. */
+  inventory?: InventoryEntryDoc[];
+  spellSlots?: SpellSlotDoc[];
+  spellPreparations?: SpellPrepDoc[];
+  spellbook?: SpellbookEntryDoc[];
   createdAt: string;
   updatedAt: string;
   /** Cosmos system property — used for optimistic-concurrency replaces. */

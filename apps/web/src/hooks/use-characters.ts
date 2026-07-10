@@ -12,14 +12,12 @@ export function useCharacters() {
 
   useEffect(() => {
     async function fetchCharacters() {
-      const { characters: mapped, error } = await listCharacters();
+      const { characters: mapped, armorByCharacter: armor, error } = await listCharacters();
       if (error) {
         setError(error);
       } else {
         setCharacters(mapped);
-        // TODO(phase3b): equipped-armor AC bonuses come back with the
-        // embedded inventory; until then cards show unarmored AC.
-        setArmorByCharacter({});
+        setArmorByCharacter(armor);
       }
       setLoading(false);
     }

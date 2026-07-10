@@ -16,11 +16,19 @@ async function errorText(res: Response): Promise<string> {
   return body?.error ?? `request failed (${res.status})`;
 }
 
-export async function listCharacters(): Promise<{ characters: Character[]; error: string | null }> {
+export async function listCharacters(): Promise<{
+  characters: Character[];
+  armorByCharacter: Record<string, number>;
+  error: string | null;
+}> {
   const res = await fetch('/api/characters');
-  if (!res.ok) return { characters: [], error: await errorText(res) };
+  if (!res.ok) return { characters: [], armorByCharacter: {}, error: await errorText(res) };
   const body = await res.json();
-  return { characters: body.characters ?? [], error: null };
+  return {
+    characters: body.characters ?? [],
+    armorByCharacter: body.armorByCharacter ?? {},
+    error: null,
+  };
 }
 
 export async function fetchCharacterWithNotes(id: string): Promise<CharacterWithNotes | null> {

@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { insertInventoryItem, type InventoryItem as DBInventoryItem } from '@/lib/data/inventory';
+import { insertInventoryItem, type InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
 import { ITEM_TYPES, type CatalogItem, type ItemType, type NewItemDraft } from './types';
 
 const EMPTY_DRAFT: NewItemDraft = {
@@ -14,8 +13,7 @@ const EMPTY_DRAFT: NewItemDraft = {
  * Lives at the tab level so drafts and search text persist while the form
  * is closed and reopened, exactly as before the extraction.
  */
-export function useAddItem({ supabase, characterId, onItemAdded }: {
-  supabase: SupabaseClient;
+export function useAddItem({ characterId, onItemAdded }: {
   characterId: string;
   onItemAdded: (item: DBInventoryItem) => void;
 }) {
@@ -79,7 +77,7 @@ export function useAddItem({ supabase, characterId, onItemAdded }: {
     if (newItem.weapon_damage_dice.trim()) payload.weapon_damage_dice = newItem.weapon_damage_dice.trim();
     const acBonus = parseInt(newItem.armor_ac_bonus);
     if (!isNaN(acBonus)) payload.armor_ac_bonus = acBonus;
-    const mapped = await insertInventoryItem(supabase, payload);
+    const mapped = await insertInventoryItem(payload);
     if (mapped) {
       onItemAdded(mapped);
       setNewItem(EMPTY_DRAFT);

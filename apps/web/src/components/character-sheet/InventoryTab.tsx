@@ -21,13 +21,11 @@ export function InventoryTab({ characterId, readOnly = false }: Props) {
   const inv = useInventory(characterId);
 
   const addItemCtl = useAddItem({
-    supabase: inv.supabase,
     characterId,
     onItemAdded: item => inv.setItems(prev => [...prev, item]),
   });
 
   const restock = useRestock({
-    supabase: inv.supabase,
     characterId,
     items: inv.items,
     setItems: inv.setItems,

@@ -1,5 +1,5 @@
 'use client';
-import type { DBSpellSlot } from '@/lib/data/spells';
+import type { DBSpellSlot } from '@/lib/api/spells';
 import { SECTION_HEADER, type SlotsData } from './types';
 
 interface Props {

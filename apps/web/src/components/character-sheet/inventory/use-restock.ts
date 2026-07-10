@@ -1,12 +1,11 @@
 'use client';
 import { useState, type Dispatch, type SetStateAction } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   insertInventoryItem,
   updateItemQuantity,
   type InventoryItem as DBInventoryItem,
-} from '@/lib/data/inventory';
-import type { Coins } from '@/lib/data/characters';
+} from '@/lib/api/inventory';
+import type { Coins } from '@/lib/api/characters';
 import { RESTOCK_ITEMS, totalSpOnHand, deductSp } from './restock-data';
 
 /**
@@ -14,8 +13,7 @@ import { RESTOCK_ITEMS, totalSpOnHand, deductSp } from './restock-data';
  * into existing inventory rows (matched case-insensitively by name) and
  * deducts the total cost from the coin purse.
  */
-export function useRestock({ supabase, characterId, items, setItems, coins, setCoins, saveCoins }: {
-  supabase: SupabaseClient;
+export function useRestock({ characterId, items, setItems, coins, setCoins, saveCoins }: {
   characterId: string;
   items: DBInventoryItem[];
   setItems: Dispatch<SetStateAction<DBInventoryItem[]>>;
@@ -63,10 +61,10 @@ export function useRestock({ supabase, characterId, items, setItems, coins, setC
         );
         if (existing) {
           const newQty = existing.quantity + totalQty;
-          await updateItemQuantity(supabase, existing.id, newQty);
+          await updateItemQuantity(characterId, existing.id, newQty);
           setItems(prev => prev.map(i => i.id === existing.id ? { ...i, quantity: newQty } : i));
         } else {
-          const mapped = await insertInventoryItem(supabase, {
+          const mapped = await insertInventoryItem({
             character_id: characterId,
             item_name: entry.name,
             item_type: entry.category === 'ammo' ? 'consumable' : 'gear',

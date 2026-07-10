@@ -16,8 +16,13 @@ vi.mock('@/lib/auth/session', () => ({
 
 vi.mock('@/lib/cosmos/client', () => ({
   getContainer: () => ({
-    item: (id: string) => ({
-      read: async () => ({ resource: docs.get(id) }),
+    item: (id: string, partitionKey?: string) => ({
+      // Point reads are partition-scoped in real Cosmos: a doc in another
+      // owner's partition is invisible (404), not returned.
+      read: async () => {
+        const doc = docs.get(id);
+        return { resource: doc && doc.ownerId === partitionKey ? doc : undefined };
+      },
       replace: async (
         doc: CharacterDoc,
         opts?: { accessCondition?: { type: string; condition: string } },

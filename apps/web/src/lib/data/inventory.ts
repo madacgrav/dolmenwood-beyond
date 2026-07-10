@@ -1,165 +1,112 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { requireAccountId } from '@/lib/auth/session';
+import { assertCharacterOwner, badRequest, notFound } from '@/lib/authz';
+import type { CharacterDoc, InventoryEntryDoc } from '@/lib/cosmos/types';
+import type { InventoryItem, ItemLocation } from '@/lib/api/inventory';
+import { mutateOwnedCharacterDoc } from './characters';
 
 /**
- * Single source of truth for `character_inventory` rows.
- *
- * Rows are kept snake_case (matching the DB) because the inventory UI
- * consumes them as-is; the shared type + mapper here replaces the
- * hand-copied casts that used to live in InventoryTab and CombatTab.
+ * Server-only inventory access: entries are embedded in the character doc
+ * (pk /ownerId), so every operation is an owner-asserted read or an
+ * ETag-guarded mutation of that one document.
  */
 
-export type ItemLocation = 'equipped' | 'stowed' | 'tiny';
-
-export interface InventoryItem {
-  id: string;
-  character_id: string;
-  item_name: string;
-  item_type: string;
-  quantity: number;
-  weight_coins: number;
-  notes?: string;
-  location: ItemLocation;
-  weapon_damage_dice?: string | null;
-  armor_ac_bonus?: number | null;
-}
-
-export interface AmmoItem {
-  id: string;
-  item_name: string;
-  quantity: number;
-}
-
-export interface EquippedWeapon {
-  id: string;
-  item_name: string;
-  weapon_damage_dice: string | null;
-}
-
-export function mapInventoryRow(row: Record<string, unknown>): InventoryItem {
+function entryToItem(characterId: string, e: InventoryEntryDoc): InventoryItem {
   return {
-    id: row.id as string,
-    character_id: row.character_id as string,
-    item_name: row.item_name as string,
-    item_type: row.item_type as string,
-    quantity: row.quantity as number,
-    weight_coins: row.weight_coins as number,
-    notes: row.notes as string | undefined,
-    location: ((row.location as string) ?? 'stowed') as ItemLocation,
-    weapon_damage_dice: row.weapon_damage_dice as string | null | undefined,
-    armor_ac_bonus: row.armor_ac_bonus as number | null | undefined,
+    id: e.id,
+    character_id: characterId,
+    item_name: e.itemName,
+    item_type: e.itemType,
+    quantity: e.quantity,
+    weight_coins: e.weightCoins,
+    notes: e.notes ?? undefined,
+    location: e.location,
+    weapon_damage_dice: e.weaponDamageDice,
+    armor_ac_bonus: e.armorAcBonus,
   };
 }
 
-export async function listInventory(
-  supabase: SupabaseClient,
-  characterId: string,
-): Promise<InventoryItem[]> {
-  const { data } = await supabase
-    .from('character_inventory')
-    .select('*')
-    .eq('character_id', characterId)
-    .order('location')
-    .order('item_type');
-  return (data ?? []).map(mapInventoryRow);
-}
+const LOCATION_ORDER: Record<string, number> = { equipped: 0, stowed: 1, tiny: 2 };
 
-/** Ammo = item_type 'ammo' plus legacy name-pattern matches. */
-export async function listAmmo(
-  supabase: SupabaseClient,
-  characterId: string,
-): Promise<AmmoItem[]> {
-  const { data } = await supabase
-    .from('character_inventory')
-    .select('id, item_name, quantity')
-    .eq('character_id', characterId)
-    .or('item_type.eq.ammo,item_name.ilike.%Arrow%,item_name.ilike.%Quarrel%,item_name.ilike.%Stone%,item_name.ilike.%Bolt%');
-  return (data ?? []).map((r: Record<string, unknown>) => ({
-    id: r.id as string,
-    item_name: r.item_name as string,
-    quantity: r.quantity as number,
-  }));
-}
-
-export async function listEquippedWeapons(
-  supabase: SupabaseClient,
-  characterId: string,
-): Promise<EquippedWeapon[]> {
-  const { data } = await supabase
-    .from('character_inventory')
-    .select('id, item_name, weapon_damage_dice')
-    .eq('character_id', characterId)
-    .eq('item_type', 'weapon')
-    .eq('location', 'equipped');
-  return (data ?? []) as EquippedWeapon[];
-}
-
-export async function insertInventoryItem(
-  supabase: SupabaseClient,
-  payload: Record<string, unknown>,
-): Promise<InventoryItem | null> {
-  const { data, error } = await supabase
-    .from('character_inventory')
-    .insert(payload)
-    .select()
-    .single();
-  if (error || !data) return null;
-  return mapInventoryRow(data as Record<string, unknown>);
-}
-
-export async function updateItemQuantity(
-  supabase: SupabaseClient,
-  id: string,
-  quantity: number,
-): Promise<void> {
-  await supabase.from('character_inventory').update({ quantity }).eq('id', id);
-}
-
-export async function updateItemLocation(
-  supabase: SupabaseClient,
-  id: string,
-  location: ItemLocation,
-): Promise<void> {
-  await supabase.from('character_inventory').update({ location }).eq('id', id);
-}
-
-export async function deleteInventoryItem(
-  supabase: SupabaseClient,
-  id: string,
-): Promise<void> {
-  await supabase.from('character_inventory').delete().eq('id', id);
-}
-
-/** Sum of armor_ac_bonus over a character's equipped items. */
-export async function fetchEquippedArmorBonus(
-  supabase: SupabaseClient,
-  characterId: string,
-): Promise<number> {
-  const { data } = await supabase
-    .from('character_inventory')
-    .select('armor_ac_bonus')
-    .eq('character_id', characterId)
-    .eq('location', 'equipped');
-  return (data ?? []).reduce(
-    (sum, r: Record<string, unknown>) => sum + ((r.armor_ac_bonus as number) ?? 0),
-    0,
+function sortedEntries(doc: CharacterDoc): InventoryEntryDoc[] {
+  // Preserve the old list ordering: by location, then item type.
+  return [...(doc.inventory ?? [])].sort(
+    (a, b) =>
+      (LOCATION_ORDER[a.location] ?? 9) - (LOCATION_ORDER[b.location] ?? 9) ||
+      a.itemType.localeCompare(b.itemType),
   );
 }
 
-/** Batched: equipped armor bonus per character id (one query for the roster). */
-export async function fetchEquippedArmorBonuses(
-  supabase: SupabaseClient,
-  characterIds: string[],
-): Promise<Record<string, number>> {
-  if (characterIds.length === 0) return {};
-  const { data } = await supabase
-    .from('character_inventory')
-    .select('character_id, armor_ac_bonus')
-    .in('character_id', characterIds)
-    .eq('location', 'equipped');
-  const map: Record<string, number> = {};
-  for (const r of (data ?? []) as Record<string, unknown>[]) {
-    const id = r.character_id as string;
-    map[id] = (map[id] ?? 0) + ((r.armor_ac_bonus as number) ?? 0);
-  }
-  return map;
+export async function listInventory(characterId: string): Promise<InventoryItem[]> {
+  const me = await requireAccountId();
+  const doc = await assertCharacterOwner(me, characterId);
+  return sortedEntries(doc).map((e) => entryToItem(characterId, e));
+}
+
+export interface NewInventoryEntryInput {
+  item_name: string;
+  item_type: string;
+  quantity?: number;
+  weight_coins?: number;
+  notes?: string | null;
+  location?: ItemLocation;
+  weapon_damage_dice?: string | null;
+  armor_ac_bonus?: number | null;
+  catalog_item_id?: string | null;
+}
+
+export async function addInventoryItem(
+  characterId: string,
+  input: NewInventoryEntryInput,
+): Promise<InventoryItem> {
+  const name = String(input.item_name ?? '').trim();
+  if (!name) throw badRequest('item_name is required');
+  const entry: InventoryEntryDoc = {
+    id: crypto.randomUUID(),
+    itemName: name,
+    itemType: String(input.item_type ?? 'gear'),
+    quantity: Math.max(1, Number(input.quantity) || 1),
+    weightCoins: Math.max(0, Number(input.weight_coins) || 0),
+    notes: input.notes ?? null,
+    location: (['equipped', 'stowed', 'tiny'] as const).includes(input.location as ItemLocation)
+      ? (input.location as ItemLocation)
+      : 'stowed',
+    weaponDamageDice: input.weapon_damage_dice ?? null,
+    armorAcBonus: input.armor_ac_bonus ?? null,
+    catalogItemId: input.catalog_item_id ?? null,
+  };
+  await mutateOwnedCharacterDoc(characterId, (doc) => {
+    doc.inventory = [...(doc.inventory ?? []), entry];
+  });
+  return entryToItem(characterId, entry);
+}
+
+export async function updateInventoryEntry(
+  characterId: string,
+  itemId: string,
+  patch: { quantity?: number; location?: ItemLocation },
+): Promise<void> {
+  await mutateOwnedCharacterDoc(characterId, (doc) => {
+    const entry = (doc.inventory ?? []).find((e) => e.id === itemId);
+    if (!entry) throw notFound('inventory item');
+    if (patch.quantity !== undefined) entry.quantity = Math.max(0, Number(patch.quantity) || 0);
+    if (patch.location !== undefined) {
+      if (!(['equipped', 'stowed', 'tiny'] as const).includes(patch.location)) {
+        throw badRequest('invalid location');
+      }
+      entry.location = patch.location;
+    }
+  });
+}
+
+export async function removeInventoryItem(characterId: string, itemId: string): Promise<void> {
+  await mutateOwnedCharacterDoc(characterId, (doc) => {
+    doc.inventory = (doc.inventory ?? []).filter((e) => e.id !== itemId);
+  });
+}
+
+/** Sum of equipped armor bonuses on an already-loaded doc (used by the roster). */
+export function equippedArmorBonusOf(doc: CharacterDoc): number {
+  return (doc.inventory ?? [])
+    .filter((e) => e.location === 'equipped')
+    .reduce((sum, e) => sum + (e.armorAcBonus ?? 0), 0);
 }

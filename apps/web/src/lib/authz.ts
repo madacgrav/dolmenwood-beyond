@@ -42,6 +42,17 @@ export async function assertCharacterOwner(
   accountId: string,
   characterId: string,
 ): Promise<CharacterDoc> {
+  // Hot path: a 1-RU point read in the caller's own partition. Only when
+  // that misses do we pay the cross-partition query to tell "not yours"
+  // (403) apart from "doesn't exist" (404).
+  try {
+    const { resource } = await getContainer('characters')
+      .item(characterId, accountId)
+      .read<CharacterDoc>();
+    if (resource) return resource;
+  } catch {
+    // fall through to the slow path
+  }
   const doc = await fetchCharacterDocById(characterId);
   if (!doc) throw notFound('character');
   assertOwner(accountId, doc.ownerId);

@@ -52,6 +52,28 @@ export async function mutateOwnedCharacterDoc(
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 export async function listCharacters(): Promise<Character[]> {
+  return (await listCharacterDocs()).map(docToCharacter);
+}
+
+/**
+ * Roster view: characters plus their equipped-armor AC bonus, computed from
+ * the embedded inventory of the same documents — no second query.
+ */
+export async function listCharactersWithArmor(): Promise<{
+  characters: Character[];
+  armorByCharacter: Record<string, number>;
+}> {
+  const docs = await listCharacterDocs();
+  const armorByCharacter: Record<string, number> = {};
+  for (const doc of docs) {
+    armorByCharacter[doc.id] = (doc.inventory ?? [])
+      .filter((e) => e.location === 'equipped')
+      .reduce((sum, e) => sum + (e.armorAcBonus ?? 0), 0);
+  }
+  return { characters: docs.map(docToCharacter), armorByCharacter };
+}
+
+async function listCharacterDocs(): Promise<CharacterDoc[]> {
   const me = await requireAccountId();
   const { resources } = await characters()
     .items.query<CharacterDoc>(
@@ -62,7 +84,7 @@ export async function listCharacters(): Promise<Character[]> {
       { partitionKey: me },
     )
     .fetchAll();
-  return resources.map(docToCharacter);
+  return resources;
 }
 
 export async function fetchCharacterWithNotes(id: string): Promise<CharacterWithNotes> {

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { InventoryItem as DBInventoryItem } from '@/lib/data/inventory';
+import type { InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
 
 export interface CatalogItem {
   id: string;

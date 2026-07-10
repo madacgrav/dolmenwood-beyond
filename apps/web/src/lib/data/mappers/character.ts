@@ -95,6 +95,10 @@ export function newCharacterToDoc(ownerId: string, input: NewCharacterInput): Ch
     coinsGp: 0,
     coinsSp: 0,
     coinsCp: 0,
+    inventory: [],
+    spellSlots: [],
+    spellPreparations: [],
+    spellbook: [],
     createdAt: now,
     updatedAt: now,
   };

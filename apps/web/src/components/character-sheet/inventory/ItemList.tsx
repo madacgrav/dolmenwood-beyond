@@ -1,5 +1,5 @@
 'use client';
-import type { InventoryItem as DBInventoryItem } from '@/lib/data/inventory';
+import type { InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
 import { LOCATION_LABELS, sectionHead } from './types';
 import { ItemRow } from './ItemRow';
 

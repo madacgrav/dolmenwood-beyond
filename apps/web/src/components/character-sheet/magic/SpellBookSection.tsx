@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import type { DBSpell } from '@/lib/data/spells';
+import type { DBSpell } from '@/lib/api/spells';
 import { SECTION_HEADER } from './types';
 import { AddSpellForm } from './AddSpellForm';
 

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { handleRouteError } from '@/lib/http';
-import { listCharacters, createCharacter } from '@/lib/data/characters';
+import { listCharactersWithArmor, createCharacter } from '@/lib/data/characters';
 
 export async function GET() {
   try {
-    return NextResponse.json({ characters: await listCharacters() });
+    return NextResponse.json(await listCharactersWithArmor());
   } catch (e) {
     return handleRouteError(e);
   }

@@ -302,11 +302,11 @@ export async function castSpell(characterId: string, prepId: string): Promise<vo
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes (add/remove item mutates the embedded array; derived AC unchanged given same inputs via rules-engine)
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` passes (65 web tests incl. 6 new: embedded add/patch/remove, invalid location 400, roster armor rollup excludes stowed, initSlots race → alreadyInitialized, prep/cast/rest lifecycle, slot-usage clamp)
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm build` pass
 #### Manual
-- [ ] Add/edit/remove inventory items (including from the catalog); persist inside the character doc
-- [ ] Track spell slots and prepare/cast spells; encumbrance + AC derived values match pre-migration
+- [x] Live-Cosmos E2E: add equipped chainmail → roster `armorByCharacter` +4 (computed from the embedded array, no second query); stow it → 0; patch/delete persist inside the doc
+- [x] Magic E2E: initSlots → prepare Sleep → cast → rest zeroes usage + clears preps; second initSlots returns `alreadyInitialized` (old 23505 race semantics preserved)
 
 ---
 
