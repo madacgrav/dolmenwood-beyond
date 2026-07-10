@@ -32,9 +32,6 @@ param appInsightsConnectionString string
 @description('Key Vault URI')
 param keyVaultUri string
 
-@description('Supabase project URL (non-secret, injected as app setting)')
-param supabaseUrl string
-
 @description('Cosmos DB account endpoint (non-secret, injected as app setting)')
 param cosmosEndpoint string
 
@@ -80,10 +77,6 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
           value: appInsightsConnectionString
         }
         {
-          name: 'NEXT_PUBLIC_SUPABASE_URL'
-          value: supabaseUrl
-        }
-        {
           name: 'COSMOS_ENDPOINT'
           value: cosmosEndpoint
         }
@@ -112,14 +105,6 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
           value: 'true'
         }
         // Secrets pulled from Key Vault via managed identity
-        {
-          name: 'NEXT_PUBLIC_SUPABASE_ANON_KEY'
-          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/supabase-anon-key/)'
-        }
-        {
-          name: 'SUPABASE_SERVICE_ROLE_KEY'
-          value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/supabase-service-role-key/)'
-        }
         {
           name: 'WORDPRESS_API_URL'
           value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/wordpress-api-url/)'

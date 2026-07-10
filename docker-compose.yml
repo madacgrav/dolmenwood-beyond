@@ -1,14 +1,15 @@
 name: dolmenwood-beyond
 
+# Data lives in Azure Cosmos DB — set COSMOS_ENDPOINT/COSMOS_KEY (plus
+# AUTH_SECRET and the optional Blob/SignalR/Resend vars) in your shell or a
+# compose .env file. There is no local database container; use the Cosmos DB
+# Emulator or a dev Cosmos account.
 services:
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
       target: builder
-      args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:54321}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
     command: ["pnpm", "--filter", "@dolmenwood/web", "dev"]
     ports:
       - "3000:3000"
@@ -20,11 +21,13 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-http://localhost:54321}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
-    depends_on:
-      - supabase-db
+      - COSMOS_ENDPOINT=${COSMOS_ENDPOINT:-}
+      - COSMOS_KEY=${COSMOS_KEY:-}
+      - AUTH_SECRET=${AUTH_SECRET:-dev-only-secret}
+      - BLOB_CONNECTION_STRING=${BLOB_CONNECTION_STRING:-}
+      - SIGNALR_CONNECTION_STRING=${SIGNALR_CONNECTION_STRING:-}
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM=${RESEND_FROM:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
@@ -33,25 +36,5 @@ services:
       retries: 3
       start_period: 40s
 
-  # Local Supabase runs via `supabase start` CLI separately
-  # This is a lightweight placeholder for the DB connection in compose
-  supabase-db:
-    image: postgres:15-alpine
-    ports:
-      - "54322:5432"
-    environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
 volumes:
   next_cache:
-  postgres_data:

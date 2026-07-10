@@ -13,9 +13,6 @@ param projectName string = 'dolmenwood'
 @description('Docker image tag to deploy')
 param imageTag string = 'latest'
 
-@description('Supabase project URL (non-secret)')
-param supabaseUrl string
-
 // ---- Naming convention ----
 var prefix = '${projectName}-${environment}'
 var acrName = replace('${projectName}${environment}acr', '-', '')  // ACR names: alphanumeric only
@@ -119,7 +116,6 @@ module appService 'modules/app-service.bicep' = {
     acrId: acr.outputs.acrId
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     keyVaultUri: keyVaultUri
-    supabaseUrl: supabaseUrl
     cosmosEndpoint: cosmos.outputs.endpoint
   }
 }

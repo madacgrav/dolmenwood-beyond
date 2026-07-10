@@ -563,11 +563,12 @@ Run: `npx tsx scripts/migrate-supabase-to-cosmos.ts`. **No credential migration*
 
 ### Verification
 #### Automated
-- [ ] `grep -r "@supabase" apps/web/src` returns nothing; `grep -rn "SUPABASE" apps/web infra .github` only matches removed/renamed references intentionally left in docs history (none in code)
-- [ ] `pnpm build` + `pnpm test` + `pnpm lint` pass
-- [ ] `deploy-azure.yml` has no `supabase` job; a full deploy succeeds and `/api/health` returns green
+- [x] `grep -r "@supabase" apps/web/src` → nothing; no `SUPABASE` env reads in src; workflows have zero supabase references; `supabase/` and `lib/supabase/` deleted; deps removed
+- [x] `pnpm build` + `pnpm test` (92) + `pnpm lint` + `pnpm typecheck` pass without the Supabase packages
+- [x] `deploy-azure.yml` has no migrations job (deploy-app needs only build+infra); Bicep deployed — Supabase app settings stripped from the App Service
+- [x] Drift re-run of the data migration at teardown time: all counts still reconcile (7/4/2/0)
 #### Manual
-- [ ] In the deployed app, smoke-test every flow from Phases 2–8: sign in (post-reset), character CRUD + inventory + spells, banking, level-up, join campaign, scheduling + proposal confirm + notification email, portrait upload, live HP
+- [ ] **Post-merge**: the deployed app smoke test (sign in post-reset, character CRUD + inventory + spells, banking, level-up, campaigns, scheduling + notification email, portrait upload, live HP) runs against the app the merge deploys — plus: announce the password reset to players, re-run the migration script one last time right at merge, and afterwards delete the Supabase GitHub secrets/vars and pause/delete the Supabase project
 
 ---
 
