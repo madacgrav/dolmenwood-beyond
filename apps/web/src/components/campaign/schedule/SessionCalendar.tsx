@@ -1,7 +1,7 @@
 'use client';
 
 import { buildMonthGrid, sameDay } from '@/lib/calendar';
-import type { Session } from '@/lib/data/schedule';
+import type { Session } from '@/lib/api/schedule';
 
 interface Props {
   sessions: Session[];

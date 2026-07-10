@@ -1,6 +1,6 @@
 'use client';
 
-import type { RsvpStatus } from '@/lib/data/schedule';
+import type { RsvpStatus } from '@/lib/api/schedule';
 
 interface Props {
   status: RsvpStatus | null;

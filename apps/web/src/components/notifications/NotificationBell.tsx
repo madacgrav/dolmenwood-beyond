@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { loadNotifications, markNotificationRead, type AppNotification } from '@/lib/data/notifications';
+import { loadNotifications, markNotificationRead, type AppNotification } from '@/lib/api/notifications';
 
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -15,28 +14,27 @@ function relativeTime(iso: string): string {
 }
 
 export function NotificationBell() {
-  const supabase = createClient();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [open, setOpen] = useState(false);
 
   const refetch = useCallback(async () => {
-    setNotifications(await loadNotifications(supabase));
-  }, [supabase]);
+    setNotifications(await loadNotifications());
+  }, []);
 
   useEffect(() => {
     let active = true;
     (async () => {
-      const data = await loadNotifications(supabase);
+      const data = await loadNotifications();
       if (active) setNotifications(data);
     })();
     return () => { active = false; };
-  }, [supabase]);
+  }, []);
 
   const unread = notifications.filter(n => !n.read).length;
 
   async function handleClickItem(n: AppNotification) {
     if (!n.read) {
-      await markNotificationRead(supabase, n.id);
+      await markNotificationRead(n.id);
       await refetch();
     }
   }

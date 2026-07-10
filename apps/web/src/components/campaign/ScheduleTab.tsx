@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { loadSchedule, createSession, updateSession, deleteSession, setRsvp, type RsvpStatus, type Session } from '@/lib/data/schedule';
+import { loadSchedule, createSession, updateSession, deleteSession, setRsvp, type RsvpStatus, type Session } from '@/lib/api/schedule';
 import { listMyCampaignNames } from '@/lib/api/campaigns';
 import { toDatetimeLocal } from '@/lib/format';
 import { sameDay } from '@/lib/calendar';
@@ -22,7 +21,6 @@ interface CampaignOption {
 }
 
 export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: boolean }) {
-  const supabase = createClient();
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
   const [campaignId, setCampaignId] = useState('');
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -61,22 +59,22 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
 
   const refetch = useCallback(async () => {
     if (!campaignId) return;
-    setSessions(await loadSchedule(supabase, campaignId));
-  }, [supabase, campaignId]);
+    setSessions(await loadSchedule(campaignId));
+  }, [campaignId]);
 
   useEffect(() => {
     if (!campaignId) return;
     let active = true;
     setLoading(true);
     (async () => {
-      const data = await loadSchedule(supabase, campaignId);
+      const data = await loadSchedule(campaignId);
       if (active) {
         setSessions(data);
         setLoading(false);
       }
     })();
     return () => { active = false; };
-  }, [supabase, campaignId]);
+  }, [campaignId]);
 
   function handleFormChange(field: SessionFormField, value: string) {
     if (field === 'title') setFormTitle(value);
@@ -110,14 +108,13 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
     setFormError('');
     const scheduledAt = new Date(formWhen).toISOString();
     const { error } = editingId
-      ? await updateSession(supabase, editingId, {
+      ? await updateSession(campaignId, editingId, {
           title: formTitle.trim(),
           scheduledAt,
           notes: formNotes.trim(),
         })
-      : await createSession(supabase, {
+      : await createSession({
           campaignId,
-          createdBy: userId,
           title: formTitle.trim(),
           scheduledAt,
           notes: formNotes.trim(),
@@ -133,7 +130,7 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
   }
 
   async function handleRsvp(sessionId: string, status: RsvpStatus) {
-    const { error } = await setRsvp(supabase, sessionId, status);
+    const { error } = await setRsvp(campaignId, sessionId, status);
     if (!error) await refetch();
   }
 
@@ -141,7 +138,7 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
     if (!deletingSession) return;
     setDeleting(true);
     setDeleteError('');
-    const { error } = await deleteSession(supabase, deletingSession.id);
+    const { error } = await deleteSession(campaignId, deletingSession.id);
     setDeleting(false);
 
     if (error) {

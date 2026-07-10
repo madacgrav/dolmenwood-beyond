@@ -1,7 +1,7 @@
 'use client';
 
 import { formatSessionDate } from '@/lib/format';
-import type { RsvpStatus, Session } from '@/lib/data/schedule';
+import type { RsvpStatus, Session } from '@/lib/api/schedule';
 import { RsvpControl } from '@/components/campaign/schedule/RsvpControl';
 
 interface SessionListProps {

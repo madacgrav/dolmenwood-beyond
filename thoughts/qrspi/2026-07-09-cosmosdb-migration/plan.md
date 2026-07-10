@@ -465,11 +465,11 @@ export async function markNotificationRead(id: string): Promise<void>
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes: all-available → proposal auto-confirms, creates a session, and writes N participant notifications; delivery enqueue is idempotent on re-run
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` passes (87 web tests incl. 5 new: RSVP upsert + creator-or-referee delete, confirm only at full approval + session attributed to proposer + N notifications, partition-scoped reads + markRead, drain enqueue idempotency + opt-out respected, failed send marked without blocking others)
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm build` pass
 #### Manual
-- [ ] Propose a date; each member marks available; on the last one it auto-confirms + a session appears
-- [ ] Each participant sees a notification; hitting `/api/notifications/drain` (with the secret) emails via Resend and marks deliveries sent, and a second call sends nothing new
+- [x] Live-Cosmos E2E: session create + RSVP with display names; proposal open (1/2) → confirmed on last approval, session created and attributed to the proposer
+- [x] Each participant got a notification; mark-read flips; drain enqueued 2 deliveries (fail-marked locally without RESEND_API_KEY — send success covered by unit tests + the existing prod Resend setup); second drain fully idempotent (0/0/0); wrong secret → 401
 
 ---
 

@@ -169,6 +169,28 @@ export interface PartyMountDoc {
   createdAt: string;
 }
 
+export interface SessionEntryDoc {
+  id: string;
+  title: string;
+  scheduledAt: string;
+  notes: string;
+  createdBy: string;
+  rsvps: { accountId: string; status: 'yes' | 'no' | 'maybe'; updatedAt: string }[];
+  createdAt: string;
+}
+
+export interface ProposalEntryDoc {
+  id: string;
+  title: string;
+  scheduledAt: string;
+  notes: string;
+  status: 'open' | 'confirmed' | 'cancelled';
+  confirmedSessionId: string | null;
+  createdBy: string;
+  availability: { accountId: string; available: boolean; updatedAt: string }[];
+  createdAt: string;
+}
+
 /** Container `campaigns`, partition key `/id`. */
 export interface CampaignDoc {
   id: string;
@@ -177,6 +199,32 @@ export interface CampaignDoc {
   inviteCode: string;
   members: { accountId: string; joinedAt: string }[];
   partyMounts: PartyMountDoc[];
+  /** Optional: absent on documents created before phase 6 — default to []. */
+  sessions?: SessionEntryDoc[];
+  proposals?: ProposalEntryDoc[];
+  createdAt: string;
+  _etag?: string;
+}
+
+/** Embedded outbox delivery — replaces the notification_deliveries table. */
+export interface DeliveryDoc {
+  channel: 'email' | 'sms' | 'whatsapp';
+  status: 'pending' | 'sent' | 'failed';
+  sentAt: string | null;
+  error: string | null;
+  attempts: number;
+}
+
+/** Container `notifications`, partition key `/accountId`. */
+export interface NotificationDoc {
+  id: string;
+  accountId: string;
+  campaignId: string | null;
+  kind: string;
+  body: string;
+  relatedSessionId: string | null;
+  read: boolean;
+  deliveries: DeliveryDoc[];
   createdAt: string;
   _etag?: string;
 }

@@ -1,4 +1,3 @@
-import { createServiceClient } from '@/lib/supabase/service';
 import { drainNotifications } from '@/lib/notifications/dispatch';
 
 export const runtime = 'nodejs';
@@ -18,6 +17,6 @@ export async function POST(request: Request) {
   if (request.headers.get('x-drain-secret') !== secret) {
     return Response.json({ error: 'unauthorized' }, { status: 401 });
   }
-  const result = await drainNotifications(createServiceClient());
+  const result = await drainNotifications();
   return Response.json(result);
 }

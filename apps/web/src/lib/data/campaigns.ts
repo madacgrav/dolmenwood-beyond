@@ -31,7 +31,7 @@ import { fetchAccountDoc } from './account';
 
 const campaigns = () => getContainer('campaigns');
 
-async function replaceCampaignWithRetry(
+export async function replaceCampaignWithRetry(
   campaignId: string,
   authorize: (doc: CampaignDoc, me: string) => void,
   mutate: (doc: CampaignDoc) => void,
@@ -120,7 +120,7 @@ export async function joinCampaign(
 
 // ── Roster hydration ──────────────────────────────────────────────────────────
 
-async function displayNamesFor(accountIds: string[]): Promise<Record<string, string>> {
+export async function displayNamesFor(accountIds: string[]): Promise<Record<string, string>> {
   const unique = [...new Set(accountIds)];
   const docs = await Promise.all(unique.map((id) => fetchAccountDoc(id)));
   const map: Record<string, string> = {};

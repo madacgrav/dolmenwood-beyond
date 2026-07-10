@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { loadProposals, createProposal, deleteProposal, setAvailability, type Proposal } from '@/lib/data/proposals';
+import { loadProposals, createProposal, deleteProposal, setAvailability, type Proposal } from '@/lib/api/proposals';
 import { ProposalForm, type ProposalFormField } from '@/components/campaign/schedule/ProposalForm';
 import { ProposalList } from '@/components/campaign/schedule/ProposalList';
 import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
@@ -10,7 +9,6 @@ import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSession
 export function ProposalsSection({ campaignId, userId, isReferee, onConfirmed }: {
   campaignId: string; userId: string; isReferee: boolean; onConfirmed?: () => void;
 }) {
-  const supabase = createClient();
   const [proposals, setProposals] = useState<Proposal[]>([]);
 
   // Proposal form state (create)
@@ -28,18 +26,18 @@ export function ProposalsSection({ campaignId, userId, isReferee, onConfirmed }:
 
   const refetch = useCallback(async () => {
     if (!campaignId) return;
-    setProposals(await loadProposals(supabase, campaignId));
-  }, [supabase, campaignId]);
+    setProposals(await loadProposals(campaignId));
+  }, [campaignId]);
 
   useEffect(() => {
     if (!campaignId) return;
     let active = true;
     (async () => {
-      const data = await loadProposals(supabase, campaignId);
+      const data = await loadProposals(campaignId);
       if (active) setProposals(data);
     })();
     return () => { active = false; };
-  }, [supabase, campaignId]);
+  }, [campaignId]);
 
   function handleFormChange(field: ProposalFormField, value: string) {
     if (field === 'title') setFormTitle(value);
@@ -62,9 +60,8 @@ export function ProposalsSection({ campaignId, userId, isReferee, onConfirmed }:
     setSaving(true);
     setFormError('');
     const scheduledAt = new Date(formWhen).toISOString();
-    const { error } = await createProposal(supabase, {
+    const { error } = await createProposal({
       campaignId,
-      createdBy: userId,
       title: formTitle.trim(),
       scheduledAt,
       notes: formNotes.trim(),
@@ -80,7 +77,7 @@ export function ProposalsSection({ campaignId, userId, isReferee, onConfirmed }:
   }
 
   async function handleAvailability(proposalId: string, available: boolean) {
-    const { error } = await setAvailability(supabase, proposalId, available);
+    const { error } = await setAvailability(campaignId, proposalId, available);
     if (!error) {
       await refetch();
       // A full approval may have created a session; refresh the parent's sessions.
@@ -92,7 +89,7 @@ export function ProposalsSection({ campaignId, userId, isReferee, onConfirmed }:
     if (!deletingProposal) return;
     setDeleting(true);
     setDeleteError('');
-    const { error } = await deleteProposal(supabase, deletingProposal.id);
+    const { error } = await deleteProposal(campaignId, deletingProposal.id);
     setDeleting(false);
 
     if (error) {
