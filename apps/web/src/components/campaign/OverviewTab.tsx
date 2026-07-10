@@ -1,14 +1,14 @@
 'use client';
 
-import { RefereeView } from './overview/RefereeView';
+import { DungeonMasterView } from './overview/DungeonMasterView';
 import { PlayerView } from './overview/PlayerView';
 
 interface Props {
-  isReferee: boolean;
+  isDM: boolean;
   userId: string;
 }
 
-export function OverviewTab({ isReferee, userId }: Props) {
-  if (isReferee) return <RefereeView userId={userId} />;
+export function OverviewTab({ isDM, userId }: Props) {
+  if (isDM) return <DungeonMasterView userId={userId} />;
   return <PlayerView userId={userId} />;
 }

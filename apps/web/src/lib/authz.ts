@@ -37,7 +37,7 @@ export async function fetchCharacterDocById(characterId: string): Promise<Charac
   return resources[0] ?? null;
 }
 
-// ── Campaign authorization (port of is_campaign_member / is_campaign_referee) ──
+// ── Campaign authorization (port of is_campaign_member / is_campaign_referee; "referee" is now "DM" in code and UI) ──
 
 export async function fetchCampaignDoc(campaignId: string): Promise<CampaignDoc | null> {
   try {
@@ -53,13 +53,13 @@ export async function fetchCampaignDoc(campaignId: string): Promise<CampaignDoc 
 export const isCampaignMember = (doc: CampaignDoc, accountId: string): boolean =>
   doc.members.some((m) => m.accountId === accountId);
 
-export const isCampaignReferee = (doc: CampaignDoc, accountId: string): boolean =>
+export const isCampaignDM = (doc: CampaignDoc, accountId: string): boolean =>
   doc.refereeId === accountId;
 
 export const isCampaignParticipant = (doc: CampaignDoc, accountId: string): boolean =>
-  isCampaignMember(doc, accountId) || isCampaignReferee(doc, accountId);
+  isCampaignMember(doc, accountId) || isCampaignDM(doc, accountId);
 
-/** 404 if the campaign doesn't exist, 403 if the caller is neither member nor referee. */
+/** 404 if the campaign doesn't exist, 403 if the caller is neither member nor DM. */
 export async function assertCampaignParticipant(
   campaignId: string,
   accountId: string,
@@ -70,7 +70,7 @@ export async function assertCampaignParticipant(
   return doc;
 }
 
-export async function listCampaignsRefereedBy(accountId: string): Promise<CampaignDoc[]> {
+export async function listCampaignsRunByDM(accountId: string): Promise<CampaignDoc[]> {
   const { resources } = await getContainer('campaigns')
     .items.query<CampaignDoc>({
       query: 'SELECT * FROM c WHERE c.refereeId = @id ORDER BY c.createdAt DESC',
@@ -92,22 +92,22 @@ export async function listCampaignsWithMember(accountId: string): Promise<Campai
 }
 
 /**
- * True when `refereeId` referees a campaign that `targetAccountId` belongs
- * to — the predicate behind referee visibility and the bank/award rules.
+ * True when `dmId` runs a campaign that `targetAccountId` belongs to — the
+ * predicate behind DM visibility and the bank/award rules.
  */
-export async function isRefereeOfAccount(
-  refereeId: string,
+export async function isDMOfAccount(
+  dmId: string,
   targetAccountId: string,
 ): Promise<boolean> {
-  if (refereeId === targetAccountId) return false;
-  const campaigns = await listCampaignsRefereedBy(refereeId);
+  if (dmId === targetAccountId) return false;
+  const campaigns = await listCampaignsRunByDM(dmId);
   return campaigns.some((c) => isCampaignMember(c, targetAccountId));
 }
 
-/** Read access to a character: its owner, or a referee of a campaign the owner is in. */
+/** Read access to a character: its owner, or the DM of a campaign the owner is in. */
 export async function canReadCharacter(accountId: string, doc: CharacterDoc): Promise<boolean> {
   if (doc.ownerId === accountId) return true;
-  return isRefereeOfAccount(accountId, doc.ownerId);
+  return isDMOfAccount(accountId, doc.ownerId);
 }
 
 /** 404 if the character doesn't exist, 403 if it belongs to someone else. */

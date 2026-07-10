@@ -4,8 +4,8 @@ import {
   badRequest,
   fetchCharacterDocById,
   forbidden,
-  isRefereeOfAccount,
-  listCampaignsRefereedBy,
+  isDMOfAccount,
+  listCampaignsRunByDM,
   notFound,
 } from '@/lib/authz';
 import type { BankLedgerEntryDoc, CharacterDoc } from '@/lib/cosmos/types';
@@ -18,8 +18,8 @@ import { mutateCharacterDoc } from './characters';
  * write — the app-layer port of the `bank_transaction` RPC.
  *
  * Authorization mirrors bank_transaction: deposits by the owner or the
- * referee of a campaign the owner belongs to; payouts by that referee
- * only (campaign-scoped, not the global account role).
+ * DM of a campaign the owner belongs to; payouts by that DM only
+ * (campaign-scoped, not the global account role).
  */
 
 const ledgerOf = (doc: CharacterDoc): BankLedgerEntryDoc[] => doc.bankLedger ?? [];
@@ -44,7 +44,7 @@ export async function fetchBankState(
   const me = await getCurrentAccount();
   const doc = await fetchCharacterDocById(characterId);
   if (!doc) throw notFound('character');
-  if (doc.ownerId !== me.id && !(await isRefereeOfAccount(me.id, doc.ownerId))) throw forbidden();
+  if (doc.ownerId !== me.id && !(await isDMOfAccount(me.id, doc.ownerId))) throw forbidden();
   const ledger = [...ledgerOf(doc)]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .map((e) => entryToRow(characterId, e));
@@ -63,10 +63,10 @@ export async function recordBankTransaction(
     async () => {
       const doc = await fetchCharacterDocById(characterId);
       if (!doc) throw notFound('character');
-      // Deposits: owner or the owner's campaign referee. Payouts: that referee only.
-      const isReferee = doc.ownerId !== me.id && (await isRefereeOfAccount(me.id, doc.ownerId));
-      if (amountGp > 0 && doc.ownerId !== me.id && !isReferee) throw forbidden();
-      if (amountGp < 0 && !isReferee) throw forbidden();
+      // Deposits: owner or the owner's campaign DM. Payouts: that DM only.
+      const isDM = doc.ownerId !== me.id && (await isDMOfAccount(me.id, doc.ownerId));
+      if (amountGp > 0 && doc.ownerId !== me.id && !isDM) throw forbidden();
+      if (amountGp < 0 && !isDM) throw forbidden();
       return doc;
     },
     (doc) => {
@@ -92,7 +92,7 @@ export async function recordBankTransaction(
   );
 }
 
-export interface RefereeBankEntry {
+export interface DMBankEntry {
   id: string;
   name: string;
   kindred: string;
@@ -104,10 +104,10 @@ export interface RefereeBankEntry {
   ledger: LedgerRow[];
 }
 
-/** Referee overview: the banks of every character owned by members of my campaigns. */
-export async function refereeBankOverview(): Promise<RefereeBankEntry[]> {
+/** DM overview: the banks of every character owned by members of my campaigns. */
+export async function dmBankOverview(): Promise<DMBankEntry[]> {
   const me = await requireAccountId();
-  const myCampaigns = await listCampaignsRefereedBy(me);
+  const myCampaigns = await listCampaignsRunByDM(me);
   if (myCampaigns.length === 0) throw forbidden();
   const memberIds = [
     ...new Set(myCampaigns.flatMap((c) => c.members.map((m) => m.accountId))),

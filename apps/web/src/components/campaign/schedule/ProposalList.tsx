@@ -8,7 +8,7 @@ import { AvailabilityControl } from '@/components/campaign/schedule/Availability
 interface ProposalListProps {
   proposals: Proposal[];
   userId: string;
-  isReferee: boolean;
+  isDM: boolean;
   roster: RosterMember[];
   onDelete: (proposal: Proposal) => void;
   onAvail: (proposalId: string, available: boolean) => void;
@@ -21,7 +21,7 @@ function sortProposals(proposals: Proposal[]): Proposal[] {
   );
 }
 
-export function ProposalList({ proposals, userId, isReferee, roster, onDelete, onAvail }: ProposalListProps) {
+export function ProposalList({ proposals, userId, isDM, roster, onDelete, onAvail }: ProposalListProps) {
   if (proposals.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--color-text-muted)' }}>
@@ -36,7 +36,7 @@ export function ProposalList({ proposals, userId, isReferee, roster, onDelete, o
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {ordered.map(proposal => {
-        const canManage = proposal.created_by === userId || isReferee;
+        const canManage = proposal.created_by === userId || isDM;
         const isConfirmed = proposal.status === 'confirmed';
         const myAvailable = proposal.availability.find(a => a.account_id === userId)?.available ?? null;
         const responses: { account_id: string; status: 'available' | 'busy' }[] =

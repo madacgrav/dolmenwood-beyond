@@ -42,7 +42,7 @@ export async function recordBankTransaction(args: {
   return body?.error ?? `request failed (${res.status})`;
 }
 
-export interface RefereeBankEntry {
+export interface DMBankEntry {
   id: string;
   name: string;
   kindred: string;
@@ -54,8 +54,8 @@ export interface RefereeBankEntry {
   ledger: LedgerRow[];
 }
 
-/** Referee-only: every character's balance + ledger in one call. */
-export async function refereeBankOverview(): Promise<RefereeBankEntry[]> {
+/** DM-only: every character's balance + ledger in one call. */
+export async function dmBankOverview(): Promise<DMBankEntry[]> {
   const res = await fetch('/api/bank');
   if (!res.ok) return [];
   const body = await res.json();

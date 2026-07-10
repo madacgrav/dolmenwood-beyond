@@ -16,7 +16,7 @@ vi.mock('@/lib/auth/session', () => ({
 
 vi.mock('@/lib/cosmos/client', async () => await import('@/test/cosmos-fake'));
 import { createCharacter } from '@/lib/data/characters';
-import { recordBankTransaction, fetchBankState, refereeBankOverview } from '@/lib/data/bank';
+import { recordBankTransaction, fetchBankState, dmBankOverview } from '@/lib/data/bank';
 import { levelUp, fetchLevelUpLog } from '@/lib/data/level-up';
 
 const INPUT = {
@@ -98,12 +98,12 @@ describe('recordBankTransaction (port of bank_transaction RPC)', () => {
     await expect(recordBankTransaction(id, 0, '')).rejects.toMatchObject({ status: 400 });
   });
 
-  it('refereeBankOverview is forbidden for players and lists all for referees', async () => {
+  it('dmBankOverview is forbidden for players and lists all for referees', async () => {
     const id = await makeCharacter(100);
     await recordBankTransaction(id, 25, '');
-    await expect(refereeBankOverview()).rejects.toMatchObject({ status: 403 });
+    await expect(dmBankOverview()).rejects.toMatchObject({ status: 403 });
     currentAccount = REFEREE;
-    const entries = await refereeBankOverview();
+    const entries = await dmBankOverview();
     expect(entries).toHaveLength(1);
     expect(entries[0]).toMatchObject({ id, balance: 25, coins_gp: 75 });
   });

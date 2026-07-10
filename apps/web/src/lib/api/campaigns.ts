@@ -44,7 +44,7 @@ export interface CampaignData {
   showMembers: boolean;
 }
 
-export interface RefereeCampaignsData {
+export interface DMCampaignsData {
   campaigns: CampaignData[];
   packAnimals: Record<string, PackAnimal[]>;
 }
@@ -54,7 +54,7 @@ async function errorMessage(res: Response): Promise<string> {
   return body?.error ?? `request failed (${res.status})`;
 }
 
-export async function loadRefereeCampaigns(): Promise<RefereeCampaignsData | null> {
+export async function loadDMCampaigns(): Promise<DMCampaignsData | null> {
   const res = await fetch('/api/campaigns?as=referee');
   if (!res.ok) return null;
   const body = await res.json();

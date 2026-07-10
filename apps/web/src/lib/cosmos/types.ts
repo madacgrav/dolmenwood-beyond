@@ -10,6 +10,8 @@ import type { AbilityScores, SessionNote, PersonOfNote, LevelUpChange } from '@d
 export interface AccountDoc {
   id: string;
   email: string;
+  // 'referee' is the stored value for the Dungeon Master (DM) role — kept for
+  // storage compatibility (no data migration). UI and identifiers say "DM".
   role: 'player' | 'referee';
   displayName: string;
   inviteCode: string;
@@ -195,6 +197,8 @@ export interface ProposalEntryDoc {
 export interface CampaignDoc {
   id: string;
   name: string;
+  // The DM's account id. Field name kept from the "referee" era for storage
+  // compatibility (no data migration). UI and identifiers say "DM".
   refereeId: string;
   inviteCode: string;
   members: { accountId: string; joinedAt: string }[];

@@ -7,10 +7,10 @@
 export interface RosterMember {
   account_id: string;
   display_name: string;
-  is_referee: boolean;
+  is_dm: boolean;
 }
 
-/** Full participant list (members ∪ referee), ordered by display name. */
+/** Full participant list (members ∪ DM), ordered by display name. */
 export async function loadRoster(campaignId: string): Promise<RosterMember[]> {
   const res = await fetch(`/api/campaigns/${campaignId}/roster`);
   if (!res.ok) return [];

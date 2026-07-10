@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { splitRoster, type RosterMember } from '@/lib/api/roster';
 
 const roster: RosterMember[] = [
-  { account_id: 'a', display_name: 'Alice', is_referee: true },
-  { account_id: 'b', display_name: 'Bob', is_referee: false },
-  { account_id: 'c', display_name: 'Cara', is_referee: false },
+  { account_id: 'a', display_name: 'Alice', is_dm: true },
+  { account_id: 'b', display_name: 'Bob', is_dm: false },
+  { account_id: 'c', display_name: 'Cara', is_dm: false },
 ];
 
 describe('splitRoster', () => {

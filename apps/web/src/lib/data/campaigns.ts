@@ -6,8 +6,8 @@ import {
   badRequest,
   fetchCharacterDocById,
   forbidden,
-  isRefereeOfAccount,
-  listCampaignsRefereedBy,
+  isDMOfAccount,
+  listCampaignsRunByDM,
   listCampaignsWithMember,
   notFound,
 } from '@/lib/authz';
@@ -17,7 +17,7 @@ import type {
   Member,
   MemberCharacter,
   PackAnimal,
-  RefereeCampaignsData,
+  DMCampaignsData,
 } from '@/lib/api/campaigns';
 import { mutateCharacterDoc } from './characters';
 import { fetchAccountDoc } from './account';
@@ -194,9 +194,9 @@ async function hydrateCampaign(doc: CampaignDoc): Promise<CampaignData> {
   };
 }
 
-export async function loadRefereeCampaigns(): Promise<RefereeCampaignsData | null> {
+export async function loadDMCampaigns(): Promise<DMCampaignsData | null> {
   const me = await requireAccountId();
-  const owned = await listCampaignsRefereedBy(me);
+  const owned = await listCampaignsRunByDM(me);
   if (owned.length === 0) return null;
   const hydrated = await Promise.all(owned.map(hydrateCampaign));
   const packAnimals: Record<string, PackAnimal[]> = {};
@@ -215,25 +215,25 @@ export async function loadPlayerCampaigns(): Promise<CampaignData[]> {
 /** Lightweight id+name list of campaigns the caller participates in. */
 export async function listMyCampaignNames(): Promise<{ id: string; name: string }[]> {
   const me = await requireAccountId();
-  const [refereed, memberOf] = await Promise.all([
-    listCampaignsRefereedBy(me),
+  const [runByMe, memberOf] = await Promise.all([
+    listCampaignsRunByDM(me),
     listCampaignsWithMember(me),
   ]);
   const seen = new Map<string, string>();
-  for (const c of [...refereed, ...memberOf]) seen.set(c.id, c.name);
+  for (const c of [...runByMe, ...memberOf]) seen.set(c.id, c.name);
   return [...seen.entries()]
     .map(([id, name]) => ({ id, name }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /**
- * Port of get_campaign_roster: the full participant list (members ∪
- * referee) with display names, participant-guarded, ordered by display
- * name, referee flagged and appearing exactly once.
+ * Port of get_campaign_roster: the full participant list (members ∪ DM)
+ * with display names, participant-guarded, ordered by display name, the
+ * DM flagged and appearing exactly once.
  */
 export async function getCampaignRoster(
   campaignId: string,
-): Promise<{ account_id: string; display_name: string; is_referee: boolean }[]> {
+): Promise<{ account_id: string; display_name: string; is_dm: boolean }[]> {
   const me = await requireAccountId();
   const doc = await assertCampaignParticipant(campaignId, me);
   const participantIds = [
@@ -245,12 +245,12 @@ export async function getCampaignRoster(
     .map((id) => ({
       account_id: id,
       display_name: names[id] ?? 'Unknown',
-      is_referee: id === doc.refereeId,
+      is_dm: id === doc.refereeId,
     }))
     .sort((a, b) => a.display_name.localeCompare(b.display_name));
 }
 
-/** Port of award_xp: referee-of-the-owner's-campaign only, never self. */
+/** Port of award_xp: DM-of-the-owner's-campaign only, never self. */
 export async function awardXP(characterId: string, gain: number): Promise<void> {
   if (!Number.isInteger(gain) || gain <= 0) throw badRequest('XP gain must be positive');
   const me = await requireAccountId();
@@ -259,7 +259,7 @@ export async function awardXP(characterId: string, gain: number): Promise<void> 
       const doc = await fetchCharacterDocById(characterId);
       if (!doc) throw notFound('character');
       if (doc.ownerId === me) throw forbidden(); // no self-award
-      if (!(await isRefereeOfAccount(me, doc.ownerId))) throw forbidden();
+      if (!(await isDMOfAccount(me, doc.ownerId))) throw forbidden();
       return doc;
     },
     (doc) => {

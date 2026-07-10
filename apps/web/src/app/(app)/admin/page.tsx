@@ -30,8 +30,8 @@ interface AdminCampaign {
   name: string;
   invite_code: string;
   created_at: string;
-  referee_display_name: string;
-  referee_email: string;
+  dm_display_name: string;
+  dm_email: string;
   member_count: number;
 }
 
@@ -185,7 +185,7 @@ export default async function AdminPage() {
                   <tr key={acc.id} style={{ backgroundColor: i % 2 === 0 ? 'transparent' : 'color-mix(in srgb, var(--color-border) 20%, transparent)' }}>
                     <td style={TABLE_CELL}>{acc.display_name || '—'}</td>
                     <td style={MUTED_CELL}>{acc.email}</td>
-                    <td style={MUTED_CELL}>{acc.role}</td>
+                    <td style={MUTED_CELL}>{acc.role === 'referee' ? 'Dungeon Master' : 'Player'}</td>
                     <td style={TABLE_CELL}>{acc.is_admin ? '🛡️' : '—'}</td>
                     <td style={MUTED_CELL}>{new Date(acc.created_at).toLocaleDateString()}</td>
                   </tr>
@@ -236,7 +236,7 @@ export default async function AdminPage() {
               <thead>
                 <tr>
                   <th style={TABLE_HEADER}>Name</th>
-                  <th style={TABLE_HEADER}>Referee</th>
+                  <th style={TABLE_HEADER}>DM</th>
                   <th style={TABLE_HEADER}>Members</th>
                   <th style={TABLE_HEADER}>Invite Code</th>
                   <th style={TABLE_HEADER}>Created</th>
@@ -246,7 +246,7 @@ export default async function AdminPage() {
                 {(campaigns ?? []).map((camp, i) => (
                   <tr key={camp.id} style={{ backgroundColor: i % 2 === 0 ? 'transparent' : 'color-mix(in srgb, var(--color-border) 20%, transparent)' }}>
                     <td style={TABLE_CELL}>{camp.name}</td>
-                    <td style={MUTED_CELL}>{camp.referee_display_name}</td>
+                    <td style={MUTED_CELL}>{camp.dm_display_name}</td>
                     <td style={{ ...TABLE_CELL, textAlign: 'center' }}>{camp.member_count}</td>
                     <td style={{ ...TABLE_CELL, fontFamily: 'monospace', color: 'var(--color-gold)', letterSpacing: '0.1em' }}>{camp.invite_code}</td>
                     <td style={MUTED_CELL}>{new Date(camp.created_at).toLocaleDateString()}</td>
