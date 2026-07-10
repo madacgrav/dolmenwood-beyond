@@ -1,39 +1,53 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { BlobServiceClient } from '@azure/storage-blob';
+import { requireAccountId } from '@/lib/auth/session';
+import { assertCharacterOwner, badRequest } from '@/lib/authz';
+import { mutateOwnedCharacterDoc } from './characters';
 
 /**
- * Portrait upload helper for the character sheet header.
+ * Server-only portrait upload to Azure Blob Storage (public-read
+ * `portraits` container, mirroring the old Supabase bucket). The blob
+ * path is built from the session account id — the caller can't write
+ * outside their own prefix, which is the port of the storage RLS
+ * `(storage.foldername(name))[1] = auth.uid()` policy.
  *
- * Owns the storage upload + getPublicUrl + characters.update steps so the
- * header hook only deals with validation and UI state.
- *
- * The characters.update is kept as a direct call here (rather than delegating
- * to updateCharacter from './characters') to preserve the original
- * fire-and-forget behavior: the portrait column write is not error-checked,
- * matching the pre-refactor component exactly.
+ * The portraitUrl write onto the character doc is kept fire-and-forget,
+ * matching the pre-migration contract (the caller also PATCHes it).
  */
 
-export interface PortraitUploadResult {
-  publicUrl: string | null;
-  error: string | null;
+const ALLOWED_EXTENSIONS = new Set(['jpg', 'png', 'webp', 'gif']);
+
+const CONTENT_TYPES: Record<string, string> = {
+  jpg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
+
+function portraitsContainer() {
+  const connectionString = process.env.BLOB_CONNECTION_STRING;
+  if (!connectionString) throw new Error('BLOB_CONNECTION_STRING must be set');
+  return BlobServiceClient.fromConnectionString(connectionString).getContainerClient('portraits');
 }
 
 export async function uploadPortrait(
-  supabase: SupabaseClient,
-  userId: string,
   characterId: string,
-  file: File,
-  ext: string,
-): Promise<PortraitUploadResult> {
-  const path = `${userId}/${characterId}/${Date.now()}.${ext}`;
-  const { error: storageError } = await supabase.storage
-    .from('portraits')
-    .upload(path, file, { upsert: true });
-  if (storageError) {
-    console.error('Portrait upload failed:', storageError.message);
-    return { publicUrl: null, error: 'Upload failed: ' + storageError.message };
-  }
-  const { data: urlData } = supabase.storage.from('portraits').getPublicUrl(path);
-  const publicUrl = urlData.publicUrl;
-  await supabase.from('characters').update({ portrait_url: publicUrl }).eq('id', characterId);
-  return { publicUrl, error: null };
+  file: { bytes: Buffer; ext: string },
+): Promise<{ publicUrl: string }> {
+  const me = await requireAccountId();
+  await assertCharacterOwner(me, characterId);
+  if (!ALLOWED_EXTENSIONS.has(file.ext)) throw badRequest('unsupported image type');
+
+  const path = `${me}/${characterId}/${Date.now()}.${file.ext}`;
+  const blob = portraitsContainer().getBlockBlobClient(path);
+  await blob.uploadData(file.bytes, {
+    blobHTTPHeaders: { blobContentType: CONTENT_TYPES[file.ext] },
+  });
+
+  const publicUrl = blob.url;
+  // Fire-and-forget, preserving the original behavior.
+  mutateOwnedCharacterDoc(characterId, (doc) => {
+    doc.portraitUrl = publicUrl;
+  }).catch((e) => console.error('portrait url write failed:', e));
+
+  return { publicUrl };
 }

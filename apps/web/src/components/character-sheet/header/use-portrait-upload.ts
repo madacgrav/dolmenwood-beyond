@@ -1,8 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CharacterWithNotes } from '@dolmenwood/types';
-import { uploadPortrait } from '@/lib/data/portraits';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -12,7 +10,6 @@ const extMap: Record<string, string> = {
 };
 
 export function usePortraitUpload(
-  supabase: SupabaseClient,
   character: CharacterWithNotes,
   onUpdate: (updates: Partial<CharacterWithNotes>) => void | Promise<void>,
 ) {
@@ -38,17 +35,17 @@ export function usePortraitUpload(
     setUploadError('');
     setPortraitUploading(true);
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        setUploadError('Could not verify user session. Please sign in again.');
+      const form = new FormData();
+      form.append('file', file);
+      form.append('characterId', character.id);
+      form.append('ext', ext);
+      const res = await fetch('/api/portraits', { method: 'POST', body: form });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setUploadError(body?.error ?? 'Upload failed.');
         return;
       }
-      const user = userData.user;
-      const { publicUrl, error } = await uploadPortrait(supabase, user.id, character.id, file, ext);
-      if (error || !publicUrl) {
-        if (error) setUploadError(error);
-        return;
-      }
+      const { publicUrl } = await res.json();
       setPortraitUrl(publicUrl);
       await onUpdate({ portraitUrl: publicUrl });
     } finally {

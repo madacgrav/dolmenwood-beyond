@@ -1,6 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useState } from 'react';
 import { HeaderTopBar } from './header/HeaderTopBar';
 import { PortraitButton } from './header/PortraitButton';
 import { HPBar } from './header/HPBar';
@@ -9,11 +8,10 @@ import { usePortraitUpload } from './header/use-portrait-upload';
 import type { CharacterSheetHeaderProps as Props } from './header/types';
 
 export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpdate, onBack, onDelete, readOnly = false }: Props) {
-  const supabase = useMemo(() => createClient(), []);
   const [hpEditOpen, setHpEditOpen] = useState(false);
   const [xpEditOpen, setXpEditOpen] = useState(false);
   const { portraitUrl, portraitUploading, uploadError, fileInputRef, handlePortraitSelect } =
-    usePortraitUpload(supabase, character, onUpdate);
+    usePortraitUpload(character, onUpdate);
 
   const initials = character.name.charAt(0).toUpperCase();
 

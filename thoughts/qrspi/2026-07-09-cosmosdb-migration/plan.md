@@ -490,10 +490,10 @@ export async function markNotificationRead(id: string): Promise<void>
 
 ### Verification
 #### Automated
-- [ ] `pnpm typecheck` passes; `az deployment group what-if` shows the storage account + `portraits` container
+- [x] `pnpm typecheck`/lint/test pass; Bicep compiles; storage account `dolmenwoodprodblob` + `portraits` container **deployed** and `blob-connection-string` stored in Key Vault
 #### Manual
-- [ ] Upload a portrait → renders from the Blob URL and persists on the character
-- [ ] A request writing to another account's path prefix is rejected (403)
+- [x] Live E2E: upload → blob at `{accountId}/{characterId}/{ts}.png`, publicly fetchable as image/png, `portraitUrl` persisted on the doc; unauthenticated → 401; bad extension → 400
+- [x] Second account uploading to another's character → 403 (path is built server-side from the session — the storage-RLS port)
 
 ---
 

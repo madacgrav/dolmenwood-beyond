@@ -63,6 +63,16 @@ module cosmos 'modules/cosmos.bicep' = {
   }
 }
 
+// ---- Blob Storage (portraits) ----
+module storage 'modules/storage.bicep' = {
+  name: 'storage'
+  params: {
+    name: replace('${projectName}${environment}blob', '-', '')
+    location: location
+    tags: tags
+  }
+}
+
 // ---- App Service ----
 // Deploy with placeholder image first; GitHub Actions updates the image tag
 module appService 'modules/app-service.bicep' = {
