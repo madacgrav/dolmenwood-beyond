@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { fetchCharacterWithNotes, updateCharacter, deleteCharacter } from '@/lib/data/characters';
+import { fetchCharacterWithNotes, updateCharacter, deleteCharacter } from '@/lib/api/characters';
 import type { CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
@@ -17,7 +16,6 @@ export default function CharacterSheetPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const router = useRouter();
-  const supabase = createClient();
   const [character, setCharacter] = useState<CharacterWithNotes | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('stats');
@@ -27,28 +25,28 @@ export default function CharacterSheetPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchCharacter = useCallback(async () => {
-    const mapped = await fetchCharacterWithNotes(supabase, id);
+    const mapped = await fetchCharacterWithNotes(id);
     if (!mapped) {
       router.push('/characters');
       return;
     }
     setCharacter(mapped);
     setLoading(false);
-  }, [id, supabase, router]);
+  }, [id, router]);
 
   useEffect(() => { fetchCharacter(); }, [fetchCharacter]);
 
   async function handleUpdate(updates: Partial<CharacterWithNotes>) {
     if (!character) return;
     setCharacter(prev => prev ? { ...prev, ...updates } : prev);
-    await updateCharacter(supabase, character.id, updates);
+    await updateCharacter(character.id, updates);
   }
 
   async function handleDeleteConfirm() {
     if (!character) return;
     setDeleting(true);
     setDeleteError(null);
-    const error = await deleteCharacter(supabase, character.id);
+    const error = await deleteCharacter(character.id);
     setDeleting(false);
     if (error) {
       setDeleteError('Failed to delete character. Please try again.');

@@ -3,8 +3,7 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { createCharacter } from '@/lib/data/characters';
+import { createCharacter } from '@/lib/api/characters';
 import type { Kindred, CharacterClass, Alignment, AbilityScores } from '@dolmenwood/types';
 
 const VALID_KINDREDS: Kindred[] = ['Human', 'Breggle', 'Elf', 'Grimalkin', 'Mossling', 'Woodgrue'];
@@ -132,11 +131,7 @@ export default function ImportCharacterPage() {
     if (!validData) return;
     setSaving(true);
     setSaveError('');
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push('/sign-in'); return; }
-
-    const { id, error } = await createCharacter(supabase, user.id, validData);
+    const { id, error } = await createCharacter(validData);
 
     setSaving(false);
     if (error) {

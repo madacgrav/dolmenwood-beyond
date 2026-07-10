@@ -1,6 +1,6 @@
 'use client';
 import type { Dispatch, SetStateAction } from 'react';
-import type { DBRetainer } from '@/lib/data/retainers';
+import type { DBRetainer } from '@/lib/api/retainers';
 import type { NewRetainerState } from './types';
 import { sectionHead } from './shared';
 import { RetainerCard } from './RetainerCard';

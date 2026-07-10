@@ -1,9 +1,8 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Character } from '@dolmenwood/types';
 import { getAttackBonus, getSaveTargets, calculateAC, getHitDie, getAbilityModifier, getKindredACBonus } from '@dolmenwood/rules-engine';
-import { createClient } from '@/lib/supabase/client';
-import { listEquippedWeapons, fetchEquippedArmorBonus, type EquippedWeapon } from '@/lib/data/inventory';
+import { listEquippedWeapons, fetchEquippedArmorBonus, type EquippedWeapon } from '@/lib/api/inventory';
 import { ConditionsSection } from './combat/ConditionsSection';
 import { ArmourClassSection } from './combat/ArmourClassSection';
 import { AttackSection } from './combat/AttackSection';
@@ -24,21 +23,20 @@ interface Props {
 const RANGED_WEAPON_PATTERNS = /bow|crossbow|sling|dart|javelin|thrown/i;
 
 export function CombatTab({ character, characterId, readOnly = false }: Props) {
-  const supabase = useMemo(() => createClient(), []);
   const [weapons, setWeapons] = useState<EquippedWeapon[]>([]);
   const [hasRangedWeapon, setHasRangedWeapon] = useState(false);
   const [equippedArmorBonus, setEquippedArmorBonus] = useState(0);
 
   useEffect(() => {
-    listEquippedWeapons(supabase, characterId).then(ws => {
+    listEquippedWeapons(characterId).then(ws => {
       setWeapons(ws);
       setHasRangedWeapon(ws.some(w => RANGED_WEAPON_PATTERNS.test(w.item_name)));
     });
-    fetchEquippedArmorBonus(supabase, characterId).then(setEquippedArmorBonus);
-  }, [characterId, supabase]);
+    fetchEquippedArmorBonus(characterId).then(setEquippedArmorBonus);
+  }, [characterId]);
 
-  const ammo = useAmmoTracking(supabase, characterId);
-  const mountsState = useMounts(supabase, characterId, character.characterClass);
+  const ammo = useAmmoTracking(characterId);
+  const mountsState = useMounts(characterId, character.characterClass);
 
   const attackBonus = getAttackBonus(character.characterClass, character.level);
   const saves = getSaveTargets(character.characterClass, character.level);

@@ -1,10 +1,9 @@
 'use client';
 import { useState, useCallback, useEffect } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { calcAmmoRecovery } from '@dolmenwood/rules-engine';
-import { listAmmo, updateItemQuantity, type AmmoItem } from '@/lib/data/inventory';
+import { listAmmo, updateItemQuantity, type AmmoItem } from '@/lib/api/inventory';
 
-export function useAmmoTracking(supabase: SupabaseClient, characterId: string) {
+export function useAmmoTracking(characterId: string) {
   const [ammoItems, setAmmoItems] = useState<AmmoItem[]>([]);
   const [battleOpen, setBattleOpen] = useState(false);
   const [battleAmmoId, setBattleAmmoId] = useState<string | null>(null);
@@ -14,8 +13,8 @@ export function useAmmoTracking(supabase: SupabaseClient, characterId: string) {
   const [battleEnding, setBattleEnding] = useState(false);
 
   const fetchAmmo = useCallback(async () => {
-    setAmmoItems(await listAmmo(supabase, characterId));
-  }, [characterId, supabase]);
+    setAmmoItems(await listAmmo(characterId));
+  }, [characterId]);
 
   useEffect(() => {
     fetchAmmo();
@@ -24,7 +23,7 @@ export function useAmmoTracking(supabase: SupabaseClient, characterId: string) {
   async function adjustAmmo(item: AmmoItem, delta: number) {
     const next = Math.max(0, item.quantity + delta);
     setAmmoItems(prev => prev.map(a => a.id === item.id ? { ...a, quantity: next } : a));
-    await updateItemQuantity(supabase, item.id, next);
+    await updateItemQuantity(characterId, item.id, next);
   }
 
   function openBattle(item: AmmoItem) {
@@ -41,7 +40,7 @@ export function useAmmoTracking(supabase: SupabaseClient, characterId: string) {
     const next = battleCurrentQty - 1;
     setBattleCurrentQty(next);
     if (battleAmmoId) {
-      await updateItemQuantity(supabase, battleAmmoId, next);
+      await updateItemQuantity(characterId, battleAmmoId, next);
       setAmmoItems(prev => prev.map(a => a.id === battleAmmoId ? { ...a, quantity: next } : a));
     }
   }
@@ -52,7 +51,7 @@ export function useAmmoTracking(supabase: SupabaseClient, characterId: string) {
     const recovered = calcAmmoRecovery(shotsUsed);
     if (recovered > 0 && battleAmmoId) {
       const finalQty = battleCurrentQty + recovered;
-      await updateItemQuantity(supabase, battleAmmoId, finalQty);
+      await updateItemQuantity(characterId, battleAmmoId, finalQty);
       setAmmoItems(prev => prev.map(a => a.id === battleAmmoId ? { ...a, quantity: finalQty } : a));
       setBattleCurrentQty(finalQty);
     }

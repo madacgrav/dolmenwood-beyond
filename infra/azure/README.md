@@ -48,20 +48,17 @@ After running setup-oidc.sh, add to GitHub repo → Settings → Secrets:
 | `AZURE_CLIENT_ID` | App registration client ID (from script output) |
 | `AZURE_TENANT_ID` | Azure tenant ID (from script output) |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
 
-### 3. Add GitHub Variables (non-secret)
-
-| Variable | Value |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://YOUR_PROJECT.supabase.co` |
-
-### 4. Add secrets to Key Vault (after first Bicep deploy)
+### 3. Add secrets to Key Vault (after first Bicep deploy)
 ```bash
 KV_NAME="dolmenwood-prod-kv"
-az keyvault secret set --vault-name $KV_NAME --name "supabase-anon-key" --value "YOUR_VALUE"
-az keyvault secret set --vault-name $KV_NAME --name "supabase-service-role-key" --value "YOUR_VALUE"
+RG="dolmenwood-beyond-rg"
+# Cosmos DB (data), Auth.js (sessions), Blob (portraits), SignalR (live updates)
+az keyvault secret set --vault-name $KV_NAME --name "cosmos-key"   --value "$(az cosmosdb keys list --name dolmenwood-prod-cosmos --resource-group $RG --query primaryMasterKey -o tsv)"
+az keyvault secret set --vault-name $KV_NAME --name "auth-secret" --value "$(openssl rand -base64 33)"
+az keyvault secret set --vault-name $KV_NAME --name "blob-connection-string"   --value "$(az storage account show-connection-string --name dolmenwoodprodblob --resource-group $RG --query connectionString -o tsv)"
+az keyvault secret set --vault-name $KV_NAME --name "signalr-connection-string"   --value "$(az signalr key list --name dolmenwood-prod-signalr --resource-group $RG --query primaryConnectionString -o tsv)"
+# WordPress (blog publishing)
 az keyvault secret set --vault-name $KV_NAME --name "wordpress-api-url" --value "YOUR_VALUE"
 az keyvault secret set --vault-name $KV_NAME --name "wordpress-app-password" --value "YOUR_VALUE"
 az keyvault secret set --vault-name $KV_NAME --name "wordpress-username" --value "YOUR_VALUE"
@@ -71,11 +68,20 @@ az keyvault secret set --vault-name $KV_NAME --name "resend-from" --value "notif
 az keyvault secret set --vault-name $KV_NAME --name "notifications-drain-secret" --value "$(openssl rand -hex 32)"
 ```
 
+The change-feed Function App (`dolmenwood-prod-charfeed`) gets its Cosmos,
+storage, and SignalR connection strings directly from Bicep (`listKeys` at
+deploy time) — no manual secret setup. Deploy its code with:
+```bash
+cd infra/functions/character-feed && npm install --omit=dev
+# zip the folder contents, then:
+az functionapp deployment source config-zip --name dolmenwood-prod-charfeed   --resource-group $RG --src charfeed.zip
+```
+
 For the scheduled notification drain (`notifications-drain.yml`), also add:
 - GitHub secret `NOTIFICATIONS_DRAIN_SECRET` — same value as the Key Vault secret
 - GitHub variable `APP_URL` — deployed base URL, e.g. `https://dolmenwood-prod-web.azurewebsites.net`
 
-### 5. Deploy
+### 4. Deploy
 
 Push to `main` — the `deploy-azure.yml` workflow handles everything automatically.
 

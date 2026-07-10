@@ -1,8 +1,8 @@
 'use client';
 
 import { formatSessionDate } from '@/lib/format';
-import type { Proposal } from '@/lib/data/proposals';
-import { splitRoster, type RosterMember } from '@/lib/data/roster';
+import type { Proposal } from '@/lib/api/proposals';
+import { splitRoster, type RosterMember } from '@/lib/api/roster';
 import { AvailabilityControl } from '@/components/campaign/schedule/AvailabilityControl';
 
 interface ProposalListProps {

@@ -1,11 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordForm />
+    </Suspense>
+  );
+}
+
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token') ?? '';
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,13 +30,21 @@ export default function ResetPasswordPage() {
       setError('Password must be at least 8 characters.');
       return;
     }
+    if (!token) {
+      setError('Missing reset token — use the link from your email.');
+      return;
+    }
     setLoading(true);
     setError('');
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password });
+    const res = await fetch('/api/auth/reset-confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    });
     setLoading(false);
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      setError(body?.error ?? 'Password reset failed.');
     } else {
       router.push('/sign-in?message=password_updated');
     }

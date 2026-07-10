@@ -1,8 +1,8 @@
 'use client';
 
 import { formatSessionDate } from '@/lib/format';
-import type { RsvpStatus, Session } from '@/lib/data/schedule';
-import { splitRoster, type RosterMember } from '@/lib/data/roster';
+import type { RsvpStatus, Session } from '@/lib/api/schedule';
+import { splitRoster, type RosterMember } from '@/lib/api/roster';
 import { RsvpControl } from '@/components/campaign/schedule/RsvpControl';
 
 interface SessionListProps {

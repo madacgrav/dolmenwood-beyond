@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { fetchCharacter as fetchCharacterData } from '@/lib/data/characters';
-import { levelUpCharacter } from '@/lib/data/level-up';
+import { fetchCharacter as fetchCharacterData } from '@/lib/api/characters';
+import { levelUpCharacter } from '@/lib/api/level-up';
 import type { Character } from '@dolmenwood/types';
 import {
   getXPThresholdForNextLevel,
@@ -29,8 +28,6 @@ const STEP_LABELS: Record<LevelUpStep, string> = {
 export default function LevelUpPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
-
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<LevelUpStep>('check');
@@ -41,22 +38,15 @@ export default function LevelUpPage() {
   const [confirmError, setConfirmError] = useState('');
 
   const fetchCharacter = useCallback(async () => {
-    const mapped = await fetchCharacterData(supabase, id);
+    // The API is owner-scoped, so a non-owner (or missing character) gets null.
+    const mapped = await fetchCharacterData(id);
     if (!mapped) {
       router.push('/characters');
       return;
     }
-
-    // Ownership guard: only the character owner may access the level-up wizard.
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user || mapped.ownerId !== user.id) {
-      router.push(`/characters/${id}`);
-      return;
-    }
-
     setCharacter(mapped);
     setLoading(false);
-  }, [id, supabase, router]);
+  }, [id, router]);
 
   useEffect(() => { fetchCharacter(); }, [fetchCharacter]);
 
@@ -68,7 +58,7 @@ export default function LevelUpPage() {
     const threshold = getXPThresholdForNextLevel(character.characterClass, character.level);
 
     try {
-      const errorMessage = await levelUpCharacter(supabase, {
+      const errorMessage = await levelUpCharacter({
         characterId: id,
         newLevel,
         hpGain,

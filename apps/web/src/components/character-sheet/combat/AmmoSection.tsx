@@ -1,5 +1,5 @@
 'use client';
-import type { AmmoItem } from '@/lib/data/inventory';
+import type { AmmoItem } from '@/lib/api/inventory';
 import { sectionHead } from './shared';
 
 interface Props {

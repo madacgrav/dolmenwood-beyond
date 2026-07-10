@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import type { CampaignData } from '@/lib/data/campaigns';
+import type { CampaignData } from '@/lib/api/campaigns';
 
 interface Props {
   campaign: CampaignData;

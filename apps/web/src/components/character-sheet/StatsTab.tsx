@@ -1,12 +1,10 @@
 'use client';
-import { useMemo } from 'react';
 import type { CharacterWithNotes } from '@dolmenwood/types';
 import {
   getPrimeAbilities, getSaveTargets,
   getAttackBonus, calculateAC, calculateSpeed,
   getMaxRetainers, getRetainerLoyaltyBase, getKindredACBonus,
 } from '@dolmenwood/rules-engine';
-import { createClient } from '@/lib/supabase/client';
 import { AbilityScoresSection } from './stats/AbilityScoresSection';
 import { CombatStatsSection } from './stats/CombatStatsSection';
 import { SkillsSection } from './stats/SkillsSection';
@@ -26,7 +24,6 @@ interface Props {
 }
 
 export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
-  const supabase = useMemo(() => createClient(), []);
   const primes = getPrimeAbilities(character.characterClass);
   const saves = getSaveTargets(character.characterClass, character.level);
   const attackBonus = getAttackBonus(character.characterClass, character.level);
@@ -35,8 +32,8 @@ export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
   const maxRetainers = getMaxRetainers(character.abilityScores.cha);
   const loyaltyBase = getRetainerLoyaltyBase(character.abilityScores.cha);
 
-  const languages = useLanguages(supabase, character.id, character.extraLanguages);
-  const retainerState = useRetainers(supabase, character.id, loyaltyBase);
+  const languages = useLanguages(character.id, character.extraLanguages);
+  const retainerState = useRetainers(character.id, loyaltyBase);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

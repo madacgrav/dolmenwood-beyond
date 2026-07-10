@@ -1,27 +1,39 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { getContainer } from '@/lib/cosmos/client';
+import { requireAccountId } from '@/lib/auth/session';
+import { forbidden, notFound } from '@/lib/authz';
+import type { NotificationDoc } from '@/lib/cosmos/types';
+import type { AppNotification } from '@/lib/api/notifications';
 
-export interface AppNotification {
-  id: string;
-  kind: string;
-  body: string;
-  related_session_id: string | null;
-  read: boolean;
-  created_at: string;
+/** Server-only in-app notifications, scoped to the caller's partition. */
+
+const notifications = () => getContainer('notifications');
+
+export async function loadNotifications(): Promise<AppNotification[]> {
+  const me = await requireAccountId();
+  const { resources } = await notifications()
+    .items.query<NotificationDoc>(
+      {
+        query: 'SELECT * FROM c WHERE c.accountId = @id ORDER BY c.createdAt DESC',
+        parameters: [{ name: '@id', value: me }],
+      },
+      { partitionKey: me },
+    )
+    .fetchAll();
+  return resources.map((n) => ({
+    id: n.id,
+    kind: n.kind,
+    body: n.body,
+    related_session_id: n.relatedSessionId,
+    read: n.read,
+    created_at: n.createdAt,
+  }));
 }
 
-/** The caller's notifications, newest first (RLS scopes to auth.uid()). */
-export async function loadNotifications(supabase: SupabaseClient): Promise<AppNotification[]> {
-  const { data, error } = await supabase
-    .from('notifications')
-    .select('id, kind, body, related_session_id, read, created_at')
-    .order('created_at', { ascending: false });
-  if (error || !data) return [];
-  return data as AppNotification[];
-}
-
-export async function markNotificationRead(
-  supabase: SupabaseClient, id: string,
-): Promise<{ error: { message: string } | null }> {
-  const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id);
-  return { error };
+export async function markNotificationRead(id: string): Promise<void> {
+  const me = await requireAccountId();
+  const { resource: doc } = await notifications().item(id, me).read<NotificationDoc>();
+  if (!doc) throw notFound('notification');
+  if (doc.accountId !== me) throw forbidden();
+  doc.read = true;
+  await notifications().item(id, me).replace(doc);
 }

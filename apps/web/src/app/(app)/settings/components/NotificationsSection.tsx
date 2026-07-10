@@ -1,13 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { updateNotificationPrefs } from '@/lib/data/account';
 import type { Account } from '@/lib/data/account';
 import { sectionStyle, sectionHeaderStyle, inputStyle } from './styles';
 
 interface NotificationsSectionProps {
-  supabase: SupabaseClient;
   account: Account | null;
   onAccountChange: (updater: (prev: Account | null) => Account | null) => void;
 }
@@ -17,7 +14,7 @@ function normalizePhone(raw: string): string {
   return raw.replace(/[\s\-().]/g, '');
 }
 
-export function NotificationsSection({ supabase, account, onAccountChange }: NotificationsSectionProps) {
+export function NotificationsSection({ account, onAccountChange }: NotificationsSectionProps) {
   const [phone, setPhone] = useState('');
   const [emailOptIn, setEmailOptIn] = useState(true);
   const [smsOptIn, setSmsOptIn] = useState(false);
@@ -37,8 +34,6 @@ export function NotificationsSection({ supabase, account, onAccountChange }: Not
     if (!account) return;
     setSaving(true);
     setSaveMsg('');
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setSaving(false); return; }
     const normalizedPhone = normalizePhone(phone);
     const prefs = {
       phone: normalizedPhone === '' ? null : normalizedPhone,
@@ -46,9 +41,13 @@ export function NotificationsSection({ supabase, account, onAccountChange }: Not
       sms_opt_in: smsOptIn,
       whatsapp_opt_in: whatsappOptIn,
     };
-    const error = await updateNotificationPrefs(supabase, user.id, prefs);
+    const res = await fetch('/api/account', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(prefs),
+    });
     setSaving(false);
-    if (error) {
+    if (!res.ok) {
       setSaveMsg('Failed to save.');
     } else {
       setPhone(normalizedPhone);

@@ -1,21 +1,15 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { listLedger, sumLedger, recordBankTransaction, type LedgerRow } from '@/lib/data/bank';
-
-interface CharacterRow {
-  id: string;
-  name: string;
-  kindred: string;
-  character_class: string;
-  level: number;
-  owner_id: string;
-  coins_gp: number;
-}
+import {
+  refereeBankOverview,
+  recordBankTransaction,
+  type LedgerRow,
+  type RefereeBankEntry,
+} from '@/lib/api/bank';
 
 interface CharacterBank {
-  character: CharacterRow;
+  character: RefereeBankEntry;
   balance: number;
   ledger: LedgerRow[];
   showTransfer: boolean;
@@ -27,35 +21,24 @@ interface CharacterBank {
 }
 
 export function BankingTab() {
-  const supabase = createClient();
   const [entries, setEntries] = useState<CharacterBank[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const [{ data: characters }, rows] = await Promise.all([
-      supabase.from('characters').select('id, name, kindred, character_class, level, owner_id, coins_gp').order('name'),
-      listLedger(supabase),
-    ]);
-
-    const chars = (characters ?? []) as CharacterRow[];
-
-    setEntries(chars.map(c => {
-      const charLedger = rows.filter(r => r.character_id === c.id);
-      const balance = sumLedger(charLedger);
-      return {
-        character: c,
-        balance,
-        ledger: charLedger,
-        showTransfer: false,
-        transferAmount: '',
-        transferDesc: '',
-        transferError: '',
-        transferLoading: false,
-        showHistory: false,
-      };
-    }));
+    const overview = await refereeBankOverview();
+    setEntries(overview.map(c => ({
+      character: c,
+      balance: c.balance,
+      ledger: c.ledger,
+      showTransfer: false,
+      transferAmount: '',
+      transferDesc: '',
+      transferError: '',
+      transferLoading: false,
+      showHistory: false,
+    })));
     setLoading(false);
-  }, [supabase]);
+  }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -70,7 +53,7 @@ export function BankingTab() {
 
     update(entry.character.id, { transferLoading: true, transferError: '' });
 
-    const txError = await recordBankTransaction(supabase, {
+    const txError = await recordBankTransaction({
       characterId: entry.character.id,
       amountGp: -amount,
       description: entry.transferDesc.trim() || 'Transfer to character',

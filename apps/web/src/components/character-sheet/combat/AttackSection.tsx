@@ -1,6 +1,6 @@
 'use client';
 import { rollDie, rollDamage, type DieType } from '@dolmenwood/rules-engine';
-import type { EquippedWeapon } from '@/lib/data/inventory';
+import type { EquippedWeapon } from '@/lib/api/inventory';
 import { AnimatedDie } from '@/components/wizard/AnimatedDie';
 import { useDiceRoll } from '@/hooks/use-dice-roll';
 import { formatMod, sectionHead } from './shared';

@@ -1,6 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState, useCallback } from 'react';
 import {
   fetchMagicData,
   listSpellSlots,
@@ -16,7 +15,7 @@ import {
   type DBSpellSlot,
   type DBPreparation,
   type DBSpell,
-} from '@/lib/data/spells';
+} from '@/lib/api/spells';
 import type { SlotsData } from './types';
 
 interface UseSpellsArgs {
@@ -34,8 +33,6 @@ interface UseSpellsArgs {
  * matching the original inline behavior.
  */
 export function useSpells({ characterId, spellcaster, isGlamour, slotsData, readOnly }: UseSpellsArgs) {
-  const supabase = useMemo(() => createClient(), []);
-
   const [dbSlots, setDbSlots] = useState<DBSpellSlot[]>([]);
   const [preparations, setPreparations] = useState<DBPreparation[]>([]);
   const [spells, setSpells] = useState<DBSpell[]>([]);
@@ -44,7 +41,7 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
   // ── Data loading & slot initialisation ───────────────────────────────────────
   const loadData = useCallback(async () => {
     const { slots: fetched, preparations: prepData, spells: spellData } =
-      await fetchMagicData(supabase, characterId);
+      await fetchMagicData(characterId);
 
     let slots = fetched;
 
@@ -59,10 +56,10 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
           slots_used: 0,
         }));
       if (inserts.length > 0) {
-        const newSlots = await insertSpellSlots(supabase, inserts);
+        const newSlots = await insertSpellSlots(characterId, inserts);
         if (newSlots === null) {
           // Another tab won the race (23505 duplicate key) — fetch what's already there
-          slots = await listSpellSlots(supabase, characterId);
+          slots = await listSpellSlots(characterId);
         } else {
           slots = newSlots;
         }
@@ -82,7 +79,7 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
         }));
       if (updates.length > 0) {
         await Promise.all(
-          updates.map(u => updateSlotTotals(supabase, u.id, u.slots_total, u.slots_used))
+          updates.map(u => updateSlotTotals(characterId, u.id, u.slots_total, u.slots_used))
         );
         slots = slots.map(s => {
           const upd = updates.find(u => u.id === s.id);
@@ -95,7 +92,7 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
     setPreparations(prepData);
     setSpells(spellData);
     setLoading(false);
-  }, [supabase, characterId, spellcaster, isGlamour, slotsData, readOnly]);
+  }, [characterId, spellcaster, isGlamour, slotsData, readOnly]);
 
   useEffect(() => {
     if (!spellcaster) { setLoading(false); return; }
@@ -121,43 +118,43 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
       ? Math.max(0, slot.slots_used - 1)
       : Math.min(slot.slots_total, slot.slots_used + 1);
     setDbSlots(prev => prev.map(s => s.id === slot.id ? { ...s, slots_used: newUsed } : s));
-    await updateSlotUsage(supabase, slot.id, newUsed);
+    await updateSlotUsage(characterId, slot.id, newUsed);
   }
 
   // ── Rest ─────────────────────────────────────────────────────────────────────
   async function handleRest() {
-    await resetSpellsForRest(supabase, characterId);
+    await resetSpellsForRest(characterId);
     setPreparations([]);
     setDbSlots(prev => prev.map(s => ({ ...s, slots_used: 0 })));
   }
 
   // ── Preparations ─────────────────────────────────────────────────────────────
   async function castPreparation(prep: DBPreparation) {
-    await updatePreparationCast(supabase, prep.id, true);
+    await updatePreparationCast(characterId, prep.id, true);
     setPreparations(prev => prev.map(p => p.id === prep.id ? { ...p, is_cast: true } : p));
     const slot = dbSlots.find(s => s.spell_rank === prep.slot_rank);
     if (slot) {
       const newUsed = Math.min(slot.slots_total, slot.slots_used + 1);
-      await updateSlotUsage(supabase, slot.id, newUsed);
+      await updateSlotUsage(characterId, slot.id, newUsed);
       setDbSlots(prev => prev.map(s => s.id === slot.id ? { ...s, slots_used: newUsed } : s));
     }
   }
 
   async function restorePreparation(prep: DBPreparation) {
-    await updatePreparationCast(supabase, prep.id, false);
+    await updatePreparationCast(characterId, prep.id, false);
     setPreparations(prev => prev.map(p => p.id === prep.id ? { ...p, is_cast: false } : p));
     const slot = dbSlots.find(s => s.spell_rank === prep.slot_rank);
     if (slot) {
       const newUsed = Math.max(0, slot.slots_used - 1);
-      await updateSlotUsage(supabase, slot.id, newUsed);
+      await updateSlotUsage(characterId, slot.id, newUsed);
       setDbSlots(prev => prev.map(s => s.id === slot.id ? { ...s, slots_used: newUsed } : s));
     }
   }
 
   /** Returns true on success so the form can close itself. */
   async function addPreparation(rank: number, name: string): Promise<boolean> {
-    const data = await insertPreparation(supabase, {
-      character_id: characterId, slot_rank: rank, spell_name: name, is_cast: false,
+    const data = await insertPreparation(characterId, {
+      slot_rank: rank, spell_name: name,
     });
     if (data) {
       setPreparations(prev => [...prev, data]);
@@ -170,12 +167,12 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
   async function toggleMemorized(spell: DBSpell) {
     const newVal = !spell.is_memorized;
     setSpells(prev => prev.map(s => s.id === spell.id ? { ...s, is_memorized: newVal } : s));
-    await updateSpellMemorized(supabase, spell.id, newVal);
+    await updateSpellMemorized(characterId, spell.id, newVal);
   }
 
   async function deleteSpell(id: string) {
     setSpells(prev => prev.filter(s => s.id !== id));
-    await deleteCharacterSpell(supabase, id);
+    await deleteCharacterSpell(characterId, id);
   }
 
   /** Returns true on success so the form can close itself. */
@@ -186,7 +183,7 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
       spell_level: isGlamour ? 0 : rank,
       is_memorized: false,
     };
-    const data = await insertCharacterSpell(supabase, payload);
+    const data = await insertCharacterSpell(characterId, payload);
     if (data) {
       setSpells(prev => [...prev, data]);
       return true;

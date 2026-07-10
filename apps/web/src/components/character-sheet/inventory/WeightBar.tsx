@@ -1,6 +1,6 @@
 'use client';
 import { calculateSpeed } from '@dolmenwood/rules-engine';
-import type { InventoryItem as DBInventoryItem } from '@/lib/data/inventory';
+import type { InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
 
 interface Props {
   items: DBInventoryItem[];

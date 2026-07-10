@@ -12,12 +12,16 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@azure/cosmos": "^4.2.0",
+    "@azure/storage-blob": "^12.33.0",
     "@dolmenwood/rules-engine": "workspace:*",
     "@dolmenwood/types": "workspace:*",
-    "@supabase/ssr": "^0.5.0",
-    "@supabase/supabase-js": "^2.47.0",
+    "@microsoft/signalr": "^10.0.0",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.0",
+    "jose": "^6.2.3",
     "next": "^15.3.0",
+    "next-auth": "5.0.0-beta.31",
     "next-pwa": "^5.6.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

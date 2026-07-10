@@ -17,17 +17,15 @@ interface Props {
   readOnly?: boolean;
 }
 
-export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) {
+export function InventoryTab({ characterId, readOnly = false }: Props) {
   const inv = useInventory(characterId);
 
   const addItemCtl = useAddItem({
-    supabase: inv.supabase,
     characterId,
     onItemAdded: item => inv.setItems(prev => [...prev, item]),
   });
 
   const restock = useRestock({
-    supabase: inv.supabase,
     characterId,
     items: inv.items,
     setItems: inv.setItems,
@@ -36,7 +34,10 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
     saveCoins: inv.saveCoins,
   });
 
-  const isOwner = !readOnly && inv.currentUserId === ownerId;
+  // The character API is owner-scoped, so anyone on the editable sheet is the
+  // owner; readOnly covers the referee view. (Was a currentUserId === ownerId
+  // check against the Supabase session.)
+  const isOwner = !readOnly;
 
   const [rules] = useOptionalRules();
   const coinWeight = rules.coinWeightEnabled ? calculateCoinWeight(inv.coins) : 0;
@@ -61,7 +62,6 @@ export function InventoryTab({ characterId, ownerId, readOnly = false }: Props) 
 
       {/* Bank Balance */}
       <BankPanel
-        supabase={inv.supabase}
         characterId={characterId}
         bankBalance={inv.bankBalance}
         coinsGp={inv.coins.gp}

@@ -13,9 +13,6 @@ param projectName string = 'dolmenwood'
 @description('Docker image tag to deploy')
 param imageTag string = 'latest'
 
-@description('Supabase project URL (non-secret)')
-param supabaseUrl string
-
 // ---- Naming convention ----
 var prefix = '${projectName}-${environment}'
 var acrName = replace('${projectName}${environment}acr', '-', '')  // ACR names: alphanumeric only
@@ -53,6 +50,49 @@ module acr 'modules/container-registry.bicep' = {
   }
 }
 
+// ---- Cosmos DB (NoSQL) ----
+module cosmos 'modules/cosmos.bicep' = {
+  name: 'cosmos'
+  params: {
+    name: '${prefix}-cosmos'
+    location: location
+    tags: tags
+  }
+}
+
+// ---- Blob Storage (portraits) ----
+module storage 'modules/storage.bicep' = {
+  name: 'storage'
+  params: {
+    name: replace('${projectName}${environment}blob', '-', '')
+    location: location
+    tags: tags
+  }
+}
+
+// ---- SignalR (live character updates) ----
+module signalr 'modules/signalr.bicep' = {
+  name: 'signalr'
+  params: {
+    name: '${prefix}-signalr'
+    location: location
+    tags: tags
+  }
+}
+
+// ---- Change-feed Function (characters → SignalR) ----
+module characterFeed 'modules/function-app.bicep' = {
+  name: 'characterFeed'
+  params: {
+    name: '${prefix}-charfeed'
+    location: location
+    tags: tags
+    storageAccountName: storage.outputs.storageAccountName
+    cosmosAccountName: cosmos.outputs.accountName
+    signalrName: signalr.outputs.signalrName
+  }
+}
+
 // ---- App Service ----
 // Deploy with placeholder image first; GitHub Actions updates the image tag
 module appService 'modules/app-service.bicep' = {
@@ -76,7 +116,7 @@ module appService 'modules/app-service.bicep' = {
     acrId: acr.outputs.acrId
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     keyVaultUri: keyVaultUri
-    supabaseUrl: supabaseUrl
+    cosmosEndpoint: cosmos.outputs.endpoint
   }
 }
 
@@ -98,4 +138,5 @@ output acrName string = acr.outputs.acrName
 output webAppName string = appService.outputs.webAppName
 output webAppUrl string = appService.outputs.webAppUrl
 output keyVaultName string = keyVault.outputs.keyVaultName
+output cosmosAccountName string = cosmos.outputs.accountName
 output appInsightsConnectionString string = monitoring.outputs.appInsightsConnectionString

@@ -1,251 +1,314 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { randomBytes } from 'node:crypto';
+import { getContainer } from '@/lib/cosmos/client';
+import { requireAccountId } from '@/lib/auth/session';
+import {
+  assertCampaignParticipant,
+  badRequest,
+  fetchCharacterDocById,
+  forbidden,
+  isRefereeOfAccount,
+  listCampaignsRefereedBy,
+  listCampaignsWithMember,
+  notFound,
+} from '@/lib/authz';
+import type { CampaignDoc, CharacterDoc, PartyMountDoc } from '@/lib/cosmos/types';
+import type {
+  CampaignData,
+  Member,
+  MemberCharacter,
+  PackAnimal,
+  RefereeCampaignsData,
+} from '@/lib/api/campaigns';
+import { mutateCharacterDoc } from './characters';
+import { fetchAccountDoc } from './account';
 
 /**
- * Single source of truth for campaign-domain queries.
- *
- * Rows are kept snake_case (matching the DB) because the campaign overview
- * UI consumes them as-is; the shared types + queries here replace the
- * inline supabase calls that used to live in OverviewTab.
+ * Server-only campaign access. Campaigns are small single-partition docs
+ * (pk /id) embedding members + party mounts; rosters hydrate via point
+ * reads on accounts and partition-scoped character queries — the app-code
+ * replacement for the get_campaign_party_data SECURITY DEFINER RPC.
  */
 
-export type PackAnimalType = 'Mule' | 'Donkey' | 'Pony' | 'Horse' | 'Ox' | 'Pack Dog';
+const campaigns = () => getContainer('campaigns');
 
-export const PACK_ANIMAL_TYPES: PackAnimalType[] = ['Mule', 'Donkey', 'Pony', 'Horse', 'Ox', 'Pack Dog'];
-
-export interface PackAnimal {
-  id: string;
-  name: string;
-  mount_type: PackAnimalType;
-  speed: number;
-  campaign_id: string;
-  owner_id: string;
+export async function replaceCampaignWithRetry(
+  campaignId: string,
+  authorize: (doc: CampaignDoc, me: string) => void,
+  mutate: (doc: CampaignDoc) => void,
+): Promise<CampaignDoc> {
+  const me = await requireAccountId();
+  for (let attempt = 0; ; attempt++) {
+    const { resource: doc } = await campaigns().item(campaignId, campaignId).read<CampaignDoc>();
+    if (!doc) throw notFound('campaign');
+    authorize(doc, me);
+    mutate(doc);
+    try {
+      const { resource } = await campaigns()
+        .item(doc.id, doc.id)
+        .replace(doc, { accessCondition: { type: 'IfMatch', condition: doc._etag! } });
+      return resource as CampaignDoc;
+    } catch (e) {
+      if ((e as { code?: number }).code === 412 && attempt < 3) continue;
+      throw e;
+    }
+  }
 }
 
-export interface MemberCharacter {
-  id: string;
-  name: string;
-  character_class: string;
-  level: number;
-  xp: number;
-  ability_scores: Record<string, number>;
-  kindred: string;
-  hp_current?: number;
-  hp_max?: number;
+// Port of generate_invite_code(): unique among campaigns, 20 attempts.
+const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+async function generateCampaignInviteCode(): Promise<string> {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const bytes = randomBytes(6);
+    let code = '';
+    for (const byte of bytes) code += INVITE_ALPHABET[byte % INVITE_ALPHABET.length];
+    const { resources } = await campaigns()
+      .items.query({
+        query: 'SELECT VALUE COUNT(1) FROM c WHERE c.inviteCode = @code',
+        parameters: [{ name: '@code', value: code }],
+      })
+      .fetchAll();
+    if (resources[0] === 0) return code;
+  }
+  throw new Error('could not generate a unique invite code');
 }
 
-export interface Member {
-  account_id: string;
-  display_name: string;
-  joined_at: string;
-  characters: MemberCharacter[];
+export async function createCampaign(name: string): Promise<{ id: string }> {
+  const me = await requireAccountId();
+  const trimmed = name.trim();
+  if (!trimmed) throw badRequest('campaign name is required');
+  const doc: CampaignDoc = {
+    id: crypto.randomUUID(),
+    name: trimmed,
+    refereeId: me,
+    inviteCode: await generateCampaignInviteCode(),
+    members: [],
+    partyMounts: [],
+    createdAt: new Date().toISOString(),
+  };
+  await campaigns().items.create(doc);
+  return { id: doc.id };
 }
 
-export interface CampaignData {
-  id: string;
-  name: string;
-  invite_code: string;
-  created_at: string;
-  members: Member[];
-  showMembers: boolean;
-}
-
-export interface RefereeCampaignsData {
-  campaigns: CampaignData[];
-  packAnimals: Record<string, PackAnimal[]>;
-}
-
-/**
- * Loads everything the referee overview needs in one call:
- * campaigns owned by the referee, their party pack animals, their
- * members (with display names), and each member's characters.
- *
- * Returns `null` when the referee owns no campaigns (so callers can
- * leave any previously-loaded pack-animal state untouched, matching
- * the original inline behavior).
- */
-export async function loadRefereeCampaigns(
-  supabase: SupabaseClient,
-  refereeId: string,
-): Promise<RefereeCampaignsData | null> {
-  const { data: rawCampaigns } = await supabase
-    .from('campaigns')
-    .select('id, name, invite_code, created_at')
-    .eq('referee_id', refereeId)
-    .order('created_at', { ascending: false });
-
-  if (!rawCampaigns || rawCampaigns.length === 0) return null;
-
-  const campaignIds = rawCampaigns.map((c: { id: string }) => c.id);
-
-  // Fetch pack animals (party-owned mounts) for all campaigns in one query
-  const { data: mountsData } = await supabase
-    .from('mounts')
-    .select('id, name, mount_type, speed, campaign_id, owner_id')
-    .in('campaign_id', campaignIds)
-    .eq('owner_type', 'party');
-
-  const packAnimals = (mountsData ?? []).reduce<Record<string, PackAnimal[]>>((acc, m) => {
-    const cid = m.campaign_id as string | null;
-    if (cid) acc[cid] = [...(acc[cid] ?? []), m as PackAnimal];
-    return acc;
-  }, {});
-
-  const { data: rawMembers } = await supabase
-    .from('campaign_members')
-    .select('campaign_id, account_id, joined_at, accounts(display_name)')
-    .in('campaign_id', campaignIds);
-
-  const members = (rawMembers ?? []) as unknown as Array<{
-    campaign_id: string;
-    account_id: string;
-    joined_at: string;
-    accounts: { display_name: string } | null;
-  }>;
-  const memberAccountIds = [...new Set(members.map(m => m.account_id))];
-
-  const { data: rawChars } = memberAccountIds.length > 0
-    ? await supabase
-        .from('characters')
-        .select('id, name, character_class, level, xp, ability_scores, kindred, owner_id')
-        .in('owner_id', memberAccountIds)
-        .order('name')
-    : { data: [] };
-
-  const chars = (rawChars ?? []) as Array<MemberCharacter & { owner_id: string }>;
-
-  const campaigns = rawCampaigns.map((c: { id: string; name: string; invite_code: string; created_at: string }) => {
-    const campaignMembers = members
-      .filter(m => m.campaign_id === c.id)
-      .map(m => ({
-        account_id: m.account_id,
-        display_name: m.accounts?.display_name ?? 'Unknown',
-        joined_at: m.joined_at,
-        characters: chars.filter(ch => ch.owner_id === m.account_id),
-      }));
-    return {
-      ...c,
-      members: campaignMembers,
-      showMembers: true,
-    };
-  });
-
-  return { campaigns, packAnimals };
-}
-
-/**
- * Loads the campaigns a player belongs to, with party rosters fetched
- * via the SECURITY DEFINER `get_campaign_party_data` RPC so players can
- * see other members' characters.
- */
-export async function loadPlayerCampaigns(
-  supabase: SupabaseClient,
-  accountId: string,
-): Promise<CampaignData[]> {
-  // Get campaigns the player belongs to
-  const { data: memberships } = await supabase
-    .from('campaign_members')
-    .select('campaign_id, joined_at')
-    .eq('account_id', accountId);
-
-  if (!memberships || memberships.length === 0) return [];
-
-  const campaignIds = memberships.map((m: { campaign_id: string }) => m.campaign_id);
-
-  const [{ data: rawCampaigns }, ...partyResults] = await Promise.all([
-    supabase.from('campaigns').select('id, name, invite_code, created_at').in('id', campaignIds),
-    // Use SECURITY DEFINER RPC so players can see other members' characters
-    ...campaignIds.map((id: string) =>
-      supabase.rpc('get_campaign_party_data', { p_campaign_id: id })
-    ),
-  ]);
-
-  return (rawCampaigns ?? []).map((c: { id: string; name: string; invite_code: string; created_at: string }, idx: number) => {
-    const partyData = partyResults[idx]?.data as Array<{
-      account_id: string;
-      display_name: string;
-      characters: Array<{
-        id: string; name: string; character_class: string; level: number;
-        kindred: string; hp_current: number; hp_max: number; xp: number;
-      }> | null;
-    }> | null;
-
-    const campaignMembers = (partyData ?? []).map(m => ({
-      account_id: m.account_id,
-      display_name: m.display_name ?? 'Unknown',
-      joined_at: '',
-      characters: (m.characters ?? []).map(ch => ({
-        id: ch.id,
-        name: ch.name,
-        character_class: ch.character_class,
-        level: ch.level,
-        kindred: ch.kindred,
-        hp_current: ch.hp_current,
-        hp_max: ch.hp_max,
-        xp: ch.xp,
-        ability_scores: {} as Record<string, number>,
-        owner_id: m.account_id,
-      })),
-    }));
-
-    return { ...c, members: campaignMembers, showMembers: true };
-  });
-}
-
-export async function createCampaign(
-  supabase: SupabaseClient,
-  name: string,
-): Promise<{ error: { message: string } | null }> {
-  const { error } = await supabase.rpc('create_campaign', { p_name: name });
-  return { error };
-}
-
+/** Port of join_campaign: invalid code and already-a-member both raise. */
 export async function joinCampaign(
-  supabase: SupabaseClient,
   inviteCode: string,
-): Promise<{ data: unknown; error: { message: string } | null }> {
-  const { data, error } = await supabase.rpc('join_campaign', { p_invite_code: inviteCode });
-  return { data, error };
+): Promise<{ campaign_id: string; campaign_name: string }> {
+  const me = await requireAccountId();
+  const code = inviteCode.trim().toUpperCase();
+  const { resources } = await campaigns()
+    .items.query<CampaignDoc>({
+      query: 'SELECT * FROM c WHERE c.inviteCode = @code',
+      parameters: [{ name: '@code', value: code }],
+    })
+    .fetchAll();
+  const found = resources[0];
+  if (!found) throw badRequest('Invalid invite code');
+
+  const doc = await replaceCampaignWithRetry(
+    found.id,
+    () => undefined, // any authenticated account may join with a valid code
+    (c) => {
+      if (c.members.some((m) => m.accountId === me)) {
+        throw badRequest('You are already a member of this campaign');
+      }
+      c.members = [...c.members, { accountId: me, joinedAt: new Date().toISOString() }];
+    },
+  );
+  return { campaign_id: doc.id, campaign_name: doc.name };
 }
 
-export async function awardXP(
-  supabase: SupabaseClient,
-  characterId: string,
-  gain: number,
-): Promise<{ error: { message: string } | null }> {
-  const { error } = await supabase.rpc('award_xp', { p_character_id: characterId, p_gain: gain });
-  return { error };
+// ── Roster hydration ──────────────────────────────────────────────────────────
+
+export async function displayNamesFor(accountIds: string[]): Promise<Record<string, string>> {
+  const unique = [...new Set(accountIds)];
+  const docs = await Promise.all(unique.map((id) => fetchAccountDoc(id)));
+  const map: Record<string, string> = {};
+  unique.forEach((id, i) => {
+    map[id] = docs[i]?.displayName ?? 'Unknown';
+  });
+  return map;
 }
+
+function charToMemberCharacter(doc: CharacterDoc): MemberCharacter {
+  return {
+    id: doc.id,
+    name: doc.name,
+    character_class: doc.characterClass,
+    level: doc.level,
+    xp: doc.xp,
+    ability_scores: doc.abilityScores as unknown as Record<string, number>,
+    kindred: doc.kindred,
+    hp_current: doc.hpCurrent,
+    hp_max: doc.hpMax,
+  };
+}
+
+async function charactersByOwner(ownerIds: string[]): Promise<Record<string, CharacterDoc[]>> {
+  const unique = [...new Set(ownerIds)];
+  const container = getContainer('characters');
+  const results = await Promise.all(
+    unique.map(async (ownerId) => {
+      const { resources } = await container.items
+        .query<CharacterDoc>(
+          {
+            query: 'SELECT * FROM c WHERE c.ownerId = @id ORDER BY c.name',
+            parameters: [{ name: '@id', value: ownerId }],
+          },
+          { partitionKey: ownerId },
+        )
+        .fetchAll();
+      return [ownerId, resources] as const;
+    }),
+  );
+  return Object.fromEntries(results);
+}
+
+function mountToPackAnimal(campaignId: string, m: PartyMountDoc): PackAnimal {
+  return {
+    id: m.id,
+    name: m.name,
+    mount_type: m.mountType as PackAnimal['mount_type'],
+    speed: m.speed,
+    campaign_id: campaignId,
+    owner_id: m.addedBy,
+  };
+}
+
+async function hydrateCampaign(doc: CampaignDoc): Promise<CampaignData> {
+  const names = await displayNamesFor(doc.members.map((m) => m.accountId));
+  const chars = await charactersByOwner(doc.members.map((m) => m.accountId));
+  const members: Member[] = doc.members.map((m) => ({
+    account_id: m.accountId,
+    display_name: names[m.accountId] ?? 'Unknown',
+    joined_at: m.joinedAt,
+    characters: (chars[m.accountId] ?? []).map(charToMemberCharacter),
+  }));
+  return {
+    id: doc.id,
+    name: doc.name,
+    invite_code: doc.inviteCode,
+    created_at: doc.createdAt,
+    members,
+    showMembers: true,
+  };
+}
+
+export async function loadRefereeCampaigns(): Promise<RefereeCampaignsData | null> {
+  const me = await requireAccountId();
+  const owned = await listCampaignsRefereedBy(me);
+  if (owned.length === 0) return null;
+  const hydrated = await Promise.all(owned.map(hydrateCampaign));
+  const packAnimals: Record<string, PackAnimal[]> = {};
+  for (const doc of owned) {
+    packAnimals[doc.id] = doc.partyMounts.map((m) => mountToPackAnimal(doc.id, m));
+  }
+  return { campaigns: hydrated, packAnimals };
+}
+
+export async function loadPlayerCampaigns(): Promise<CampaignData[]> {
+  const me = await requireAccountId();
+  const memberOf = await listCampaignsWithMember(me);
+  return Promise.all(memberOf.map(hydrateCampaign));
+}
+
+/** Lightweight id+name list of campaigns the caller participates in. */
+export async function listMyCampaignNames(): Promise<{ id: string; name: string }[]> {
+  const me = await requireAccountId();
+  const [refereed, memberOf] = await Promise.all([
+    listCampaignsRefereedBy(me),
+    listCampaignsWithMember(me),
+  ]);
+  const seen = new Map<string, string>();
+  for (const c of [...refereed, ...memberOf]) seen.set(c.id, c.name);
+  return [...seen.entries()]
+    .map(([id, name]) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Port of get_campaign_roster: the full participant list (members ∪
+ * referee) with display names, participant-guarded, ordered by display
+ * name, referee flagged and appearing exactly once.
+ */
+export async function getCampaignRoster(
+  campaignId: string,
+): Promise<{ account_id: string; display_name: string; is_referee: boolean }[]> {
+  const me = await requireAccountId();
+  const doc = await assertCampaignParticipant(campaignId, me);
+  const participantIds = [
+    doc.refereeId,
+    ...doc.members.map((m) => m.accountId).filter((id) => id !== doc.refereeId),
+  ];
+  const names = await displayNamesFor(participantIds);
+  return participantIds
+    .map((id) => ({
+      account_id: id,
+      display_name: names[id] ?? 'Unknown',
+      is_referee: id === doc.refereeId,
+    }))
+    .sort((a, b) => a.display_name.localeCompare(b.display_name));
+}
+
+/** Port of award_xp: referee-of-the-owner's-campaign only, never self. */
+export async function awardXP(characterId: string, gain: number): Promise<void> {
+  if (!Number.isInteger(gain) || gain <= 0) throw badRequest('XP gain must be positive');
+  const me = await requireAccountId();
+  await mutateCharacterDoc(
+    async () => {
+      const doc = await fetchCharacterDocById(characterId);
+      if (!doc) throw notFound('character');
+      if (doc.ownerId === me) throw forbidden(); // no self-award
+      if (!(await isRefereeOfAccount(me, doc.ownerId))) throw forbidden();
+      return doc;
+    },
+    (doc) => {
+      doc.xp += gain;
+    },
+  );
+}
+
+// ── Party pack animals (embedded on the campaign doc) ─────────────────────────
 
 export async function insertPackAnimal(
-  supabase: SupabaseClient,
-  params: {
-    ownerId: string;
-    campaignId: string;
-    name: string;
-    mountType: PackAnimalType;
-    speed: number;
-  },
-): Promise<PackAnimal | null> {
-  const { data, error } = await supabase
-    .from('mounts')
-    .insert({
-      owner_id: params.ownerId,
-      owner_type: 'party',
-      campaign_id: params.campaignId,
-      name: params.name,
-      mount_type: params.mountType,
-      speed: params.speed,
-      has_full_stats: false,
-    })
-    .select('id, name, mount_type, speed, campaign_id, owner_id')
-    .single();
-  if (error || !data) return null;
-  return data as PackAnimal;
+  campaignId: string,
+  params: { name: string; mountType: string; speed: number },
+): Promise<PackAnimal> {
+  const me = await requireAccountId();
+  await assertCampaignParticipant(campaignId, me);
+  const mount: PartyMountDoc = {
+    id: crypto.randomUUID(),
+    name: params.name.trim(),
+    mountType: params.mountType,
+    speed: Number(params.speed) || 0,
+    addedBy: me,
+    createdAt: new Date().toISOString(),
+  };
+  if (!mount.name) throw badRequest('name is required');
+  await replaceCampaignWithRetry(
+    campaignId,
+    (doc, meId) => {
+      if (!doc.members.some((m) => m.accountId === meId) && doc.refereeId !== meId) {
+        throw forbidden();
+      }
+    },
+    (doc) => {
+      doc.partyMounts = [...doc.partyMounts, mount];
+    },
+  );
+  return mountToPackAnimal(campaignId, mount);
 }
 
-export async function removePackAnimal(
-  supabase: SupabaseClient,
-  animalId: string,
-): Promise<void> {
-  await supabase.from('mounts').delete().eq('id', animalId);
+export async function removePackAnimal(campaignId: string, mountId: string): Promise<void> {
+  await replaceCampaignWithRetry(
+    campaignId,
+    (doc, meId) => {
+      if (!doc.members.some((m) => m.accountId === meId) && doc.refereeId !== meId) {
+        throw forbidden();
+      }
+    },
+    (doc) => {
+      doc.partyMounts = doc.partyMounts.filter((m) => m.id !== mountId);
+    },
+  );
 }

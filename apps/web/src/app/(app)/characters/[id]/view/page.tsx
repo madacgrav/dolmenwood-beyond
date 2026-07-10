@@ -1,8 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { fetchCharacterWithNotes } from '@/lib/data/characters';
+import { fetchCharacterWithNotes } from '@/lib/api/characters';
 import type { CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
@@ -25,44 +24,29 @@ export default function CharacterViewPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const router = useRouter();
-  const supabase = createClient();
 
   const [character, setCharacter] = useState<CharacterWithNotes | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('stats');
 
   const fetchCharacter = useCallback(async () => {
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push('/sign-in'); return; }
-
-    // Fetch character (RLS ensures only authorised users see it)
-    const mapped = await fetchCharacterWithNotes(supabase, id);
+    // The server grants reads to the owner or a referee of the owner's
+    // campaign; anyone else gets null → back to the roster.
+    const [accountRes, mapped] = await Promise.all([
+      fetch('/api/account'),
+      fetchCharacterWithNotes(id),
+    ]);
     if (!mapped) { router.push('/characters'); return; }
 
-    // Owner should use the editable sheet
-    if (mapped.ownerId === user.id) {
+    const account: { id: string } | null = accountRes.ok ? await accountRes.json() : null;
+    if (account && mapped.ownerId === account.id) {
+      // Owners use the editable sheet.
       router.replace(`/characters/${id}`);
       return;
     }
-
-    // Verify referee access: the viewer must be the referee_id of a campaign
-    // that the character's owner belongs to (not just any campaign).
-    const { data: refAccess } = await supabase
-      .from('campaign_members')
-      .select('campaign_id, campaigns!inner(referee_id)')
-      .eq('account_id', mapped.ownerId)
-      .eq('campaigns.referee_id', user.id)
-      .limit(1);
-
-    if (!refAccess || refAccess.length === 0) {
-      router.push('/characters');
-      return;
-    }
-
     setCharacter(mapped);
     setLoading(false);
-  }, [id, supabase, router]);
+  }, [id, router]);
 
   useEffect(() => { fetchCharacter(); }, [fetchCharacter]);
 

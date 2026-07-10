@@ -1,7 +1,7 @@
 'use client';
 
-import { PACK_ANIMAL_TYPES } from '@/lib/data/campaigns';
-import type { PackAnimal, PackAnimalType } from '@/lib/data/campaigns';
+import { PACK_ANIMAL_TYPES } from '@/lib/api/campaigns';
+import type { PackAnimal, PackAnimalType } from '@/lib/api/campaigns';
 import type { NewPackAnimalForm } from './types';
 
 interface Props {

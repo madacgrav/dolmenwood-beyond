@@ -1,15 +1,13 @@
 'use client';
 import { useState } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { updateCharacter } from '@/lib/data/characters';
+import { updateCharacter } from '@/lib/api/characters';
 
 /**
- * Learned (extra) languages, persisted on the `characters` row.
+ * Learned (extra) languages, persisted on the character document.
  * Updates are optimistic: local state changes first, then rolls back
- * with an error message if the Supabase write fails.
+ * with an error message if the server write fails.
  */
 export function useLanguages(
-  supabase: SupabaseClient,
   characterId: string,
   rawExtraLanguages: string[] | undefined,
 ) {
@@ -26,7 +24,7 @@ export function useLanguages(
     setExtraLanguages(updated);
     setNewLang('');
     setLangError('');
-    const error = await updateCharacter(supabase, characterId, { extraLanguages: updated });
+    const error = await updateCharacter(characterId, { extraLanguages: updated });
     if (error) {
       setExtraLanguages(extraLanguages);
       setLangError('Failed to save language');
@@ -37,7 +35,7 @@ export function useLanguages(
     const updated = extraLanguages.filter((_, i) => i !== idx);
     setExtraLanguages(updated);
     setLangError('');
-    const error = await updateCharacter(supabase, characterId, { extraLanguages: updated });
+    const error = await updateCharacter(characterId, { extraLanguages: updated });
     if (error) {
       setExtraLanguages(extraLanguages);
       setLangError('Failed to remove language');

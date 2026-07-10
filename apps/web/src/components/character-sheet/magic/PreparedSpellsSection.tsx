@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import type { DBPreparation } from '@/lib/data/spells';
+import type { DBPreparation } from '@/lib/api/spells';
 import { SECTION_HEADER } from './types';
 import { PrepareSpellForm } from './PrepareSpellForm';
 

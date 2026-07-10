@@ -1,5 +1,7 @@
-import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth/config';
+import { getAdminData } from '@/lib/data/admin';
+import { HttpError } from '@/lib/authz';
 
 interface AdminAccount {
   id: string;
@@ -106,15 +108,21 @@ function KpiCard({ label, value }: { label: string; value: number }) {
 }
 
 export default async function AdminPage() {
-  const supabase = await createClient();
+  const session = await auth();
+  if (!session?.user?.id) redirect('/sign-in');
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in');
-
-  const { data, error } = await supabase.rpc('get_admin_data');
+  let data: AdminData | null = null;
+  let error: { message: string } | null = null;
+  let accessDenied = false;
+  try {
+    data = await getAdminData();
+  } catch (e) {
+    accessDenied = e instanceof HttpError && e.status === 403;
+    error = { message: e instanceof Error ? e.message : 'Unknown error' };
+  }
 
   if (error || !data) {
-    const isAccessDenied = error?.message?.toLowerCase().includes('access denied');
+    const isAccessDenied = accessDenied;
     return (
       <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
         <div style={{ textAlign: 'center' }}>

@@ -1,0 +1,12 @@
+{
+  "name": "character-feed",
+  "version": "1.0.0",
+  "description": "Cosmos change feed on characters -> SignalR broadcast (live HP updates)",
+  "main": "src/functions/*.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.0"
+  }
+}

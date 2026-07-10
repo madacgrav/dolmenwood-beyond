@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { splitRoster, type RosterMember } from '../../lib/data/roster';
+import { splitRoster, type RosterMember } from '@/lib/api/roster';
 
 const roster: RosterMember[] = [
   { account_id: 'a', display_name: 'Alice', is_referee: true },

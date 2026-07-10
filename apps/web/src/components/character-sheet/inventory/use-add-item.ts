@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { insertInventoryItem, type InventoryItem as DBInventoryItem } from '@/lib/data/inventory';
+import { insertInventoryItem, type InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
 import { ITEM_TYPES, type CatalogItem, type ItemType, type NewItemDraft } from './types';
 
 const EMPTY_DRAFT: NewItemDraft = {
@@ -14,8 +13,7 @@ const EMPTY_DRAFT: NewItemDraft = {
  * Lives at the tab level so drafts and search text persist while the form
  * is closed and reopened, exactly as before the extraction.
  */
-export function useAddItem({ supabase, characterId, onItemAdded }: {
-  supabase: SupabaseClient;
+export function useAddItem({ characterId, onItemAdded }: {
   characterId: string;
   onItemAdded: (item: DBInventoryItem) => void;
 }) {
@@ -29,13 +27,28 @@ export function useAddItem({ supabase, characterId, onItemAdded }: {
   useEffect(() => {
     if (addMode !== 'catalog') return;
     setCatalogLoading(true);
-    supabase.from('catalog_items').select('id, name, item_type, weight, cost_gp, weapon_damage_dice, armor_ac_bonus, notes')
-      .order('name')
-      .then(({ data }) => {
-        setCatalogItems((data ?? []) as CatalogItem[]);
+    // Catalog is served from Cosmos via the server route (no browser DB access).
+    fetch('/api/catalog')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((docs: {
+        id: string; name: string; itemType: string; weight: number;
+        costGp: number | null; weaponDamageDice: string | null;
+        armorAcBonus: number | null; notes: string | null;
+      }[]) => {
+        setCatalogItems(docs.map((d) => ({
+          id: d.id,
+          name: d.name,
+          item_type: d.itemType,
+          weight: d.weight,
+          cost_gp: d.costGp,
+          weapon_damage_dice: d.weaponDamageDice,
+          armor_ac_bonus: d.armorAcBonus,
+          notes: d.notes,
+        })));
         setCatalogLoading(false);
-      });
-  }, [addMode, supabase]);
+      })
+      .catch(() => setCatalogLoading(false));
+  }, [addMode]);
 
   function selectCatalogItem(cat: CatalogItem) {
     const mappedType = cat.item_type === 'armor' ? 'armour' : cat.item_type as ItemType;
@@ -64,7 +77,7 @@ export function useAddItem({ supabase, characterId, onItemAdded }: {
     if (newItem.weapon_damage_dice.trim()) payload.weapon_damage_dice = newItem.weapon_damage_dice.trim();
     const acBonus = parseInt(newItem.armor_ac_bonus);
     if (!isNaN(acBonus)) payload.armor_ac_bonus = acBonus;
-    const mapped = await insertInventoryItem(supabase, payload);
+    const mapped = await insertInventoryItem(payload);
     if (mapped) {
       onItemAdded(mapped);
       setNewItem(EMPTY_DRAFT);

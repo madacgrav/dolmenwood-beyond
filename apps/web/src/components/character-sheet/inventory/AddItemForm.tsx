@@ -1,5 +1,5 @@
 'use client';
-import type { InventoryItem as DBInventoryItem } from '@/lib/data/inventory';
+import type { InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
 import { ITEM_TYPES, type ItemType } from './types';
 import type { AddItemController } from './use-add-item';
 

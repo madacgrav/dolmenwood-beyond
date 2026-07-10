@@ -1,32 +1,86 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { LevelUpFeature } from '@dolmenwood/rules-engine';
+import type { LevelUpChange } from '@dolmenwood/types';
+import { requireAccountId } from '@/lib/auth/session';
+import { badRequest } from '@/lib/authz';
+import type { LevelUpLogDoc } from '@/lib/cosmos/types';
+import { assertCharacterOwner } from '@/lib/authz';
+import { mutateOwnedCharacterDoc } from './characters';
 
 /**
- * Single source of truth for the `level_up` RPC, following the
- * `lib/data/inventory.ts` style (supabase first param, plain data in/out).
+ * App-layer port of the `level_up` RPC: owner-only, monotonic level
+ * progression, optional XP-threshold gate, and the level/hp update plus
+ * the log entry land in one document replace (atomic by construction).
  */
 
-export interface LevelUpParams {
-  characterId: string;
+export interface LevelUpInput {
   newLevel: number;
   hpGain: number;
   hpRoll: number;
-  features: LevelUpFeature[];
+  changes: LevelUpChange[];
   xpThreshold: number;
 }
 
-/** Calls the `level_up` RPC. Returns an error message, or null on success. */
-export async function levelUpCharacter(
-  supabase: SupabaseClient,
-  { characterId, newLevel, hpGain, hpRoll, features, xpThreshold }: LevelUpParams,
-): Promise<string | null> {
-  const { error } = await supabase.rpc('level_up', {
-    p_character_id:  characterId,
-    p_new_level:     newLevel,
-    p_hp_gain:       hpGain,
-    p_hp_roll:       hpRoll,
-    p_changes:       features.map(f => ({ field: f.name, oldValue: '', newValue: f.description })),
-    p_xp_threshold:  xpThreshold,
+export async function levelUp(characterId: string, input: LevelUpInput): Promise<void> {
+  const newLevel = Number(input.newLevel);
+  const hpGain = Number(input.hpGain);
+  if (!Number.isInteger(newLevel) || newLevel < 2 || newLevel > 15) {
+    throw badRequest('level must be between 2 and 15');
+  }
+  if (!Number.isInteger(hpGain) || hpGain < 0) {
+    throw badRequest('hp gain must be a non-negative integer');
+  }
+
+  await mutateOwnedCharacterDoc(characterId, (doc) => {
+    if (doc.level !== newLevel - 1) {
+      throw badRequest(`level must advance one step (current ${doc.level})`);
+    }
+    if (input.xpThreshold > 0 && doc.xp < input.xpThreshold) {
+      throw badRequest('not enough XP for this level');
+    }
+    doc.level = newLevel;
+    doc.hpMax += hpGain;
+    doc.hpCurrent = doc.hpMax; // level-up restores to full, matching the RPC
+    const log: LevelUpLogDoc = {
+      id: crypto.randomUUID(),
+      fromLevel: newLevel - 1,
+      toLevel: newLevel,
+      timestamp: new Date().toISOString(),
+      changes: input.changes ?? [],
+      hpRoll: Number(input.hpRoll) || 0,
+      hpRollFinal: hpGain,
+    };
+    doc.levelUpLogs = [...(doc.levelUpLogs ?? []), log];
   });
-  return error ? error.message : null;
+}
+
+export interface LevelUpLogEntry {
+  id: string;
+  character_id: string;
+  from_level: number;
+  to_level: number;
+  hp_roll: number;
+  hp_roll_final: number;
+  changes: LevelUpChange[];
+  timestamp: string;
+}
+
+export async function fetchLevelUpLog(
+  characterId: string,
+): Promise<{ characterName: string; entries: LevelUpLogEntry[] }> {
+  const me = await requireAccountId();
+  const doc = await assertCharacterOwner(me, characterId);
+  return {
+    characterName: doc.name,
+    entries: [...(doc.levelUpLogs ?? [])]
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+      .map((l) => ({
+        id: l.id,
+        character_id: characterId,
+        from_level: l.fromLevel,
+        to_level: l.toLevel,
+        hp_roll: l.hpRoll,
+        hp_roll_final: l.hpRollFinal,
+        changes: l.changes,
+        timestamp: l.timestamp,
+      })),
+  };
 }

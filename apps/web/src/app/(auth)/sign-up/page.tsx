@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { signIn } from 'next-auth/react';
 
 type Role = 'player' | 'referee';
 
@@ -26,19 +26,23 @@ export default function SignUpPage() {
 
     setLoading(true);
     setError('');
-    const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-        data: { role, display_name: displayName || email.split('@')[0] },
-      },
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, role, displayName: displayName || email.split('@')[0] }),
     });
 
-    if (error) {
-      setError(error.message);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      setError(body?.error ?? 'Sign up failed.');
       setLoading(false);
+      return;
+    }
+
+    // Account created — establish the session immediately.
+    const result = await signIn('credentials', { email, password, redirect: false });
+    if (result?.error) {
+      router.push('/sign-in');
     } else {
       router.push('/characters');
       router.refresh();

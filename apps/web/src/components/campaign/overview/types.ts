@@ -2,7 +2,7 @@ import {
   getXPThresholdForNextLevel,
   canLevelUpAfterGain,
 } from '@dolmenwood/rules-engine';
-import type { MemberCharacter, PackAnimalType } from '@/lib/data/campaigns';
+import type { MemberCharacter, PackAnimalType } from '@/lib/api/campaigns';
 
 export type {
   CampaignData,
@@ -10,7 +10,7 @@ export type {
   MemberCharacter,
   PackAnimal,
   PackAnimalType,
-} from '@/lib/data/campaigns';
+} from '@/lib/api/campaigns';
 
 export interface XPAwardState {
   showPanel: boolean;
