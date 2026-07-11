@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import type { CampaignData } from '@/lib/api/campaigns';
 import { CurrentDateCard } from './CurrentDateCard';
+import { RestPrompt } from './RestPrompt';
 
 interface Props {
   campaign: CampaignData;
@@ -11,10 +12,12 @@ interface Props {
 
 export function PartyRoster({ campaign, userId }: Props) {
   const router = useRouter();
+  const myCharacters = campaign.members.find(m => m.account_id === userId)?.characters ?? [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
     <CurrentDateCard date={campaign.current_date} />
+    <RestPrompt characters={myCharacters} currentDate={campaign.current_date} />
     <div
       style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', overflow: 'hidden' }}
     >

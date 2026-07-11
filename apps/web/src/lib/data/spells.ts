@@ -1,6 +1,7 @@
 import { requireAccountId } from '@/lib/auth/session';
 import { assertCharacterOwner, badRequest, notFound } from '@/lib/authz';
 import type { CharacterDoc, SpellSlotDoc, SpellPrepDoc, SpellbookEntryDoc } from '@/lib/cosmos/types';
+import type { DwDate } from '@dolmenwood/rules-engine';
 import type { DBSpellSlot, DBPreparation, DBSpell, MagicData } from '@/lib/api/spells';
 import { mutateOwnedCharacterDoc } from './characters';
 
@@ -63,7 +64,7 @@ export type MagicOp =
   | { op: 'initSlots'; slots: { spell_rank: number; slots_total: number; slots_used?: number }[] }
   | { op: 'updateSlotTotals'; slotId: string; slots_total: number; slots_used: number }
   | { op: 'updateSlotUsage'; slotId: string; slots_used: number }
-  | { op: 'rest' }
+  | { op: 'rest'; restDate?: DwDate }
   | { op: 'addPreparation'; slot_rank: number; spell_name: string }
   | { op: 'setPreparationCast'; prepId: string; is_cast: boolean }
   | { op: 'addSpell'; spell_name: string; spell_level: number; is_memorized?: boolean; notes?: string | null }
@@ -109,6 +110,7 @@ export async function applyMagicOp(characterId: string, op: MagicOp): Promise<un
       case 'rest': {
         doc.spellPreparations = [];
         doc.spellSlots = (doc.spellSlots ?? []).map((s) => ({ ...s, slotsUsed: 0 }));
+        if (op.restDate) doc.lastRestDate = op.restDate;
         return;
       }
       case 'addPreparation': {

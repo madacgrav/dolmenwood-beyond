@@ -156,6 +156,8 @@ export interface CharacterDoc {
   levelUpLogs?: LevelUpLogDoc[];
   mounts?: MountEntryDoc[];
   retainers?: RetainerEntryDoc[];
+  /** Last in-world date this character rested. Absent = never rested. */
+  lastRestDate?: DwDate | null;
   createdAt: string;
   updatedAt: string;
   /** Cosmos system property — used for optimistic-concurrency replaces. */

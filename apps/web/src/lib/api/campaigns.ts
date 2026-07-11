@@ -28,6 +28,7 @@ export interface MemberCharacter {
   kindred: string;
   hp_current?: number;
   hp_max?: number;
+  last_rest_date?: DwDate | null;
 }
 
 export interface Member {

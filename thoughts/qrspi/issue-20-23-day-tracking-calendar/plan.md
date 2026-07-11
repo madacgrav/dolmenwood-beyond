@@ -378,9 +378,9 @@ Render inside `PartyRoster.tsx`, passing the viewer's own member characters (the
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/rules-engine test` passes (sameDwDate covered in Phase 1)
-- [ ] `pnpm --filter @dolmenwood/web typecheck` passes
-- [ ] `pnpm --filter @dolmenwood/web test` passes
+- [x] `pnpm --filter @dolmenwood/rules-engine test` passes (sameDwDate covered in Phase 1)
+- [x] `pnpm --filter @dolmenwood/web typecheck` passes
+- [x] `pnpm --filter @dolmenwood/web test` passes
 #### Manual
 - [ ] Give a caster used spell slots; DM sets/advances the date → on campaign overview the character shows a "🌙 Rest" row
 - [ ] Click Rest → open the character's Magic tab → slots show 0 used, preparations cleared; the campaign Rest row is gone

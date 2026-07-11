@@ -178,6 +178,7 @@ function charToMemberCharacter(doc: CharacterDoc): MemberCharacter {
     kindred: doc.kindred,
     hp_current: doc.hpCurrent,
     hp_max: doc.hpMax,
+    last_rest_date: doc.lastRestDate ?? null,
   };
 }
 
