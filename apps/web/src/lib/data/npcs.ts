@@ -4,6 +4,7 @@ import {
   badRequest,
   forbidden,
   isCampaignParticipant,
+  notFound,
 } from '@/lib/authz';
 import type { CampaignDoc, NpcEntryDoc, NpcStatus } from '@/lib/cosmos/types';
 import type { Npc, NpcInput } from '@/lib/api/npcs';
@@ -61,6 +62,49 @@ export async function addNpc(campaignId: string, input: NpcInput): Promise<void>
         createdAt: new Date().toISOString(),
       };
       doc.npcs = [...(doc.npcs ?? []), npc];
+    },
+  );
+}
+
+/** Creator or DM may edit/delete (same rule as campaign sessions). */
+function assertCanEditNpc(doc: CampaignDoc, npc: NpcEntryDoc, meId: string): void {
+  if (npc.addedBy !== meId && doc.refereeId !== meId) throw forbidden();
+}
+
+export async function updateNpc(
+  campaignId: string,
+  npcId: string,
+  patch: NpcInput,
+): Promise<void> {
+  const me = await requireAccountId();
+  const name = String(patch.name ?? '').trim();
+  if (!name) throw badRequest('name is required');
+  await replaceCampaignWithRetry(
+    campaignId,
+    () => undefined,
+    (doc) => {
+      const npc = (doc.npcs ?? []).find((n) => n.id === npcId);
+      if (!npc) throw notFound('npc');
+      assertCanEditNpc(doc, npc, me);
+      npc.name = name;
+      npc.relationship = String(patch.relationship ?? '').trim();
+      npc.status = normStatus(patch.status);
+      npc.note = String(patch.note ?? '').trim();
+      npc.updatedAt = new Date().toISOString();
+    },
+  );
+}
+
+export async function deleteNpc(campaignId: string, npcId: string): Promise<void> {
+  const me = await requireAccountId();
+  await replaceCampaignWithRetry(
+    campaignId,
+    () => undefined,
+    (doc) => {
+      const npc = (doc.npcs ?? []).find((n) => n.id === npcId);
+      if (!npc) throw notFound('npc');
+      assertCanEditNpc(doc, npc, me);
+      doc.npcs = (doc.npcs ?? []).filter((n) => n.id !== npcId);
     },
   );
 }

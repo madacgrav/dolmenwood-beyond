@@ -45,3 +45,23 @@ export async function createNpc(campaignId: string, input: NpcInput): Promise<Ma
   });
   return errorOf(res);
 }
+
+export async function updateNpc(
+  campaignId: string,
+  npcId: string,
+  patch: NpcInput,
+): Promise<MaybeError> {
+  const res = await fetch(`/api/campaigns/${campaignId}/npcs/${npcId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  return errorOf(res);
+}
+
+export async function deleteNpc(campaignId: string, npcId: string): Promise<MaybeError> {
+  const res = await fetch(`/api/campaigns/${campaignId}/npcs/${npcId}`, {
+    method: 'DELETE',
+  });
+  return errorOf(res);
+}

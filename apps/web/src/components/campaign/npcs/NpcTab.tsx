@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { loadNpcs, createNpc, type Npc, type NpcInput } from '@/lib/api/npcs';
+import { loadNpcs, createNpc, updateNpc, deleteNpc, type Npc, type NpcInput } from '@/lib/api/npcs';
 import { listMyCampaignNames } from '@/lib/api/campaigns';
 import { NpcList } from './NpcList';
 import { NpcForm } from './NpcForm';
@@ -20,6 +20,7 @@ export function NpcTab({ userId, isDM }: { userId: string; isDM: boolean }) {
   const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formValue, setFormValue] = useState<NpcInput>(EMPTY_INPUT);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -56,20 +57,38 @@ export function NpcTab({ userId, isDM }: { userId: string; isDM: boolean }) {
 
   function resetForm() {
     setShowForm(false);
+    setEditingId(null);
     setFormValue(EMPTY_INPUT);
     setFormError('');
+  }
+
+  function handleEdit(npc: Npc) {
+    setEditingId(npc.id);
+    setShowForm(true);
+    setFormValue({ name: npc.name, relationship: npc.relationship, status: npc.status, note: npc.note });
+    setFormError('');
+  }
+
+  async function handleDelete(npcId: string) {
+    // ponytail: window.confirm for delete; swap for a modal like DeleteSessionModal if UX requires
+    if (!window.confirm('Delete this NPC?')) return;
+    const { error } = await deleteNpc(campaignId, npcId);
+    if (!error) await refetch();
   }
 
   async function handleSubmit() {
     if (!formValue.name.trim()) { setFormError('Enter a name.'); return; }
     setSaving(true);
     setFormError('');
-    const { error } = await createNpc(campaignId, {
+    const input = {
       name: formValue.name.trim(),
       relationship: formValue.relationship.trim(),
       status: formValue.status,
       note: formValue.note.trim(),
-    });
+    };
+    const { error } = editingId
+      ? await updateNpc(campaignId, editingId, input)
+      : await createNpc(campaignId, input);
     setSaving(false);
     if (error) {
       setFormError(error.message);
@@ -109,7 +128,7 @@ export function NpcTab({ userId, isDM }: { userId: string; isDM: boolean }) {
 
       {showForm ? (
         <NpcForm
-          mode="create"
+          mode={editingId ? 'edit' : 'create'}
           value={formValue}
           error={formError}
           loading={saving}
@@ -137,7 +156,7 @@ export function NpcTab({ userId, isDM }: { userId: string; isDM: boolean }) {
           ))}
         </div>
       ) : (
-        <NpcList npcs={npcs} userId={userId} isDM={isDM} />
+        <NpcList npcs={npcs} userId={userId} isDM={isDM} onEdit={handleEdit} onDelete={handleDelete} />
       )}
     </div>
   );
