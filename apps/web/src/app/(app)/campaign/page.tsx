@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { BankingTab } from '@/components/campaign/BankingTab';
 import { OverviewTab } from '@/components/campaign/OverviewTab';
 import { ScheduleTab } from '@/components/campaign/ScheduleTab';
@@ -58,6 +59,9 @@ export default function CampaignPage() {
             DM view
           </p>
         )}
+        <Link href="/campaign/houses" style={{ display: 'inline-block', fontSize: '0.8rem', color: 'var(--color-primary)', textDecoration: 'none', marginBottom: '0.75rem' }}>
+          🏰 Noble Houses →
+        </Link>
       </div>
 
       {/* Tabs */}

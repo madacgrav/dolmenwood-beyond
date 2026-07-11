@@ -1,0 +1,74 @@
+[
+  {
+    "id": "brackenwold",
+    "name": "House Brackenwold",
+    "alignment": "Lawful",
+    "domain": "The Duchy of Brackenwold, encompassing the whole of Dolmenwood (at least notionally) as well as a large region to the south. The domains of all other listed noble houses fall within the duchy.",
+    "seat": "Castle Brackenwold, upon the south-eastern verge of Dolmenwood.",
+    "head": "Duke Thespian III of Brackenwold. A troubled man who, it is said, would prefer to spend his days hunting rather than presiding over a great realm. It is known that the duke harbours a deep hatred of the Drune and a growing fear of the Nag-Lord."
+  },
+  {
+    "id": "guillefer",
+    "name": "House Guillefer",
+    "alignment": "Neutral",
+    "domain": "A region of forest on either side of the Lochsbreth Road, in north-eastern Dolmenwood, encompassing the villages of Blackeswell, Meagre's Reach, and Odd.",
+    "seat": "The Hall of Sleep, located at the north-eastern end of the Groaning Loch.",
+    "head": "The nobles of this house share rulership on a sporadically rotating basis. The current ruler, Edwin Guillefer, is a poet and harpist, and is said to be a friend of Ygraine the sorceress. He remains untroubled by the waxing of the Nag-Lord's influence in the region, to the consternation of his neighbour, the Lady Harrowmoor."
+  },
+  {
+    "id": "harrowmoor",
+    "name": "House Harrowmoor",
+    "alignment": "Lawful",
+    "domain": "A broad region of forest at the heart of Dolmenwood, stretching from the town of Prigwort in the east to the shores of Lake Longmere in the west.",
+    "seat": "Harrowmoor Keep, located on the southerly cliffs of the Groaning Loch.",
+    "head": "Lady Theatrice Harrowmoor. A famed intellect and expert on matters historical, Lady Harrowmoor is cool-headed but not cold-hearted. Of late, she has taken more direct involvement in the affairs of Prigwort, bolstering the town guard against the growing presence of crookhorn ruffians in the area."
+  },
+  {
+    "id": "hogwarsh",
+    "name": "House Hogwarsh",
+    "alignment": "Neutral",
+    "domain": "The Barony of the High Wold, encompassing the long-settled south-western corner of Dolmenwood and the rustic pastures to the south. The domains of houses Malbleat, Murkin, Nodlock, and Ramius fall within the barony.",
+    "seat": "High-Hankle, located in the central plains of the High Wold, in the south-east of Dolmenwood.",
+    "head": "Baron Sagewine Hogwarsh. Inherited the lordship of the High Wold as a callow youth. Now in his thirties, Hogwarsh is known for his lax attitude to the law, being more interested in wine and debauchery than in the maintenance of order."
+  },
+  {
+    "id": "malbleat",
+    "name": "House Malbleat",
+    "alignment": "Chaotic",
+    "domain": "The eastern portion of the High Wold region in the south-east of Dolmenwood, encompassing the towns of Lankshorn and Dreg.",
+    "seat": "Redwraith Manor, located in the woods four miles north of Lankshorn.",
+    "head": "Lord Gryphius Malbleat, longhorn breggle. A refined aesthete known for his cruelty and his bitter enmity toward his elder half-brother, Lord Ramius."
+  },
+  {
+    "id": "mulbreck",
+    "name": "House Mulbreck",
+    "alignment": "Lawful",
+    "domain": "The woods and meadows of southern Dolmenwood, east of the River Hameth, encompassing the Woodcutters' Encampment.",
+    "seat": "Bogwitt Manor, located in the south-eastern corner of Dolmenwood.",
+    "head": "Lady Pulsephine Mulbreck. A reclusive lady who seldom sets foot outside of her manor and permits no guests to enter. It is said that she remains in mourning over the death of her husband a decade past."
+  },
+  {
+    "id": "murkin",
+    "name": "House Murkin",
+    "alignment": "Chaotic",
+    "domain": "The rugged, little-travelled lands west of Dolmenwood, within the Barony of the High Wold, bounded by the marshes of the Northern Scratch.",
+    "seat": "Kolstoke Keep, located on the western edge of Dolmenwood.",
+    "head": "Lord Simeone Murkin, a boorish and cruel-tempered man of mixed breggle/human parentage. Murkin's only passions are conquest and military dominance."
+  },
+  {
+    "id": "nodlock",
+    "name": "House Nodlock",
+    "alignment": "Neutral",
+    "domain": "A small pocket of pasture and woodland at the far south-western tip of Dolmenwood, within the Barony of the High Wold.",
+    "seat": "Nodding Castle, located on the south-western edge of Dolmenwood.",
+    "head": "Lord Harald Nodlock. A slovenly man renowned for his love of wine (at all hours of the day), his volatile mood, and his proclivity for spontaneously meting out justice. Nodlock is said to be a lackey of his neighbour, Lord Ramius."
+  },
+  {
+    "id": "ramius",
+    "name": "House Ramius",
+    "alignment": "Neutral",
+    "domain": "The western deeps of Dolmenwood and a small portion of the grasslands upon its south-western verge, within the Barony of the High Wold.",
+    "seat": "Castle Everdusk, located two miles into the woods in the High Wold region in the south-east of Dolmenwood.",
+    "head": "Lord Shadgore Ramius, longhorn breggle. A brilliant mind, known for his subtle strategies and far-reaching ambition. Resents the meddling Baron Hogwarsh for granting his younger half-brother, Lord Malbleat, dominion over much of the High Wold."
+  }
+]

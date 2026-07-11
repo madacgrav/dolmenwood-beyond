@@ -249,3 +249,13 @@ export interface CatalogItemDoc {
   size: string | null;
   notes: string | null;
 }
+
+/** Container `noble_houses`, partition key `/id`. */
+export interface NobleHouseDoc {
+  id: string;
+  name: string;
+  alignment: 'Lawful' | 'Neutral' | 'Chaotic';
+  domain: string;
+  seat: string;
+  head: string;
+}
