@@ -112,7 +112,6 @@ export function newCharacterToDoc(ownerId: string, input: NewCharacterInput): Ch
 const UPDATABLE_FIELDS = [
   'name',
   'level',
-  'xp',
   'abilityScores',
   'hpCurrent',
   'hpMax',

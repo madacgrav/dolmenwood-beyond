@@ -4,6 +4,7 @@ import type { CharacterDoc } from '@/lib/cosmos/types';
 import { requireAccountId } from '@/lib/auth/session';
 import {
   assertCharacterOwner,
+  badRequest,
   canReadCharacter,
   fetchCharacterDocById,
   forbidden,
@@ -118,6 +119,26 @@ export async function updateCharacter(
   updates: Partial<CharacterWithNotes>,
 ): Promise<void> {
   await mutateOwnedCharacterDoc(id, (doc) => applyCharacterUpdates(doc, updates));
+}
+
+/** Owner-only absolute XP set with an append to the xp log. Replaces the
+ *  generic PATCH path for the `xp` field so every change is recorded. */
+export async function adjustXP(characterId: string, newTotal: number): Promise<{ xp: number }> {
+  if (!Number.isInteger(newTotal) || newTotal < 0) throw badRequest('xp must be a non-negative integer');
+  const me = await requireAccountId();
+  const doc = await mutateOwnedCharacterDoc(characterId, (d) => {
+    const delta = newTotal - d.xp;
+    d.xp = newTotal;
+    d.xpLog = [...(d.xpLog ?? []), {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      delta,
+      newTotal,
+      source: 'manual_edit' as const,
+      actorId: me,
+    }];
+  });
+  return { xp: doc.xp };
 }
 
 export async function deleteCharacter(id: string): Promise<void> {

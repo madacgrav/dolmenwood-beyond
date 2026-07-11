@@ -54,6 +54,16 @@ export async function updateCharacter(
   return res.ok ? null : errorText(res);
 }
 
+/** Set the character's absolute XP total; the server records the delta in the XP log. */
+export async function adjustXP(id: string, newTotal: number): Promise<string | null> {
+  const res = await fetch(`/api/characters/${id}/adjust-xp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newTotal }),
+  });
+  return res.ok ? null : errorText(res);
+}
+
 export async function deleteCharacter(id: string): Promise<string | null> {
   const res = await fetch(`/api/characters/${id}`, { method: 'DELETE' });
   return res.ok ? null : errorText(res);
