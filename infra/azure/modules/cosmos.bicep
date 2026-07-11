@@ -43,6 +43,7 @@ resource db 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2024-05-15' = {
 // migration phases only add application code.
 var containers = [
   { name: 'catalog_items', partitionKey: '/itemType' }
+  { name: 'noble_houses', partitionKey: '/id' }
   { name: 'accounts', partitionKey: '/id' }
   { name: 'characters', partitionKey: '/ownerId' }
   { name: 'campaigns', partitionKey: '/id' }
