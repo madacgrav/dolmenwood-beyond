@@ -21,7 +21,7 @@ export interface AdminData {
   }[];
   campaigns: {
     id: string; name: string; invite_code: string; created_at: string;
-    referee_display_name: string; referee_email: string; member_count: number;
+    dm_display_name: string; dm_email: string; member_count: number;
   }[];
   stats: {
     total_accounts: number; total_characters: number;
@@ -76,8 +76,8 @@ export async function getAdminData(): Promise<AdminData> {
       name: c.name,
       invite_code: c.inviteCode,
       created_at: c.createdAt,
-      referee_display_name: accountById.get(c.refereeId)?.displayName ?? 'Unknown',
-      referee_email: accountById.get(c.refereeId)?.email ?? '—',
+      dm_display_name: accountById.get(c.refereeId)?.displayName ?? 'Unknown',
+      dm_email: accountById.get(c.refereeId)?.email ?? '—',
       member_count: c.members.length,
     })),
     stats: {

@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import {
-  refereeBankOverview,
+  dmBankOverview,
   recordBankTransaction,
   type LedgerRow,
-  type RefereeBankEntry,
+  type DMBankEntry,
 } from '@/lib/api/bank';
 
 interface CharacterBank {
-  character: RefereeBankEntry;
+  character: DMBankEntry;
   balance: number;
   ledger: LedgerRow[];
   showTransfer: boolean;
@@ -25,7 +25,7 @@ export function BankingTab() {
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const overview = await refereeBankOverview();
+    const overview = await dmBankOverview();
     setEntries(overview.map(c => ({
       character: c,
       balance: c.balance,

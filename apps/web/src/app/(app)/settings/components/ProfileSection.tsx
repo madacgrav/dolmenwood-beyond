@@ -93,8 +93,8 @@ export function ProfileSection({
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
         {account?.role && (
-          <span style={{ display: 'inline-block', padding: '0.25rem 0.75rem', borderRadius: '999px', backgroundColor: roleBadgeColor, color: 'white', fontSize: '0.75rem', fontWeight: '600', textTransform: 'capitalize' }}>
-            {account.role}
+          <span style={{ display: 'inline-block', padding: '0.25rem 0.75rem', borderRadius: '999px', backgroundColor: roleBadgeColor, color: 'white', fontSize: '0.75rem', fontWeight: '600' }}>
+            {account.role === 'referee' ? 'Dungeon Master' : 'Player'}
           </span>
         )}
         <button

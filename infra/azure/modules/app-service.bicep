@@ -129,6 +129,22 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
           name: 'NOTIFICATIONS_DRAIN_SECRET'
           value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/notifications-drain-secret/)'
         }
+        // WhatsApp (Twilio) is feature-flagged on the presence of the TWILIO_*
+        // env vars. Uncomment once the Twilio account exists and the three Key
+        // Vault secrets are set — an unresolved KV reference would pass the
+        // literal reference string through and falsely enable the channel.
+        // {
+        //   name: 'TWILIO_ACCOUNT_SID'
+        //   value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/twilio-account-sid/)'
+        // }
+        // {
+        //   name: 'TWILIO_AUTH_TOKEN'
+        //   value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/twilio-auth-token/)'
+        // }
+        // {
+        //   name: 'TWILIO_WHATSAPP_FROM'
+        //   value: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/twilio-whatsapp-from/)'
+        // }
         {
           name: 'NODE_ENV'
           value: 'production'

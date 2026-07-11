@@ -9,7 +9,7 @@ type TabId = 'overview' | 'bank' | 'schedule';
 
 export default function CampaignPage() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [isReferee, setIsReferee] = useState(false);
+  const [isDM, setIsDM] = useState(false);
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -19,20 +19,20 @@ export default function CampaignPage() {
       if (res.ok) {
         const account: { id: string; role: string } = await res.json();
         setUserId(account.id);
-        setIsReferee(account.role === 'referee');
+        setIsDM(account.role === 'referee');
       }
       setLoading(false);
     }
     checkRole();
   }, []);
 
-  const tabs: { id: TabId; label: string; refereeOnly?: boolean }[] = [
+  const tabs: { id: TabId; label: string; dmOnly?: boolean }[] = [
     { id: 'overview', label: '⚔️ Party' },
-    { id: 'bank', label: '🏦 Bank', refereeOnly: true },
+    { id: 'bank', label: '🏦 Bank', dmOnly: true },
     { id: 'schedule', label: '📅 Schedule' },
   ];
 
-  const visibleTabs = tabs.filter(t => !t.refereeOnly || isReferee);
+  const visibleTabs = tabs.filter(t => !t.dmOnly || isDM);
 
   if (loading) {
     return (
@@ -53,9 +53,9 @@ export default function CampaignPage() {
         }}>
           Campaign
         </h1>
-        {isReferee && (
+        {isDM && (
           <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '0 0 0.75rem' }}>
-            Referee view
+            DM view
           </p>
         )}
       </div>
@@ -94,10 +94,10 @@ export default function CampaignPage() {
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
         {activeTab === 'overview' && userId && (
-          <OverviewTab isReferee={isReferee} userId={userId} />
+          <OverviewTab isDM={isDM} userId={userId} />
         )}
 
-        {activeTab === 'bank' && isReferee && (
+        {activeTab === 'bank' && isDM && (
           <div>
             <div style={{ marginBottom: '1rem' }}>
               <h2 style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: '1.1rem', color: 'var(--color-text)', margin: '0 0 0.25rem' }}>
@@ -112,7 +112,7 @@ export default function CampaignPage() {
         )}
 
         {activeTab === 'schedule' && userId && (
-          <ScheduleTab userId={userId} isReferee={isReferee} />
+          <ScheduleTab userId={userId} isDM={isDM} />
         )}
       </div>
     </div>

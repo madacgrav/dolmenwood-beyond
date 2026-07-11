@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { applyXPModifiers } from '@dolmenwood/rules-engine';
 import {
-  loadRefereeCampaigns,
+  loadDMCampaigns,
   createCampaign,
   awardXP,
   insertPackAnimal,
@@ -18,7 +18,7 @@ import { MemberList } from './MemberList';
 import { XPAwardPanel } from './XPAwardPanel';
 import { PackAnimalsSection } from './PackAnimalsSection';
 
-export function RefereeView(_props: { userId: string }) {
+export function DungeonMasterView(_props: { userId: string }) {
   const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -39,7 +39,7 @@ export function RefereeView(_props: { userId: string }) {
   }
 
   const loadCampaigns = useCallback(async () => {
-    const result = await loadRefereeCampaigns();
+    const result = await loadDMCampaigns();
     if (!result) {
       setCampaigns([]);
       setLoading(false);
@@ -83,8 +83,8 @@ export function RefereeView(_props: { userId: string }) {
   }
 
   async function handleAwardXP(campaign: CampaignData) {
-    // Belt-and-suspenders: only the referee who owns this campaign may award XP.
-    // The DB also enforces this via RLS + referee_id scoping in loadCampaigns.
+    // Belt-and-suspenders: only the DM who owns this campaign may award XP.
+    // The server also enforces this via refereeId scoping in loadCampaigns.
     if (!campaigns.some(c => c.id === campaign.id)) {
       patchXP(campaign.id, { error: 'Unauthorized: you do not own this campaign.' });
       return;

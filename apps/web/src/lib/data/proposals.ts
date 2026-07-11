@@ -69,6 +69,7 @@ export async function createProposal(
   const title = String(input.title ?? '').trim();
   if (!title) throw badRequest('title is required');
   if (!input.scheduledAt) throw badRequest('scheduled_at is required');
+  let recipients: string[] = [];
   await replaceCampaignWithRetry(
     campaignId,
     (doc, meId) => {
@@ -87,8 +88,19 @@ export async function createProposal(
         createdAt: new Date().toISOString(),
       };
       doc.proposals = [...(doc.proposals ?? []), proposal];
+      // Everyone who needs to weigh in on availability — except the proposer.
+      recipients = participantIdsOf(doc).filter((id) => id !== me);
     },
   );
+  if (recipients.length > 0) {
+    await fanOutNotifications(
+      campaignId,
+      recipients,
+      'date_suggested',
+      `New session date suggested: ${title}`,
+      null,
+    );
+  }
 }
 
 export async function deleteProposal(campaignId: string, proposalId: string): Promise<void> {
@@ -99,7 +111,7 @@ export async function deleteProposal(campaignId: string, proposalId: string): Pr
     (doc) => {
       const proposal = (doc.proposals ?? []).find((p) => p.id === proposalId);
       if (!proposal) throw notFound('proposal');
-      // Creator or referee (port of the date_proposals RLS)
+      // Creator or DM (port of the date_proposals RLS)
       if (proposal.createdBy !== me && doc.refereeId !== me) throw forbidden();
       doc.proposals = (doc.proposals ?? []).filter((p) => p.id !== proposalId);
     },
@@ -170,25 +182,35 @@ export async function setProposalAvailability(
   );
 
   if (confirmed) {
-    await fanOutConfirmationNotifications(campaignId, confirmed);
+    const { title, sessionId, participantIds } = confirmed;
+    await fanOutNotifications(
+      campaignId,
+      participantIds,
+      'date_confirmed',
+      `Session confirmed: ${title}`,
+      sessionId,
+    );
   }
 }
 
 /** Cross-partition, best-effort: a failed insert only costs that recipient. */
-async function fanOutConfirmationNotifications(
+async function fanOutNotifications(
   campaignId: string,
-  confirmed: { title: string; sessionId: string; participantIds: string[] },
+  recipientIds: string[],
+  kind: string,
+  body: string,
+  relatedSessionId: string | null,
 ): Promise<void> {
   const notifications = getContainer('notifications');
   await Promise.all(
-    confirmed.participantIds.map(async (accountId) => {
+    recipientIds.map(async (accountId) => {
       const doc: NotificationDoc = {
         id: crypto.randomUUID(),
         accountId,
         campaignId,
-        kind: 'date_confirmed',
-        body: `Session confirmed: ${confirmed.title}`,
-        relatedSessionId: confirmed.sessionId,
+        kind,
+        body,
+        relatedSessionId,
         read: false,
         deliveries: [],
         createdAt: new Date().toISOString(),

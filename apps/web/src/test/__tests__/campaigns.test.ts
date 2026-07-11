@@ -17,7 +17,7 @@ vi.mock('@/lib/cosmos/client', async () => await import('@/test/cosmos-fake'));
 import {
   createCampaign,
   joinCampaign,
-  loadRefereeCampaigns,
+  loadDMCampaigns,
   loadPlayerCampaigns,
   awardXP,
   insertPackAnimal,
@@ -70,13 +70,13 @@ describe('campaign lifecycle', () => {
 
     // Referee sees the same campaign with members hydrated
     currentAccount = REFEREE;
-    const refView = await loadRefereeCampaigns();
+    const refView = await loadDMCampaigns();
     expect(refView!.campaigns[0]!.members[0]!.display_name).toBe('Alice');
   });
 
-  it('loadRefereeCampaigns returns null when the caller owns no campaigns', async () => {
+  it('loadDMCampaigns returns null when the caller owns no campaigns', async () => {
     currentAccount = PLAYER;
-    expect(await loadRefereeCampaigns()).toBeNull();
+    expect(await loadDMCampaigns()).toBeNull();
   });
 });
 

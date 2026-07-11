@@ -8,7 +8,7 @@ import { RsvpControl } from '@/components/campaign/schedule/RsvpControl';
 interface SessionListProps {
   sessions: Session[];
   userId: string;
-  isReferee: boolean;
+  isDM: boolean;
   roster: RosterMember[];
   onRsvp: (sessionId: string, status: RsvpStatus) => void;
   onEdit: (session: Session) => void;
@@ -27,7 +27,7 @@ function sortSessions(sessions: Session[]): Session[] {
   return [...upcoming, ...past];
 }
 
-export function SessionList({ sessions, userId, isReferee, roster, onRsvp, onEdit, onDelete }: SessionListProps) {
+export function SessionList({ sessions, userId, isDM, roster, onRsvp, onEdit, onDelete }: SessionListProps) {
   if (sessions.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
@@ -50,7 +50,7 @@ export function SessionList({ sessions, userId, isReferee, roster, onRsvp, onEdi
         const maybe = groups.maybe ?? [];
         const no = groups.no ?? [];
         const myStatus = session.rsvps.find(r => r.account_id === userId)?.status ?? null;
-        const canManage = session.created_by === userId || isReferee;
+        const canManage = session.created_by === userId || isDM;
         return (
           <div
             key={session.id}

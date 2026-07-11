@@ -136,7 +136,7 @@ export default function SignUpPage() {
                   <RoleCard
                     selected={role === 'referee'}
                     onClick={() => setRole('referee')}
-                    title="Referee"
+                    title="Dungeon Master"
                     description="Run campaigns, generate invite codes, and monitor your party's character sheets."
                     icon="📖"
                   />

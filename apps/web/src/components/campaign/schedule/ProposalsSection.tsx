@@ -7,8 +7,8 @@ import { ProposalForm, type ProposalFormField } from '@/components/campaign/sche
 import { ProposalList } from '@/components/campaign/schedule/ProposalList';
 import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
 
-export function ProposalsSection({ campaignId, userId, isReferee, roster, onConfirmed }: {
-  campaignId: string; userId: string; isReferee: boolean; roster: RosterMember[]; onConfirmed?: () => void;
+export function ProposalsSection({ campaignId, userId, isDM, roster, onConfirmed }: {
+  campaignId: string; userId: string; isDM: boolean; roster: RosterMember[]; onConfirmed?: () => void;
 }) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
 
@@ -135,7 +135,7 @@ export function ProposalsSection({ campaignId, userId, isReferee, roster, onConf
       <ProposalList
         proposals={proposals}
         userId={userId}
-        isReferee={isReferee}
+        isDM={isDM}
         roster={roster}
         onDelete={setDeletingProposal}
         onAvail={handleAvailability}

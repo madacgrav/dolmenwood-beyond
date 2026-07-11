@@ -37,7 +37,7 @@ export function PlayerView({ userId }: { userId: string }) {
       return;
     }
     if (!data) {
-      setJoinError('Invalid invite code. Check with your referee.');
+      setJoinError('Invalid invite code. Check with your Dungeon Master.');
       setJoinLoading(false);
       return;
     }
@@ -68,7 +68,7 @@ export function PlayerView({ userId }: { userId: string }) {
             Join a Campaign
           </h2>
           <p style={{ color: 'var(--color-text-muted)', maxWidth: '300px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
-            Ask your referee for the invite code to join their campaign.
+            Ask your Dungeon Master for the invite code to join their campaign.
           </p>
         </div>
       )}

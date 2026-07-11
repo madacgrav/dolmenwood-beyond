@@ -21,7 +21,7 @@ interface CampaignOption {
   name: string;
 }
 
-export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: boolean }) {
+export function ScheduleTab({ userId, isDM }: { userId: string; isDM: boolean }) {
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
   const [campaignId, setCampaignId] = useState('');
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -190,7 +190,7 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
       )}
 
       {campaignId && (
-        <ProposalsSection campaignId={campaignId} userId={userId} isReferee={isReferee} roster={roster} onConfirmed={refetch} />
+        <ProposalsSection campaignId={campaignId} userId={userId} isDM={isDM} roster={roster} onConfirmed={refetch} />
       )}
 
       {showForm ? (
@@ -264,7 +264,7 @@ export function ScheduleTab({ userId, isReferee }: { userId: string; isReferee: 
               ? sessions.filter(s => sameDay(new Date(s.scheduled_at), selectedDay))
               : sessions}
             userId={userId}
-            isReferee={isReferee}
+            isDM={isDM}
             roster={roster}
             onRsvp={handleRsvp}
             onEdit={handleEdit}

@@ -6,6 +6,7 @@ import {
   updateDisplayName,
   updateNotificationPrefs,
 } from '@/lib/data/account';
+import { isValidE164 } from '@/lib/phone';
 
 function handleError(e: unknown) {
   if (e instanceof AuthError) {
@@ -32,6 +33,9 @@ export async function PATCH(request: Request) {
 
     if (typeof body.display_name === 'string') {
       await updateDisplayName(accountId, body.display_name);
+    }
+    if (typeof body.phone === 'string' && body.phone !== '' && !isValidE164(body.phone)) {
+      return NextResponse.json({ error: 'invalid phone number' }, { status: 400 });
     }
     const prefKeys = ['phone', 'email_opt_in', 'sms_opt_in', 'whatsapp_opt_in'] as const;
     if (prefKeys.some((k) => body[k] !== undefined)) {
