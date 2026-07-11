@@ -1,6 +1,7 @@
 'use client';
 
 import type { Npc } from '@/lib/api/npcs';
+import { STATUS_META } from './types';
 
 interface Props {
   npc: Npc;
@@ -16,6 +17,7 @@ export function NpcCard({ npc, userId, isDM, onEdit, onDelete }: Props) {
     <div style={{
       padding: '0.625rem 0.75rem', borderRadius: '10px',
       border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)',
+      opacity: npc.status === 'dead' ? 0.6 : 1,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <span style={{ color: 'var(--color-text)', fontWeight: '600', fontSize: '0.9rem' }}>
@@ -30,11 +32,11 @@ export function NpcCard({ npc, userId, isDM, onEdit, onDelete }: Props) {
           </>
         )}
         <span style={{
-          marginLeft: 'auto', fontSize: '0.7rem', color: 'var(--color-text-muted)',
-          border: '1px solid var(--color-border)', borderRadius: '999px',
-          padding: '0.1rem 0.5rem', textTransform: 'capitalize',
+          marginLeft: 'auto', fontSize: '0.7rem', color: STATUS_META[npc.status].color,
+          border: `1px solid ${STATUS_META[npc.status].color}`, borderRadius: '999px',
+          padding: '0.1rem 0.5rem',
         }}>
-          {npc.status}
+          {STATUS_META[npc.status].label}
         </span>
         {canEdit && onEdit && (
           <button
