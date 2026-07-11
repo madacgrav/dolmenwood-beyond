@@ -78,4 +78,27 @@ describe.skipIf(!existsSync(BLANK_PATH))('fillCharacterSheet', () => {
     // Speed: 460 coins equipped → 30
     expect(val('Speed')).toBe('30');
   });
+
+  it('fills skills, languages, and progression', async () => {
+    const blank = readFileSync(BLANK_PATH);
+    const doc = makeDoc({ extraLanguages: ['Woldish', 'Gaffe', 'Caprice'] });
+    const bytes = await fillCharacterSheet(new Uint8Array(blank), docToFullCharacter(doc));
+
+    const filled = await PDFDocument.load(bytes);
+    const form = filled.getForm();
+    const val = (name: string) => form.getTextField(name).getText();
+
+    // Universal skills always present, formatted as targets
+    expect(val('Listen')).toMatch(/^\d\+$/);
+    expect(val('Search')).toMatch(/^\d\+$/);
+    expect(val('Survival')).toMatch(/^\d\+$/);
+    // Languages split across the two fields
+    expect(val('Languages 1')).toBe('Woldish, Gaffe');
+    expect(val('Languages 2')).toBe('Caprice');
+    // Progression
+    expect(val('Level')).toBe('1');
+    expect(val('XP')).toBe('1665');
+    expect(Number(val('XP For Next Level'))).toBeGreaterThan(0);
+    expect(val('XP Modifier')).toMatch(/^[+-]\d+%$/);
+  });
 });

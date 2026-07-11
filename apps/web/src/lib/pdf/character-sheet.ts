@@ -6,6 +6,11 @@ import {
   calculateAC,
   getKindredACBonus,
   calculateSpeed,
+  getAllSkills,
+  getPrimeAbilities,
+  getXPModifier,
+  getKindredXPBonus,
+  getXPThresholdForNextLevel,
 } from '@dolmenwood/rules-engine';
 import type { FullCharacter } from '@/lib/data/mappers/character';
 
@@ -96,6 +101,31 @@ export async function fillCharacterSheet(
     .filter((e) => e.location !== 'tiny')
     .reduce((s, e) => s + e.weightCoins * e.quantity, 0);
   set('Speed', calculateSpeed(itemWeight));
+
+  // Skills — universal (Listen/Search/Survival) have same-named fields;
+  // class skills go to the Extra Skill slots
+  const skills = getAllSkills(c.characterClass, c.level, c.kindred);
+  for (const s of skills.filter((s) => s.isUniversal)) set(s.name, `${s.target}+`);
+  skills
+    .filter((s) => !s.isUniversal)
+    .slice(0, 6)
+    .forEach((s, i) => set(`Extra Skill ${i + 1}`, `${s.name} ${s.target}+`));
+
+  // Languages — stored extras only (base/kindred languages aren't modeled)
+  const langs = c.extraLanguages ?? [];
+  const half = Math.ceil(langs.length / 2);
+  set('Languages 1', langs.slice(0, half).join(', '));
+  set('Languages 2', langs.slice(half).join(', '));
+
+  // Progression
+  set('Level', c.level);
+  set('XP', c.xp);
+  set('XP For Next Level', getXPThresholdForNextLevel(c.characterClass, c.level));
+  const primeScores = getPrimeAbilities(c.characterClass).map(
+    (p) => a[p.toLowerCase() as keyof typeof a] ?? 0,
+  );
+  const xpMod = getXPModifier(primeScores) + getKindredXPBonus(c.kindred);
+  set('XP Modifier', `${xpMod >= 0 ? '+' : ''}${xpMod}%`);
 
   return pdf.save();
 }
