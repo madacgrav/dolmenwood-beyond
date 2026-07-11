@@ -12,9 +12,11 @@ import {
 import {
   docToCharacter,
   docToCharacterWithNotes,
+  docToFullCharacter,
   newCharacterToDoc,
   applyCharacterUpdates,
   type NewCharacterInput,
+  type FullCharacter,
 } from './mappers/character';
 
 export type { NewCharacterInput };
@@ -102,6 +104,13 @@ async function listCharacterDocs(): Promise<CharacterDoc[]> {
     )
     .fetchAll();
   return resources;
+}
+
+/** Owner-only full projection (coins, inventory, spells) for the PDF export. */
+export async function fetchFullCharacter(id: string): Promise<FullCharacter> {
+  const me = await requireAccountId();
+  const doc = await assertCharacterOwner(me, id);
+  return docToFullCharacter(doc);
 }
 
 /** Readable by the owner or a referee of a campaign the owner belongs to. */

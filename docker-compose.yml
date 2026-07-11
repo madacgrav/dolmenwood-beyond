@@ -28,6 +28,7 @@ services:
       - SIGNALR_CONNECTION_STRING=${SIGNALR_CONNECTION_STRING:-}
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - RESEND_FROM=${RESEND_FROM:-}
+      - SHEET_PDF_URL=${SHEET_PDF_URL:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]

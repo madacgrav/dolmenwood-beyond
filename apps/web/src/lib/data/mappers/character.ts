@@ -3,7 +3,13 @@ import type {
   CharacterWithNotes,
   AbilityScores,
 } from '@dolmenwood/types';
-import type { CharacterDoc } from '@/lib/cosmos/types';
+import type {
+  CharacterDoc,
+  InventoryEntryDoc,
+  SpellSlotDoc,
+  SpellPrepDoc,
+  SpellbookEntryDoc,
+} from '@/lib/cosmos/types';
 
 /**
  * Single source of truth for mapping character documents to the domain
@@ -45,6 +51,30 @@ export function docToCharacterWithNotes(doc: CharacterDoc): CharacterWithNotes {
     notes: doc.notes ?? undefined,
     sessionNotes: doc.sessionNotes ?? [],
     peopleOfNote: doc.peopleOfNote ?? [],
+  };
+}
+
+/** Everything the PDF export needs: the notes projection plus coins and the embedded arrays. */
+export type FullCharacter = CharacterWithNotes & {
+  coinsGp: number;
+  coinsSp: number;
+  coinsCp: number;
+  inventory: InventoryEntryDoc[];
+  spellSlots: SpellSlotDoc[];
+  spellPreparations: SpellPrepDoc[];
+  spellbook: SpellbookEntryDoc[];
+};
+
+export function docToFullCharacter(doc: CharacterDoc): FullCharacter {
+  return {
+    ...docToCharacterWithNotes(doc),
+    coinsGp: doc.coinsGp,
+    coinsSp: doc.coinsSp,
+    coinsCp: doc.coinsCp,
+    inventory: doc.inventory ?? [],
+    spellSlots: doc.spellSlots ?? [],
+    spellPreparations: doc.spellPreparations ?? [],
+    spellbook: doc.spellbook ?? [],
   };
 }
 
