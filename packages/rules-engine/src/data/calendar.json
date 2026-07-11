@@ -1,0 +1,105 @@
+{
+  "weekdayNames": ["Colly", "Chime", "Hayme", "Moot", "Frisk", "Eggfast", "Sunning"],
+  "months": [
+    {
+      "name": "Grimvold",
+      "seasonLabel": "The Onset of Winter",
+      "weekDays": 28,
+      "wysendays": ["Hanglemas", "Dyboll's Day"],
+      "newMoon": 4,
+      "fullMoon": 19,
+      "solarEvent": { "name": "Winter Solstice", "day": 19 }
+    },
+    {
+      "name": "Lymewald",
+      "seasonLabel": "Deep Winter",
+      "weekDays": 28,
+      "wysendays": [],
+      "newMoon": 4,
+      "fullMoon": 18
+    },
+    {
+      "name": "Haggryme",
+      "seasonLabel": "The Fading of Winter",
+      "weekDays": 28,
+      "wysendays": ["Yarl's Day", "The Day of Virgins"],
+      "newMoon": 5,
+      "fullMoon": 20
+    },
+    {
+      "name": "Symswald",
+      "seasonLabel": "The Onset of Spring",
+      "weekDays": 28,
+      "wysendays": ["Hopfast"],
+      "newMoon": 4,
+      "fullMoon": 19,
+      "solarEvent": { "name": "Vernal Equinox", "day": 20 }
+    },
+    {
+      "name": "Harchment",
+      "seasonLabel": "High Spring",
+      "weekDays": 28,
+      "wysendays": ["Smithing"],
+      "newMoon": 5,
+      "fullMoon": 19
+    },
+    {
+      "name": "Iggwyld",
+      "seasonLabel": "The Fading of Spring",
+      "weekDays": 28,
+      "wysendays": ["Shortening", "Longshank's Day"],
+      "newMoon": 5,
+      "fullMoon": 20
+    },
+    {
+      "name": "Chysting",
+      "seasonLabel": "The Onset of Summer",
+      "weekDays": 28,
+      "wysendays": ["Bradging", "Copsewallow", "Chalice"],
+      "newMoon": 4,
+      "fullMoon": 19,
+      "solarEvent": { "name": "Summer Solstice", "day": 18 }
+    },
+    {
+      "name": "Lillipythe",
+      "seasonLabel": "High Summer",
+      "weekDays": 28,
+      "wysendays": ["Old Dobey's Day"],
+      "newMoon": 3,
+      "fullMoon": 17
+    },
+    {
+      "name": "Haelhold",
+      "seasonLabel": "The Fading of Summer",
+      "weekDays": 28,
+      "wysendays": [],
+      "newMoon": 3,
+      "fullMoon": 18
+    },
+    {
+      "name": "Reedwryme",
+      "seasonLabel": "The Onset of Autumn",
+      "weekDays": 28,
+      "wysendays": ["Shub's Eve", "Druden Day"],
+      "newMoon": 4,
+      "fullMoon": 19,
+      "solarEvent": { "name": "Autumnal Equinox", "day": 19 }
+    },
+    {
+      "name": "Obthryme",
+      "seasonLabel": "Deep Autumn",
+      "weekDays": 28,
+      "wysendays": [],
+      "newMoon": 4,
+      "fullMoon": 19
+    },
+    {
+      "name": "Braghold",
+      "seasonLabel": "The Fading of Autumn",
+      "weekDays": 28,
+      "wysendays": ["The Day of Doors", "Dolmenday"],
+      "newMoon": 5,
+      "fullMoon": 20
+    }
+  ]
+}

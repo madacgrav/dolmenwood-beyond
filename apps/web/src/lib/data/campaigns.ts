@@ -6,11 +6,14 @@ import {
   badRequest,
   fetchCharacterDocById,
   forbidden,
+  isCampaignDM,
   isDMOfAccount,
   listCampaignsRunByDM,
   listCampaignsWithMember,
   notFound,
 } from '@/lib/authz';
+import { advanceDay, monthLength } from '@dolmenwood/rules-engine';
+import type { DwDate } from '@dolmenwood/rules-engine';
 import type { CampaignDoc, CharacterDoc, PartyMountDoc } from '@/lib/cosmos/types';
 import type {
   CampaignData,
@@ -52,6 +55,40 @@ export async function replaceCampaignWithRetry(
       throw e;
     }
   }
+}
+
+const authorizeDM = (doc: CampaignDoc, me: string): void => {
+  if (!isCampaignDM(doc, me)) throw forbidden();
+};
+
+function validDwDate(d: unknown): DwDate {
+  const o = d as Partial<DwDate> | null | undefined;
+  if (!o || !Number.isInteger(o.year) || !Number.isInteger(o.month) || !Number.isInteger(o.day)) {
+    throw badRequest('invalid date');
+  }
+  if (o.month! < 1 || o.month! > 12) throw badRequest('invalid month');
+  if (o.day! < 1 || o.day! > monthLength(o.month!)) throw badRequest('invalid day');
+  return { year: o.year!, month: o.month!, day: o.day! };
+}
+
+/** DM-only: set the campaign's in-world date. */
+export async function setCampaignDate(campaignId: string, date: unknown): Promise<DwDate> {
+  const valid = validDwDate(date);
+  await replaceCampaignWithRetry(campaignId, authorizeDM, (doc) => {
+    doc.currentDate = valid;
+  });
+  return valid;
+}
+
+/** DM-only: advance the campaign's in-world date by one day. */
+export async function advanceCampaignDay(campaignId: string): Promise<DwDate> {
+  let next: DwDate | undefined;
+  await replaceCampaignWithRetry(campaignId, authorizeDM, (doc) => {
+    if (!doc.currentDate) throw badRequest('set the date first');
+    next = advanceDay(doc.currentDate);
+    doc.currentDate = next;
+  });
+  return next!;
 }
 
 // Port of generate_invite_code(): unique among campaigns, 20 attempts.
@@ -141,6 +178,7 @@ function charToMemberCharacter(doc: CharacterDoc): MemberCharacter {
     kindred: doc.kindred,
     hp_current: doc.hpCurrent,
     hp_max: doc.hpMax,
+    last_rest_date: doc.lastRestDate ?? null,
   };
 }
 
@@ -191,6 +229,7 @@ async function hydrateCampaign(doc: CampaignDoc): Promise<CampaignData> {
     created_at: doc.createdAt,
     members,
     showMembers: true,
+    current_date: doc.currentDate ?? null,
   };
 }
 

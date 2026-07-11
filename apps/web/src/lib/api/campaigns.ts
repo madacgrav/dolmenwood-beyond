@@ -3,6 +3,8 @@
  * shapes the campaign overview components were built against.
  */
 
+import type { DwDate } from '@dolmenwood/rules-engine';
+
 export type PackAnimalType = 'Mule' | 'Donkey' | 'Pony' | 'Horse' | 'Ox' | 'Pack Dog';
 
 export const PACK_ANIMAL_TYPES: PackAnimalType[] = ['Mule', 'Donkey', 'Pony', 'Horse', 'Ox', 'Pack Dog'];
@@ -26,6 +28,7 @@ export interface MemberCharacter {
   kindred: string;
   hp_current?: number;
   hp_max?: number;
+  last_rest_date?: DwDate | null;
 }
 
 export interface Member {
@@ -42,6 +45,7 @@ export interface CampaignData {
   created_at: string;
   members: Member[];
   showMembers: boolean;
+  current_date: DwDate | null;
 }
 
 export interface DMCampaignsData {
@@ -111,6 +115,26 @@ export async function awardXP(
   });
   if (res.ok) return { error: null };
   return { error: { message: await errorMessage(res) } };
+}
+
+export async function setCampaignDate(campaignId: string, date: DwDate): Promise<DwDate | null> {
+  const res = await fetch(`/api/campaigns/${campaignId}/calendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ op: 'setDate', date }),
+  });
+  if (!res.ok) return null;
+  return (await res.json()).currentDate ?? null;
+}
+
+export async function advanceCampaignDay(campaignId: string): Promise<DwDate | null> {
+  const res = await fetch(`/api/campaigns/${campaignId}/calendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ op: 'advanceDay' }),
+  });
+  if (!res.ok) return null;
+  return (await res.json()).currentDate ?? null;
 }
 
 export async function insertPackAnimal(params: {

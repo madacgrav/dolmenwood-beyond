@@ -5,6 +5,8 @@
  * splitting them across REST resources would buy nothing.
  */
 
+import type { DwDate } from '@dolmenwood/rules-engine';
+
 export interface DBSpellSlot {
   id: string;
   character_id: string;
@@ -90,9 +92,10 @@ export async function updateSlotUsage(
   await magicOp(characterId, { op: 'updateSlotUsage', slotId, slots_used });
 }
 
-/** End-of-day rest: delete all preparations and zero out slot usage. */
-export async function resetSpellsForRest(characterId: string): Promise<void> {
-  await magicOp(characterId, { op: 'rest' });
+/** End-of-day rest: delete all preparations and zero out slot usage.
+ *  Pass the campaign's in-world date to stamp `lastRestDate` on the character. */
+export async function resetSpellsForRest(characterId: string, restDate?: DwDate): Promise<void> {
+  await magicOp(characterId, restDate ? { op: 'rest', restDate } : { op: 'rest' });
 }
 
 export async function insertPreparation(

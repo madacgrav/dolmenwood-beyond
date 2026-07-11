@@ -1,4 +1,5 @@
 import type { AbilityScores, SessionNote, PersonOfNote, LevelUpChange, XPLogEntry } from '@dolmenwood/types';
+import type { DwDate } from '@dolmenwood/rules-engine';
 
 /**
  * Cosmos DB document shapes, one interface per container. These are the
@@ -156,6 +157,8 @@ export interface CharacterDoc {
   xpLog?: XPLogEntry[];
   mounts?: MountEntryDoc[];
   retainers?: RetainerEntryDoc[];
+  /** Last in-world date this character rested. Absent = never rested. */
+  lastRestDate?: DwDate | null;
   createdAt: string;
   updatedAt: string;
   /** Cosmos system property — used for optimistic-concurrency replaces. */
@@ -224,6 +227,8 @@ export interface CampaignDoc {
   proposals?: ProposalEntryDoc[];
   /** Optional: absent on documents created before the NPC tracker — default to []. */
   npcs?: NpcEntryDoc[];
+  /** In-world current date, DM-controlled. Absent/null until the DM sets it. */
+  currentDate?: DwDate | null;
   createdAt: string;
   _etag?: string;
 }

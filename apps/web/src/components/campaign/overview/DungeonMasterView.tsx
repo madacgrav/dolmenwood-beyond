@@ -12,7 +12,9 @@ import {
 import type { CampaignData, PackAnimal, PackAnimalType } from '@/lib/api/campaigns';
 import { defaultXPAward } from './types';
 import type { NewPackAnimalForm, XPAwardState } from './types';
+import type { DwDate } from '@dolmenwood/rules-engine';
 import { CampaignCreateForm } from './CampaignCreateForm';
+import { CurrentDateCard } from './CurrentDateCard';
 import { InviteCodePanel } from './InviteCodePanel';
 import { MemberList } from './MemberList';
 import { XPAwardPanel } from './XPAwardPanel';
@@ -80,6 +82,10 @@ export function DungeonMasterView(_props: { userId: string }) {
 
   function toggleMembers(id: string) {
     setCampaigns(prev => prev.map(c => c.id === id ? { ...c, showMembers: !c.showMembers } : c));
+  }
+
+  function setCampaignDate(id: string, date: DwDate) {
+    setCampaigns(prev => prev.map(c => c.id === id ? { ...c, current_date: date } : c));
   }
 
   async function handleAwardXP(campaign: CampaignData) {
@@ -222,6 +228,16 @@ export function DungeonMasterView(_props: { userId: string }) {
               copied={copiedId === campaign.id}
               onCopy={() => copyInviteCode(campaign.invite_code, campaign.id)}
             />
+
+            {/* In-world date */}
+            <div style={{ marginTop: '0.625rem' }}>
+              <CurrentDateCard
+                date={campaign.current_date}
+                campaignId={campaign.id}
+                isDM
+                onChange={date => setCampaignDate(campaign.id, date)}
+              />
+            </div>
           </div>
 
           {/* Members toggle */}
