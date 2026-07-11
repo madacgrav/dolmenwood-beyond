@@ -1,5 +1,12 @@
 import { PDFDocument, type PDFForm } from 'pdf-lib';
-import { getAbilityModifier } from '@dolmenwood/rules-engine';
+import {
+  getAbilityModifier,
+  getSaveTargets,
+  getAttackBonus,
+  calculateAC,
+  getKindredACBonus,
+  calculateSpeed,
+} from '@dolmenwood/rules-engine';
 import type { FullCharacter } from '@/lib/data/mappers/character';
 
 /**
@@ -49,6 +56,46 @@ export async function fillCharacterSheet(
   set('Constitution Modifier', mod(a.con));
   set('Charisma', a.cha);
   set('Charisma Modifier', mod(a.cha));
+
+  // HP
+  set('Max Hit Points', c.hpMax);
+  set('Hit Points', c.hpCurrent);
+
+  // Save targets ('Magic Resistance' isn't modeled — blank)
+  const saves = getSaveTargets(c.characterClass, c.level);
+  if (saves) {
+    set('Doom', saves.doom);
+    set('Ray', saves.ray);
+    set('Hold', saves.hold);
+    set('Blast', saves.blast);
+    set('Spell', saves.spell);
+  }
+
+  // AC — same inputs as CombatTab (shield folds into equipped armorAcBonus)
+  const armorBonus = c.inventory
+    .filter((e) => e.location === 'equipped')
+    .reduce((s, e) => s + (e.armorAcBonus ?? 0), 0);
+  set(
+    'Armour Class',
+    calculateAC({
+      dexScore: a.dex,
+      armorBonus,
+      kindredACBonus: getKindredACBonus(c.kindred),
+      classACBonus: 0,
+      shieldBonus: 0,
+    }),
+  );
+
+  // Attack
+  set('Attack', fmt(getAttackBonus(c.characterClass, c.level)));
+
+  // Movement — same weight rule as the Inventory tab's WeightBar (tiny items
+  // are weightless; campaign coin-weight option not applied). Exploring/
+  // Overland aren't modeled — blank.
+  const itemWeight = c.inventory
+    .filter((e) => e.location !== 'tiny')
+    .reduce((s, e) => s + e.weightCoins * e.quantity, 0);
+  set('Speed', calculateSpeed(itemWeight));
 
   return pdf.save();
 }
