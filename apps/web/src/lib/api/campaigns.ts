@@ -116,6 +116,26 @@ export async function awardXP(
   return { error: { message: await errorMessage(res) } };
 }
 
+export async function setCampaignDate(campaignId: string, date: DwDate): Promise<DwDate | null> {
+  const res = await fetch(`/api/campaigns/${campaignId}/calendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ op: 'setDate', date }),
+  });
+  if (!res.ok) return null;
+  return (await res.json()).currentDate ?? null;
+}
+
+export async function advanceCampaignDay(campaignId: string): Promise<DwDate | null> {
+  const res = await fetch(`/api/campaigns/${campaignId}/calendar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ op: 'advanceDay' }),
+  });
+  if (!res.ok) return null;
+  return (await res.json()).currentDate ?? null;
+}
+
 export async function insertPackAnimal(params: {
   campaignId: string;
   name: string;

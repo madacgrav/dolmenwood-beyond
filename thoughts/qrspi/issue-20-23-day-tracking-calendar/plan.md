@@ -292,8 +292,8 @@ export async function advanceCampaignDay(campaignId: string): Promise<DwDate | n
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web typecheck` passes
-- [ ] `pnpm --filter @dolmenwood/web test` passes
+- [x] `pnpm --filter @dolmenwood/web typecheck` passes
+- [x] `pnpm --filter @dolmenwood/web test` passes
 #### Manual
 - [ ] As DM (`account.role === 'referee'`): "Set date…" → set Grimvold 28 → card updates; "Advance day" → rolls to Lymewald... wait, Grimvold has 30 days → day 29 Hanglemas; advance again → 30 Dyboll's Day; advance → Lymewald 1
 - [ ] As non-DM: no Advance/Set controls visible
