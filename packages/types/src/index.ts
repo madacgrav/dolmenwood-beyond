@@ -183,6 +183,18 @@ export interface LevelUpChange {
   newValue: string | number;
 }
 
+export type XPLogSource = 'dm_award' | 'manual_edit' | 'level_up';
+
+export interface XPLogEntry {
+  id: string;
+  timestamp: string;   // server ISO-8601
+  delta: number;       // signed; 0 for level_up
+  newTotal: number;    // character xp after the mutation
+  source: XPLogSource;
+  actorId: string;     // DM account id for dm_award; owner id otherwise
+  toLevel?: number;    // only on level_up entries
+}
+
 // Derived stats (computed by rules engine, not stored)
 export interface DerivedStats {
   abilityModifiers: Record<keyof AbilityScores, number>;
