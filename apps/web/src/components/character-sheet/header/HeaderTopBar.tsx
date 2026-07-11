@@ -79,6 +79,17 @@ export function HeaderTopBar({ characterId, editMode, readOnly, onToggleEdit, on
                 zIndex: 99, minWidth: '180px', overflow: 'hidden',
               }}>
                 <button
+                  onClick={() => { setShowMenu(false); router.push(`/characters/${characterId}/xp-log`); }}
+                  style={{
+                    width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none',
+                    textAlign: 'left', cursor: 'pointer', color: 'var(--color-text)',
+                    fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    minHeight: '44px',
+                  }}
+                >
+                  📈 XP History
+                </button>
+                <button
                   onClick={() => { setShowMenu(false); router.push(`/characters/${characterId}/level-up-log`); }}
                   style={{
                     width: '100%', padding: '0.75rem 1rem', background: 'none', border: 'none',

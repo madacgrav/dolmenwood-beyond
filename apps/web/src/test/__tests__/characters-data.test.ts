@@ -78,8 +78,8 @@ describe('character CRUD (owner-scoped)', () => {
   it('retries a stale-ETag (412) replace against a fresh read and converges', async () => {
     const { id } = await createCharacter(INPUT);
     fakeState.failNextReplaceWith412 = true;
-    await updateCharacter(id, { xp: 100 });
+    await updateCharacter(id, { hpCurrent: 5 });
     expect(fakeState.replaceCalls).toBe(2); // first hits 412, retry succeeds
-    expect(docs.get(id)!.xp).toBe(100);
+    expect(docs.get(id)!.hpCurrent).toBe(5);
   });
 });

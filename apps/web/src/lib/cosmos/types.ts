@@ -1,4 +1,4 @@
-import type { AbilityScores, SessionNote, PersonOfNote, LevelUpChange } from '@dolmenwood/types';
+import type { AbilityScores, SessionNote, PersonOfNote, LevelUpChange, XPLogEntry } from '@dolmenwood/types';
 
 /**
  * Cosmos DB document shapes, one interface per container. These are the
@@ -153,6 +153,7 @@ export interface CharacterDoc {
   spellbook?: SpellbookEntryDoc[];
   bankLedger?: BankLedgerEntryDoc[];
   levelUpLogs?: LevelUpLogDoc[];
+  xpLog?: XPLogEntry[];
   mounts?: MountEntryDoc[];
   retainers?: RetainerEntryDoc[];
   createdAt: string;

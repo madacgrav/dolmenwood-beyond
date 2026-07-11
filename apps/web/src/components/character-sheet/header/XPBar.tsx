@@ -9,10 +9,10 @@ interface Props {
   readOnly: boolean;
   xpEditOpen: boolean;
   onToggle: () => void;
-  onUpdate: (updates: Partial<CharacterWithNotes>) => void | Promise<void>;
+  onAdjustXP?: (newTotal: number) => void | Promise<void>;
 }
 
-export function XPBar({ character, readOnly, xpEditOpen, onToggle, onUpdate }: Props) {
+export function XPBar({ character, readOnly, xpEditOpen, onToggle, onAdjustXP }: Props) {
   const [xpInputVal, setXpInputVal] = useState('');
   const router = useRouter();
 
@@ -31,7 +31,7 @@ export function XPBar({ character, readOnly, xpEditOpen, onToggle, onUpdate }: P
       const gain = val > 0
         ? applyXPModifiers(val, character.characterClass, character.abilityScores as unknown as Record<string, number>, character.kindred)
         : val;
-      onUpdate({ xp: Math.max(0, character.xp + gain) });
+      onAdjustXP?.(Math.max(0, character.xp + gain));
     }
     setXpInputVal('');
     onToggle();
