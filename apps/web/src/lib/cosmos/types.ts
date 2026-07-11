@@ -182,6 +182,21 @@ export interface SessionEntryDoc {
   createdAt: string;
 }
 
+export type NpcStatus = 'alive' | 'dead' | 'missing' | 'unknown';
+
+/** Campaign-shared NPC ("People of Note" tracker), embedded on the campaign. */
+export interface NpcEntryDoc {
+  id: string;
+  name: string;
+  /** Free text — ally, rival, patron, family… */
+  relationship: string;
+  status: NpcStatus;
+  note: string;
+  addedBy: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface ProposalEntryDoc {
   id: string;
   title: string;
@@ -207,6 +222,8 @@ export interface CampaignDoc {
   /** Optional: absent on documents created before phase 6 — default to []. */
   sessions?: SessionEntryDoc[];
   proposals?: ProposalEntryDoc[];
+  /** Optional: absent on documents created before the NPC tracker — default to []. */
+  npcs?: NpcEntryDoc[];
   createdAt: string;
   _etag?: string;
 }
