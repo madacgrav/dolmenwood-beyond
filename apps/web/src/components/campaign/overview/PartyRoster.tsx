@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import type { CampaignData } from '@/lib/api/campaigns';
+import { CurrentDateCard } from './CurrentDateCard';
 
 interface Props {
   campaign: CampaignData;
@@ -12,6 +13,8 @@ export function PartyRoster({ campaign, userId }: Props) {
   const router = useRouter();
 
   return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+    <CurrentDateCard date={campaign.current_date} />
     <div
       style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '10px', overflow: 'hidden' }}
     >
@@ -91,6 +94,7 @@ export function PartyRoster({ campaign, userId }: Props) {
           )}
         </div>
       ))}
+    </div>
     </div>
   );
 }

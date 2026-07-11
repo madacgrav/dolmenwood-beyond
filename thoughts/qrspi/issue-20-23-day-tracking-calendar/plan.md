@@ -185,8 +185,8 @@ Render it inside `PartyRoster.tsx` (per-campaign, players) — pass `campaign.cu
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter @dolmenwood/web typecheck` passes
-- [ ] `pnpm --filter @dolmenwood/web test` passes
+- [x] `pnpm --filter @dolmenwood/web typecheck` passes
+- [x] `pnpm --filter @dolmenwood/web test` passes
 #### Manual
 - [ ] Patch a campaign doc in Cosmos with `currentDate: {year:1000,month:1,day:4}`; load campaign overview as a member → card shows "4 Grimvold 1000 · Moot · The Onset of Winter · 🌑 new"
 - [ ] Campaign with no `currentDate` → card renders nothing (no crash)

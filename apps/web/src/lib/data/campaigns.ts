@@ -191,6 +191,7 @@ async function hydrateCampaign(doc: CampaignDoc): Promise<CampaignData> {
     created_at: doc.createdAt,
     members,
     showMembers: true,
+    current_date: doc.currentDate ?? null,
   };
 }
 

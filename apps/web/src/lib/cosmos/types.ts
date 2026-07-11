@@ -1,4 +1,5 @@
 import type { AbilityScores, SessionNote, PersonOfNote, LevelUpChange } from '@dolmenwood/types';
+import type { DwDate } from '@dolmenwood/rules-engine';
 
 /**
  * Cosmos DB document shapes, one interface per container. These are the
@@ -206,6 +207,8 @@ export interface CampaignDoc {
   /** Optional: absent on documents created before phase 6 — default to []. */
   sessions?: SessionEntryDoc[];
   proposals?: ProposalEntryDoc[];
+  /** In-world current date, DM-controlled. Absent/null until the DM sets it. */
+  currentDate?: DwDate | null;
   createdAt: string;
   _etag?: string;
 }

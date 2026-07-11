@@ -3,6 +3,8 @@
  * shapes the campaign overview components were built against.
  */
 
+import type { DwDate } from '@dolmenwood/rules-engine';
+
 export type PackAnimalType = 'Mule' | 'Donkey' | 'Pony' | 'Horse' | 'Ox' | 'Pack Dog';
 
 export const PACK_ANIMAL_TYPES: PackAnimalType[] = ['Mule', 'Donkey', 'Pony', 'Horse', 'Ox', 'Pack Dog'];
@@ -42,6 +44,7 @@ export interface CampaignData {
   created_at: string;
   members: Member[];
   showMembers: boolean;
+  current_date: DwDate | null;
 }
 
 export interface DMCampaignsData {
