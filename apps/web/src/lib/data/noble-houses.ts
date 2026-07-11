@@ -10,3 +10,16 @@ export async function listNobleHouses(): Promise<NobleHouseDoc[]> {
     .fetchAll();
   return resources;
 }
+
+export async function getNobleHouse(id: string): Promise<NobleHouseDoc | null> {
+  await requireAccountId();
+  try {
+    const { resource } = await getContainer('noble_houses')
+      .item(id, id) // partition key /id === document id
+      .read<NobleHouseDoc>();
+    return resource ?? null;
+  } catch (e) {
+    if ((e as { code?: number }).code === 404) return null;
+    throw e;
+  }
+}

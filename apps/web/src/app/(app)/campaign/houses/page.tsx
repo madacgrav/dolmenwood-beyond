@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { listNobleHouses } from '@/lib/api/noble-houses';
 import type { NobleHouseDoc } from '@/lib/cosmos/types';
@@ -60,10 +61,12 @@ export default function NobleHousesPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {houses.map(house => (
-              <div key={house.id} style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '0.875rem 1rem' }}>
-                <div style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--color-text)' }}>{house.name}</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.125rem' }}>{house.alignment} · {house.seat}</div>
-              </div>
+              <Link key={house.id} href={`/campaign/houses/${house.id}`} style={{ textDecoration: 'none' }}>
+                <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '0.875rem 1rem' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: '700', color: 'var(--color-text)' }}>{house.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.125rem' }}>{house.alignment} · {house.seat}</div>
+                </div>
+              </Link>
             ))}
           </div>
         )}

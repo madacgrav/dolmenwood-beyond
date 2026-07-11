@@ -5,3 +5,9 @@ export async function listNobleHouses(): Promise<NobleHouseDoc[]> {
   if (!res.ok) return [];
   return res.json();
 }
+
+export async function fetchNobleHouse(id: string): Promise<NobleHouseDoc | null> {
+  const res = await fetch(`/api/houses/${id}`);
+  if (!res.ok) return null;
+  return res.json();
+}
