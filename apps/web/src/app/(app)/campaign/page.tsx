@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import { BankingTab } from '@/components/campaign/BankingTab';
 import { OverviewTab } from '@/components/campaign/OverviewTab';
 import { ScheduleTab } from '@/components/campaign/ScheduleTab';
+import { NpcTab } from '@/components/campaign/npcs/NpcTab';
 
-type TabId = 'overview' | 'bank' | 'schedule';
+type TabId = 'overview' | 'bank' | 'schedule' | 'npcs';
 
 export default function CampaignPage() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -30,6 +31,7 @@ export default function CampaignPage() {
     { id: 'overview', label: '⚔️ Party' },
     { id: 'bank', label: '🏦 Bank', dmOnly: true },
     { id: 'schedule', label: '📅 Schedule' },
+    { id: 'npcs', label: '👥 NPCs' },
   ];
 
   const visibleTabs = tabs.filter(t => !t.dmOnly || isDM);
@@ -113,6 +115,10 @@ export default function CampaignPage() {
 
         {activeTab === 'schedule' && userId && (
           <ScheduleTab userId={userId} isDM={isDM} />
+        )}
+
+        {activeTab === 'npcs' && userId && (
+          <NpcTab userId={userId} isDM={isDM} />
         )}
       </div>
     </div>
