@@ -1,4 +1,4 @@
-import type { AbilityScores, SessionNote, PersonOfNote, LevelUpChange } from '@dolmenwood/types';
+import type { AbilityScores, SessionNote, PersonOfNote, LevelUpChange, XPLogEntry } from '@dolmenwood/types';
 import type { DwDate } from '@dolmenwood/rules-engine';
 
 /**
@@ -154,6 +154,7 @@ export interface CharacterDoc {
   spellbook?: SpellbookEntryDoc[];
   bankLedger?: BankLedgerEntryDoc[];
   levelUpLogs?: LevelUpLogDoc[];
+  xpLog?: XPLogEntry[];
   mounts?: MountEntryDoc[];
   retainers?: RetainerEntryDoc[];
   /** Last in-world date this character rested. Absent = never rested. */
@@ -184,6 +185,21 @@ export interface SessionEntryDoc {
   createdAt: string;
 }
 
+export type NpcStatus = 'alive' | 'dead' | 'missing' | 'unknown';
+
+/** Campaign-shared NPC ("People of Note" tracker), embedded on the campaign. */
+export interface NpcEntryDoc {
+  id: string;
+  name: string;
+  /** Free text — ally, rival, patron, family… */
+  relationship: string;
+  status: NpcStatus;
+  note: string;
+  addedBy: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface ProposalEntryDoc {
   id: string;
   title: string;
@@ -209,6 +225,8 @@ export interface CampaignDoc {
   /** Optional: absent on documents created before phase 6 — default to []. */
   sessions?: SessionEntryDoc[];
   proposals?: ProposalEntryDoc[];
+  /** Optional: absent on documents created before the NPC tracker — default to []. */
+  npcs?: NpcEntryDoc[];
   /** In-world current date, DM-controlled. Absent/null until the DM sets it. */
   currentDate?: DwDate | null;
   createdAt: string;
@@ -252,4 +270,14 @@ export interface CatalogItemDoc {
   qualities: string[];
   size: string | null;
   notes: string | null;
+}
+
+/** Container `noble_houses`, partition key `/id`. */
+export interface NobleHouseDoc {
+  id: string;
+  name: string;
+  alignment: 'Lawful' | 'Neutral' | 'Chaotic';
+  domain: string;
+  seat: string;
+  head: string;
 }

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { fetchCharacterWithNotes, updateCharacter, deleteCharacter } from '@/lib/api/characters';
+import { fetchCharacterWithNotes, updateCharacter, deleteCharacter, adjustXP } from '@/lib/api/characters';
 import type { CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
@@ -40,6 +40,12 @@ export default function CharacterSheetPage() {
     if (!character) return;
     setCharacter(prev => prev ? { ...prev, ...updates } : prev);
     await updateCharacter(character.id, updates);
+  }
+
+  async function handleAdjustXP(newTotal: number) {
+    if (!character) return;
+    setCharacter(prev => prev ? { ...prev, xp: newTotal } : prev);
+    await adjustXP(character.id, newTotal);
   }
 
   async function handleDeleteConfirm() {
@@ -89,6 +95,7 @@ export default function CharacterSheetPage() {
         editMode={editMode}
         onToggleEdit={() => setEditMode(e => !e)}
         onUpdate={handleUpdate}
+        onAdjustXP={handleAdjustXP}
         onBack={() => router.push('/characters')}
         onDelete={() => { setDeleteError(null); setShowDeleteConfirm(true); }}
       />

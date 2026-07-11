@@ -303,6 +303,14 @@ export async function awardXP(characterId: string, gain: number): Promise<void> 
     },
     (doc) => {
       doc.xp += gain;
+      doc.xpLog = [...(doc.xpLog ?? []), {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        delta: gain,
+        newTotal: doc.xp,
+        source: 'dm_award' as const,
+        actorId: me,
+      }];
     },
   );
 }

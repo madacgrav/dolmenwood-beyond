@@ -101,8 +101,13 @@ describe('awardXP (port of award_xp RPC)', () => {
 
     currentAccount = REFEREE;
     await expect(awardXP(charId, 0)).rejects.toMatchObject({ status: 400 });
+    // rejected awards leave no log entry
+    expect(store('characters').get(charId)!.xpLog ?? []).toHaveLength(0);
     await awardXP(charId, 150);
     expect(store('characters').get(charId)!.xp).toBe(150);
+    const logged = store('characters').get(charId)!.xpLog as import('@dolmenwood/types').XPLogEntry[];
+    expect(logged).toHaveLength(1);
+    expect(logged[0]).toMatchObject({ source: 'dm_award', delta: 150, newTotal: 150, actorId: REFEREE.id });
   });
 
   it('referee of an unrelated campaign cannot award', async () => {

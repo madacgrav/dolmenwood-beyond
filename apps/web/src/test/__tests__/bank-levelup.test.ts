@@ -129,6 +129,10 @@ describe('levelUp (port of level_up RPC)', () => {
     const { entries } = await fetchLevelUpLog(id);
     expect(entries).toHaveLength(1);
     expect(entries[0]).toMatchObject({ from_level: 1, to_level: 2, hp_roll: 6, hp_roll_final: 5 });
+    // level-up also marks the xp log (zero delta) in the same replace
+    const xpLog = doc.xpLog as import('@dolmenwood/types').XPLogEntry[];
+    expect(xpLog).toHaveLength(1);
+    expect(xpLog[0]).toMatchObject({ source: 'level_up', delta: 0, newTotal: 2000, toLevel: 2 });
   });
 
   it('rejects non-monotonic levels, out-of-range levels, and unmet XP thresholds', async () => {

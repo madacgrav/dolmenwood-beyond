@@ -5,6 +5,8 @@ export interface CharacterSheetHeaderProps {
   editMode: boolean;
   onToggleEdit: () => void;
   onUpdate: (updates: Partial<CharacterWithNotes>) => void | Promise<void>;
+  /** XP edits go through the dedicated adjust-xp route (logged server-side). */
+  onAdjustXP?: (newTotal: number) => void | Promise<void>;
   onBack: () => void;
   onDelete?: () => void;
   readOnly?: boolean;

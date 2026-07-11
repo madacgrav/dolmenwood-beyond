@@ -4,6 +4,7 @@ import type { CharacterDoc } from '@/lib/cosmos/types';
 import { requireAccountId } from '@/lib/auth/session';
 import {
   assertCharacterOwner,
+  badRequest,
   canReadCharacter,
   fetchCharacterDocById,
   forbidden,
@@ -12,9 +13,11 @@ import {
 import {
   docToCharacter,
   docToCharacterWithNotes,
+  docToFullCharacter,
   newCharacterToDoc,
   applyCharacterUpdates,
   type NewCharacterInput,
+  type FullCharacter,
 } from './mappers/character';
 
 export type { NewCharacterInput };
@@ -104,6 +107,13 @@ async function listCharacterDocs(): Promise<CharacterDoc[]> {
   return resources;
 }
 
+/** Owner-only full projection (coins, inventory, spells) for the PDF export. */
+export async function fetchFullCharacter(id: string): Promise<FullCharacter> {
+  const me = await requireAccountId();
+  const doc = await assertCharacterOwner(me, id);
+  return docToFullCharacter(doc);
+}
+
 /** Readable by the owner or a referee of a campaign the owner belongs to. */
 export async function fetchCharacterWithNotes(id: string): Promise<CharacterWithNotes> {
   const me = await requireAccountId();
@@ -118,6 +128,26 @@ export async function updateCharacter(
   updates: Partial<CharacterWithNotes>,
 ): Promise<void> {
   await mutateOwnedCharacterDoc(id, (doc) => applyCharacterUpdates(doc, updates));
+}
+
+/** Owner-only absolute XP set with an append to the xp log. Replaces the
+ *  generic PATCH path for the `xp` field so every change is recorded. */
+export async function adjustXP(characterId: string, newTotal: number): Promise<{ xp: number }> {
+  if (!Number.isInteger(newTotal) || newTotal < 0) throw badRequest('xp must be a non-negative integer');
+  const me = await requireAccountId();
+  const doc = await mutateOwnedCharacterDoc(characterId, (d) => {
+    const delta = newTotal - d.xp;
+    d.xp = newTotal;
+    d.xpLog = [...(d.xpLog ?? []), {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      delta,
+      newTotal,
+      source: 'manual_edit' as const,
+      actorId: me,
+    }];
+  });
+  return { xp: doc.xp };
 }
 
 export async function deleteCharacter(id: string): Promise<void> {

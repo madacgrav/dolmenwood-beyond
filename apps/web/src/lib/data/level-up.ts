@@ -20,6 +20,7 @@ export interface LevelUpInput {
 }
 
 export async function levelUp(characterId: string, input: LevelUpInput): Promise<void> {
+  const me = await requireAccountId();
   const newLevel = Number(input.newLevel);
   const hpGain = Number(input.hpGain);
   if (!Number.isInteger(newLevel) || newLevel < 2 || newLevel > 15) {
@@ -49,6 +50,15 @@ export async function levelUp(characterId: string, input: LevelUpInput): Promise
       hpRollFinal: hpGain,
     };
     doc.levelUpLogs = [...(doc.levelUpLogs ?? []), log];
+    doc.xpLog = [...(doc.xpLog ?? []), {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      delta: 0,
+      newTotal: doc.xp,
+      source: 'level_up' as const,
+      actorId: me,
+      toLevel: newLevel,
+    }];
   });
 }
 
