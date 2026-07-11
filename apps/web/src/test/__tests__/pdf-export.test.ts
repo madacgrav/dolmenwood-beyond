@@ -101,4 +101,43 @@ describe.skipIf(!existsSync(BLANK_PATH))('fillCharacterSheet', () => {
     expect(Number(val('XP For Next Level'))).toBeGreaterThan(0);
     expect(val('XP Modifier')).toMatch(/^[+-]\d+%$/);
   });
+
+  it('fills inventory sections, coins, and routes slot overflow to Other Notes', async () => {
+    const blank = readFileSync(BLANK_PATH);
+    const item = (n: number, location: 'equipped' | 'stowed' | 'tiny'): NonNullable<CharacterDoc['inventory']>[number] => ({
+      id: `i${location}${n}`, itemName: `${location} thing ${n}`, itemType: 'gear',
+      quantity: 1, weightCoins: 10, notes: null, location,
+      weaponDamageDice: null, armorAcBonus: null, catalogItemId: null,
+    });
+    const doc = makeDoc({
+      age: '21', height: "6'", weight: '147 lbs',
+      coinsGp: 394, coinsSp: 8, coinsCp: 0,
+      inventory: [
+        ...Array.from({ length: 12 }, (_, i) => item(i + 1, 'equipped')), // 2 overflow
+        ...Array.from({ length: 3 }, (_, i) => item(i + 1, 'stowed')),
+        item(1, 'tiny'),
+      ],
+    });
+    const bytes = await fillCharacterSheet(new Uint8Array(blank), docToFullCharacter(doc));
+
+    const filled = await PDFDocument.load(bytes);
+    const form = filled.getForm();
+    const val = (name: string) => form.getTextField(name).getText();
+
+    expect(val('Equipped Item 1')).toBe('equipped thing 1');
+    expect(val('Equipped Item Weight 10')).toBe('10');
+    expect(val('Stowed Item 3')).toBe('stowed thing 3');
+    expect(val('Tiny Items')).toBe('tiny thing 1');
+    // 15 non-tiny items × 10 coins
+    expect(val('Total Weight')).toBe('150');
+    expect(form.getCheckBox('Weight Encumbrance').isChecked()).toBe(true);
+    expect(val('Gold Pieces')).toBe('394');
+    expect(val('Silver Pieces')).toBe('8');
+    // items 11 and 12 overflowed into Other Notes with the physical description
+    const notes = val('Other Notes') ?? '';
+    expect(notes).toContain('Age: 21');
+    expect(notes).toContain('Additional items:');
+    expect(notes).toContain('equipped thing 11');
+    expect(notes).toContain('equipped thing 12');
+  });
 });

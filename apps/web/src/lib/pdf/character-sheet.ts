@@ -13,6 +13,7 @@ import {
   getXPThresholdForNextLevel,
 } from '@dolmenwood/rules-engine';
 import type { FullCharacter } from '@/lib/data/mappers/character';
+import type { InventoryEntryDoc } from '@/lib/cosmos/types';
 
 /**
  * Fills the official Dolmenwood fillable character sheet (109 AcroForm text
@@ -30,6 +31,36 @@ function trySet(form: PDFForm, name: string, value: string | number | undefined 
 }
 
 const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+
+function itemLabel(e: InventoryEntryDoc): string {
+  const qty = e.quantity > 1 ? ` ×${e.quantity}` : '';
+  const extra = e.weaponDamageDice
+    ? ` (${e.weaponDamageDice})`
+    : e.armorAcBonus
+      ? ` (+${e.armorAcBonus} AC)`
+      : '';
+  return `${e.itemName}${qty}${extra}`;
+}
+
+/** Fill numbered item/weight slot pairs; anything past `max` goes to `overflow`. */
+function fillSlots(
+  form: PDFForm,
+  itemPrefix: string,
+  weightPrefix: string,
+  items: InventoryEntryDoc[],
+  max: number,
+  overflow: string[],
+) {
+  items.forEach((e, i) => {
+    const w = e.weightCoins * e.quantity;
+    if (i < max) {
+      trySet(form, `${itemPrefix} ${i + 1}`, itemLabel(e));
+      trySet(form, `${weightPrefix} ${i + 1}`, w);
+    } else {
+      overflow.push(`${itemLabel(e)} — ${w}`);
+    }
+  });
+}
 
 export async function fillCharacterSheet(
   blank: ArrayBuffer | Uint8Array,
@@ -126,6 +157,39 @@ export async function fillCharacterSheet(
   );
   const xpMod = getXPModifier(primeScores) + getKindredXPBonus(c.kindred);
   set('XP Modifier', `${xpMod >= 0 ? '+' : ''}${xpMod}%`);
+
+  // Inventory — tiny items share one multiline box; equipped/stowed fill the
+  // numbered slots, spilling past the fixed capacity into Other Notes
+  const equipped = c.inventory.filter((e) => e.location === 'equipped');
+  const stowed = c.inventory.filter((e) => e.location === 'stowed');
+  const tiny = c.inventory.filter((e) => e.location === 'tiny');
+
+  set('Tiny Items', tiny.map(itemLabel).join('\n'));
+
+  const overflow: string[] = [];
+  fillSlots(form, 'Equipped Item', 'Equipped Item Weight', equipped, 10, overflow);
+  fillSlots(form, 'Stowed Item', 'Stowed Item Weight', stowed, 16, overflow);
+  set('Total Weight', itemWeight);
+
+  try {
+    form.getCheckBox('Weight Encumbrance').check();
+  } catch {
+    // checkbox absent — skip
+  }
+
+  // Coins ('Pellucidium Pieces' has no app field — blank)
+  set('Copper Pieces', c.coinsCp);
+  set('Silver Pieces', c.coinsSp);
+  set('Gold Pieces', c.coinsGp);
+
+  // Other Notes: physical description + any inventory overflow
+  const notes: string[] = [];
+  if (c.age) notes.push(`Age: ${c.age}`);
+  if (c.height) notes.push(`Height: ${c.height}`);
+  if (c.weight) notes.push(`Weight: ${c.weight}`);
+  if (c.sex) notes.push(`Sex: ${c.sex}`);
+  if (overflow.length) notes.push('', 'Additional items:', ...overflow);
+  set('Other Notes', notes.join('\n'));
 
   return pdf.save();
 }
