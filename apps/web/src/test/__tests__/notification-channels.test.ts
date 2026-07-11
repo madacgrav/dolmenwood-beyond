@@ -1,9 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { channelsFor } from '../../lib/notifications/channels';
 
 const CONSENT = '2026-07-10T00:00:00Z';
 
-describe('channelsFor', () => {
+// WhatsApp is feature-flagged on the presence of the TWILIO_* env vars.
+function enableWhatsApp() {
+  vi.stubEnv('TWILIO_ACCOUNT_SID', 'ACtest');
+  vi.stubEnv('TWILIO_AUTH_TOKEN', 'token');
+  vi.stubEnv('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886');
+}
+
+describe('channelsFor (Twilio configured)', () => {
+  beforeEach(enableWhatsApp);
+  afterEach(() => vi.unstubAllEnvs());
+
   it('returns email when email is opted in', () => {
     expect(
       channelsFor({
@@ -57,5 +67,18 @@ describe('channelsFor', () => {
         whatsapp_consent_at: CONSENT,
       }),
     ).toEqual(['email', 'whatsapp']);
+  });
+});
+
+describe('channelsFor (Twilio NOT configured — feature flag off)', () => {
+  it('excludes whatsapp even when opted in and consented', () => {
+    expect(
+      channelsFor({
+        email_opt_in: true,
+        sms_opt_in: false,
+        whatsapp_opt_in: true,
+        whatsapp_consent_at: CONSENT,
+      }),
+    ).toEqual(['email']);
   });
 });

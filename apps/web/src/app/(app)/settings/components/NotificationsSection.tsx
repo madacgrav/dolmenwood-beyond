@@ -66,7 +66,7 @@ export function NotificationsSection({ account, onAccountChange }: Notifications
   const toggles = [
     { value: emailOptIn, set: setEmailOptIn, label: 'Email', desc: 'Session confirmations by email' },
     { value: smsOptIn, set: setSmsOptIn, label: 'SMS', desc: 'Text message notifications (coming soon)' },
-    { value: whatsappOptIn, set: setWhatsappOptIn, label: 'WhatsApp', desc: 'WhatsApp notifications' },
+    { value: whatsappOptIn, set: setWhatsappOptIn, label: 'WhatsApp', desc: 'WhatsApp notifications (coming soon)' },
   ];
 
   return (

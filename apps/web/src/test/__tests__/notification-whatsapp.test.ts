@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { AccountDoc, NotificationDoc } from '@/lib/cosmos/types';
 import { store, resetFake } from '@/test/cosmos-fake';
 
@@ -84,7 +84,13 @@ beforeEach(() => {
   seedAccounts();
   sentWhatsApp.length = 0;
   currentAccount = DM;
+  // WhatsApp is feature-flagged on the presence of the TWILIO_* env vars.
+  vi.stubEnv('TWILIO_ACCOUNT_SID', 'ACtest');
+  vi.stubEnv('TWILIO_AUTH_TOKEN', 'token');
+  vi.stubEnv('TWILIO_WHATSAPP_FROM', 'whatsapp:+14155238886');
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe('whatsapp channel dispatch', () => {
   it('delivers whatsapp to opted-in+consented recipients; missing phone fails without blocking others', async () => {
