@@ -100,6 +100,19 @@ export function HeaderTopBar({ characterId, editMode, readOnly, onToggleEdit, on
                 >
                   📜 Level Up History
                 </button>
+                <a
+                  href={`/api/characters/${characterId}/pdf`}
+                  onClick={() => setShowMenu(false)}
+                  style={{
+                    width: '100%', padding: '0.75rem 1rem',
+                    borderTop: '1px solid var(--color-border)',
+                    textAlign: 'left', cursor: 'pointer', color: 'var(--color-text)',
+                    fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    minHeight: '44px', textDecoration: 'none',
+                  }}
+                >
+                  📄 Export PDF
+                </a>
                 {onDelete && (
                   <button
                     onClick={() => { setShowMenu(false); onDelete(); }}
