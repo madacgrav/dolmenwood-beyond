@@ -140,4 +140,30 @@ describe.skipIf(!existsSync(BLANK_PATH))('fillCharacterSheet', () => {
     expect(notes).toContain('equipped thing 11');
     expect(notes).toContain('equipped thing 12');
   });
+
+  it('lists spells in the traits areas for casters, leaves them blank otherwise', async () => {
+    const blank = readFileSync(BLANK_PATH);
+    const casterDoc = makeDoc({
+      characterClass: 'Friar',
+      spellSlots: [{ id: 's1', rank: 1, slotsTotal: 2, slotsUsed: 1 }],
+      spellPreparations: [
+        { id: 'p1', slotRank: 1, spellName: 'Lesser Healing', isCast: false, createdAt: 'now' },
+        { id: 'p2', slotRank: 1, spellName: 'Light', isCast: true, createdAt: 'now' },
+      ],
+      spellbook: [
+        { id: 'b1', spellName: 'Detect Magic', spellLevel: 1, isMemorized: true, notes: null },
+      ],
+    });
+    const casterBytes = await fillCharacterSheet(new Uint8Array(blank), docToFullCharacter(casterDoc));
+    const casterForm = (await PDFDocument.load(casterBytes)).getForm();
+    const traits = casterForm.getTextField('Kindred & Class Traits 1').getText() ?? '';
+    expect(traits).toContain('Slots: R1 1/2');
+    expect(traits).toContain('Prepared: Lesser Healing, Light (cast)');
+    expect(traits).toContain('Spellbook: Detect Magic*');
+
+    // Knight (non-caster) from makeDoc default — traits stay empty
+    const knightBytes = await fillCharacterSheet(new Uint8Array(blank), docToFullCharacter(makeDoc()));
+    const knightForm = (await PDFDocument.load(knightBytes)).getForm();
+    expect(knightForm.getTextField('Kindred & Class Traits 1').getText() ?? '').toBe('');
+  });
 });

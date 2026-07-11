@@ -11,6 +11,7 @@ import {
   getXPModifier,
   getKindredXPBonus,
   getXPThresholdForNextLevel,
+  isSpellcaster,
 } from '@dolmenwood/rules-engine';
 import type { FullCharacter } from '@/lib/data/mappers/character';
 import type { InventoryEntryDoc } from '@/lib/cosmos/types';
@@ -190,6 +191,31 @@ export async function fillCharacterSheet(
   if (c.sex) notes.push(`Sex: ${c.sex}`);
   if (overflow.length) notes.push('', 'Additional items:', ...overflow);
   set('Other Notes', notes.join('\n'));
+
+  // Spells — the paper sheet has no spell page; casters list them in the
+  // Kindred & Class Traits areas (split across the two fields by length)
+  if (isSpellcaster(c.characterClass)) {
+    const lines: string[] = [];
+    if (c.spellSlots.length) {
+      lines.push(
+        'Slots: ' + c.spellSlots.map((s) => `R${s.rank} ${s.slotsUsed}/${s.slotsTotal}`).join(', '),
+      );
+    }
+    if (c.spellPreparations.length) {
+      lines.push(
+        'Prepared: ' +
+          c.spellPreparations.map((p) => p.spellName + (p.isCast ? ' (cast)' : '')).join(', '),
+      );
+    }
+    if (c.spellbook.length) {
+      lines.push(
+        'Spellbook: ' + c.spellbook.map((s) => s.spellName + (s.isMemorized ? '*' : '')).join(', '),
+      );
+    }
+    const text = lines.join('\n');
+    set('Kindred & Class Traits 1', text.slice(0, 900));
+    if (text.length > 900) set('Kindred & Class Traits 2', text.slice(900));
+  }
 
   return pdf.save();
 }
