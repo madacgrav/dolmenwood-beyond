@@ -271,7 +271,7 @@ main().catch((e) => { console.error(e); process.exit(1); });
 
 ### Verification
 #### Automated
-- [ ] `npm --prefix apps/web run test` passes (includes the `stripRole` test)
+- [x] `npm --prefix apps/web run test` passes (includes the `stripRole` test)
 #### Manual
 - [ ] Dry check: `SELECT VALUE COUNT(1) FROM c WHERE IS_DEFINED(c.role)` on the `accounts` container is 0 after running the script (env-gated; run against a non-prod instance first).
 

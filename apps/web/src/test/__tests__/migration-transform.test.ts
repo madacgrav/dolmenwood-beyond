@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import {
+  stripRole,
   toAccountDoc,
   toCharacterDoc,
   toCampaignDoc,
@@ -31,6 +32,19 @@ describe('toAccountDoc', () => {
       createdAt: T1.toISOString(),
       updatedAt: T2.toISOString(),
     });
+  });
+});
+
+describe('stripRole', () => {
+  it('removes role and preserves other fields', () => {
+    const out = stripRole({ id: 'a1', role: 'referee', email: 'x@y.z', isAdmin: false });
+    expect('role' in out).toBe(false);
+    expect(out).toEqual({ id: 'a1', email: 'x@y.z', isAdmin: false });
+  });
+
+  it('is a no-op on docs without role', () => {
+    const out = stripRole({ id: 'a2', email: 'x@y.z' });
+    expect(out).toEqual({ id: 'a2', email: 'x@y.z' });
   });
 });
 
