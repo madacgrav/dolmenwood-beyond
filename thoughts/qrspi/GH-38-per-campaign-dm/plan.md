@@ -153,8 +153,8 @@ body: JSON.stringify({ email, password, displayName: displayName || email.split(
 
 ### Verification
 #### Automated
-- [ ] `npm --prefix apps/web run typecheck` passes
-- [ ] `npm --prefix apps/web run test` passes
+- [x] `npm --prefix apps/web run typecheck` passes
+- [x] `npm --prefix apps/web run test` passes
 #### Manual
 - [ ] `/sign-up` is a single-step form; no role picker, no step dots.
 - [ ] Submitting creates the account and lands on `/characters`.

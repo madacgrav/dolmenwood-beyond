@@ -28,7 +28,6 @@ export type Account = {
 export interface SignUpInput {
   email: string;
   password: string;
-  role: 'player' | 'referee';
   displayName?: string;
 }
 
@@ -106,7 +105,7 @@ export async function createAccount(input: SignUpInput): Promise<AccountDoc> {
   const doc: AccountDoc = {
     id: crypto.randomUUID(),
     email,
-    role: input.role === 'referee' ? 'referee' : 'player',
+    role: 'player',
     displayName: input.displayName?.trim() || (email.split('@')[0] ?? email),
     inviteCode: await generateInviteCode(),
     isAdmin: false,
