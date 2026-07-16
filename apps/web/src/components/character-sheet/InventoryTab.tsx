@@ -95,6 +95,7 @@ export function InventoryTab({ characterId, readOnly = false }: Props) {
         items={inv.items}
         isOwner={isOwner}
         onToggleLocation={inv.toggleLocation}
+        onSetQuantity={inv.setItemQuantity}
         onDelete={inv.deleteItem}
       />
 

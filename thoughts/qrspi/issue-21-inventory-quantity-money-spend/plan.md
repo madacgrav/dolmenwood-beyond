@@ -87,8 +87,8 @@ The weight chip (lines 24-28), location button (30-37), and delete button (38-46
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter web typecheck` passes
-- [ ] `pnpm --filter web test` passes
+- [x] `pnpm --filter web typecheck` passes
+- [x] `pnpm --filter web test` passes
 #### Manual
 - [ ] On iPhone Safari: tap a torch's count → numeric keypad → type 3 → blur → persists (no broken spinner)
 - [ ] −/+ nudges a count; minus disabled at 0

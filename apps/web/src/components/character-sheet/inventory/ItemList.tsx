@@ -7,11 +7,12 @@ interface Props {
   items: DBInventoryItem[];
   isOwner: boolean;
   onToggleLocation: (item: DBInventoryItem) => void;
+  onSetQuantity: (id: string, quantity: number) => void;
   onDelete: (id: string) => void;
 }
 
 /** Item list grouped by location (equipped → stowed → tiny); empty groups are hidden. */
-export function ItemList({ items, isOwner, onToggleLocation, onDelete }: Props) {
+export function ItemList({ items, isOwner, onToggleLocation, onSetQuantity, onDelete }: Props) {
   return (
     <>
       {(['equipped', 'stowed', 'tiny'] as const).map(loc => {
@@ -27,6 +28,7 @@ export function ItemList({ items, isOwner, onToggleLocation, onDelete }: Props) 
                   item={item}
                   isOwner={isOwner}
                   onToggleLocation={onToggleLocation}
+                  onSetQuantity={onSetQuantity}
                   onDelete={onDelete}
                 />
               ))}
