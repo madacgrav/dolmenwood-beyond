@@ -7,18 +7,18 @@ import type { Character } from '@dolmenwood/types';
 
 export function useCharacters() {
   const [characters, setCharacters] = useState<Character[]>([]);
-  const [armorByCharacter, setArmorByCharacter] = useState<Record<string, number>>({});
+  const [acByCharacter, setAcByCharacter] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchCharacters() {
-      const { characters: mapped, armorByCharacter: armor, error } = await listCharacters();
+      const { characters: mapped, acByCharacter: acMap, error } = await listCharacters();
       if (error) {
         setError(error);
       } else {
         setCharacters(mapped);
-        setArmorByCharacter(armor);
+        setAcByCharacter(acMap);
       }
       setLoading(false);
     }
@@ -61,5 +61,5 @@ export function useCharacters() {
     return error;
   }
 
-  return { characters, armorByCharacter, loading, error, deleteCharacter };
+  return { characters, acByCharacter, loading, error, deleteCharacter };
 }

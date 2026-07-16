@@ -6,6 +6,7 @@ import { ITEM_TYPES, type CatalogItem, type ItemType, type NewItemDraft } from '
 const EMPTY_DRAFT: NewItemDraft = {
   item_name: '', item_type: 'gear', quantity: 1, weight_coins: 0,
   location: 'stowed', weapon_damage_dice: '', armor_ac_bonus: '',
+  is_shield: false, armor_bulk: null,
 };
 
 /**
@@ -33,7 +34,8 @@ export function useAddItem({ characterId, onItemAdded }: {
       .then((docs: {
         id: string; name: string; itemType: string; weight: number;
         costGp: number | null; weaponDamageDice: string | null;
-        armorAcBonus: number | null; notes: string | null;
+        armorAcBonus: number | null; isShield?: boolean;
+        armorBulk?: CatalogItem['armor_bulk']; notes: string | null;
       }[]) => {
         setCatalogItems(docs.map((d) => ({
           id: d.id,
@@ -43,6 +45,8 @@ export function useAddItem({ characterId, onItemAdded }: {
           cost_gp: d.costGp,
           weapon_damage_dice: d.weaponDamageDice,
           armor_ac_bonus: d.armorAcBonus,
+          is_shield: d.isShield ?? false,
+          armor_bulk: d.armorBulk ?? null,
           notes: d.notes,
         })));
         setCatalogLoading(false);
@@ -60,6 +64,8 @@ export function useAddItem({ characterId, onItemAdded }: {
       location: cat.item_type === 'armor' || cat.item_type === 'weapon' ? 'equipped' : 'stowed',
       weapon_damage_dice: cat.weapon_damage_dice ?? '',
       armor_ac_bonus: cat.armor_ac_bonus != null ? String(cat.armor_ac_bonus) : '',
+      is_shield: cat.is_shield,
+      armor_bulk: cat.armor_bulk,
     });
     setAddMode('custom');
   }
@@ -77,6 +83,8 @@ export function useAddItem({ characterId, onItemAdded }: {
     if (newItem.weapon_damage_dice.trim()) payload.weapon_damage_dice = newItem.weapon_damage_dice.trim();
     const acBonus = parseInt(newItem.armor_ac_bonus);
     if (!isNaN(acBonus)) payload.armor_ac_bonus = acBonus;
+    if (newItem.is_shield) payload.is_shield = true;
+    if (newItem.armor_bulk) payload.armor_bulk = newItem.armor_bulk;
     const mapped = await insertInventoryItem(payload);
     if (mapped) {
       onItemAdded(mapped);

@@ -3,6 +3,7 @@
  * snake_case UI shapes the inventory/combat components were built against
  * (kept from the Supabase era to avoid churn).
  */
+import type { ArmorBulk } from '@dolmenwood/types';
 
 export type ItemLocation = 'equipped' | 'stowed' | 'tiny';
 
@@ -17,6 +18,8 @@ export interface InventoryItem {
   location: ItemLocation;
   weapon_damage_dice?: string | null;
   armor_ac_bonus?: number | null;
+  is_shield?: boolean;
+  armor_bulk?: ArmorBulk | null;
 }
 
 export interface AmmoItem {
@@ -53,14 +56,6 @@ export async function listEquippedWeapons(characterId: string): Promise<Equipped
   return items
     .filter((i) => i.item_type === 'weapon' && i.location === 'equipped')
     .map((i) => ({ id: i.id, item_name: i.item_name, weapon_damage_dice: i.weapon_damage_dice ?? null }));
-}
-
-/** Sum of armor_ac_bonus over a character's equipped items. */
-export async function fetchEquippedArmorBonus(characterId: string): Promise<number> {
-  const items = await listInventory(characterId);
-  return items
-    .filter((i) => i.location === 'equipped')
-    .reduce((sum, i) => sum + (i.armor_ac_bonus ?? 0), 0);
 }
 
 /** Payload keeps the snake_case add-form shape (character_id included). */

@@ -3,8 +3,8 @@ import {
   getAbilityModifier,
   getSaveTargets,
   getAttackBonus,
-  calculateAC,
-  getKindredACBonus,
+  deriveCharacterAC,
+  type ACItem,
   calculateSpeed,
   getAllSkills,
   getPrimeAbilities,
@@ -108,20 +108,14 @@ export async function fillCharacterSheet(
     set('Spell', saves.spell);
   }
 
-  // AC — same inputs as CombatTab (shield folds into equipped armorAcBonus)
-  const armorBonus = c.inventory
-    .filter((e) => e.location === 'equipped')
-    .reduce((s, e) => s + (e.armorAcBonus ?? 0), 0);
-  set(
-    'Armour Class',
-    calculateAC({
-      dexScore: a.dex,
-      armorBonus,
-      kindredACBonus: getKindredACBonus(c.kindred),
-      classACBonus: 0,
-      shieldBonus: 0,
-    }),
-  );
+  // AC — same producer as the character sheet tabs and roster
+  const acItems: ACItem[] = c.inventory.map((e) => ({
+    location: e.location,
+    armorAcBonus: e.armorAcBonus,
+    isShield: e.isShield,
+    armorBulk: e.armorBulk,
+  }));
+  set('Armour Class', deriveCharacterAC(c, acItems).total);
 
   // Attack
   set('Attack', fmt(getAttackBonus(c.characterClass, c.level)));

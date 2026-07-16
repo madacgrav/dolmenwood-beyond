@@ -2,6 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { fetchCharacterWithNotes, updateCharacter, deleteCharacter, adjustXP } from '@/lib/api/characters';
+import { listInventory, type InventoryItem } from '@/lib/api/inventory';
+import { deriveCharacterAC, type ACItem } from '@dolmenwood/rules-engine';
 import type { CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
@@ -17,6 +19,7 @@ export default function CharacterSheetPage() {
   const id = params.id;
   const router = useRouter();
   const [character, setCharacter] = useState<CharacterWithNotes | null>(null);
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('stats');
   const [editMode, setEditMode] = useState(false);
@@ -35,6 +38,9 @@ export default function CharacterSheetPage() {
   }, [id, router]);
 
   useEffect(() => { fetchCharacter(); }, [fetchCharacter]);
+  // Re-fetch on tab switch so AC reflects items equipped/unequipped in the
+  // Inventory tab (matches the old per-mount fetch CombatTab did itself).
+  useEffect(() => { listInventory(id).then(setItems); }, [id, activeTab]);
 
   async function handleUpdate(updates: Partial<CharacterWithNotes>) {
     if (!character) return;
@@ -79,6 +85,14 @@ export default function CharacterSheetPage() {
   }
 
   if (!character) return null;
+
+  const acItems: ACItem[] = items.map((i) => ({
+    location: i.location,
+    armorAcBonus: i.armor_ac_bonus,
+    isShield: i.is_shield,
+    armorBulk: i.armor_bulk,
+  }));
+  const acBreakdown = deriveCharacterAC(character, acItems);
 
   const tabs: { id: TabName; label: string }[] = [
     { id: 'stats', label: 'Stats' },
@@ -130,8 +144,8 @@ export default function CharacterSheetPage() {
       </div>
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
-        {activeTab === 'stats' && <StatsTab character={character} editMode={editMode} onUpdate={handleUpdate} />}
-        {activeTab === 'combat' && <CombatTab character={character} characterId={id} />}
+        {activeTab === 'stats' && <StatsTab character={character} acBreakdown={acBreakdown} editMode={editMode} onUpdate={handleUpdate} />}
+        {activeTab === 'combat' && <CombatTab character={character} characterId={id} acBreakdown={acBreakdown} />}
         {activeTab === 'inventory' && <InventoryTab characterId={id} ownerId={character.ownerId} />}
         {activeTab === 'magic' && <MagicTab character={character} characterId={id} />}
         {activeTab === 'notes' && <NotesTab character={character} onUpdate={handleUpdate} />}

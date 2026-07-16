@@ -42,6 +42,12 @@ export function getKindredACBonus(kindred: string): number {
   return match ? parseInt(match[1]!, 10) : 0;
 }
 
+/** True when the kindred's AC bonus is conditional on light/no armour (e.g. Breggle). */
+export function isKindredACBonusArmorConditional(kindred: string): boolean {
+  const s = getKindredData(kindred)?.acBonus ?? '';
+  return /unarmoured|light/i.test(s);
+}
+
 export function getKindredLanguages(kindred: string): string[] {
   return getKindredData(kindred)?.nativeLanguages ?? [];
 }

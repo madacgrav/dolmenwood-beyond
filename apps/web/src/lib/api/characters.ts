@@ -18,15 +18,15 @@ async function errorText(res: Response): Promise<string> {
 
 export async function listCharacters(): Promise<{
   characters: Character[];
-  armorByCharacter: Record<string, number>;
+  acByCharacter: Record<string, number>;
   error: string | null;
 }> {
   const res = await fetch('/api/characters');
-  if (!res.ok) return { characters: [], armorByCharacter: {}, error: await errorText(res) };
+  if (!res.ok) return { characters: [], acByCharacter: {}, error: await errorText(res) };
   const body = await res.json();
   return {
     characters: body.characters ?? [],
-    armorByCharacter: body.armorByCharacter ?? {},
+    acByCharacter: body.acByCharacter ?? {},
     error: null,
   };
 }

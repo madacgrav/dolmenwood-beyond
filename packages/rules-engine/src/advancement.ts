@@ -39,6 +39,12 @@ export function getAttackBonus(className: string, level: number): number {
   return getClassLevel(className, level)?.attackBonus ?? 0;
 }
 
+/** Class-granted AC bonus for this level (Friar's unarmoured defence; 0 for other classes). */
+export function getClassACBonus(className: string, level: number): number {
+  const lvl = getClassLevel(className, level) as (ClassLevel & { acBonus?: number }) | null;
+  return typeof lvl?.acBonus === 'number' ? lvl.acBonus : 0;
+}
+
 export function getSaveTargets(className: string, level: number) {
   return getClassLevel(className, level)?.saves ?? null;
 }

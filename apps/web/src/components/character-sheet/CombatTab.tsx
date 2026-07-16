@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import type { Character } from '@dolmenwood/types';
-import { getAttackBonus, getSaveTargets, calculateAC, getHitDie, getAbilityModifier, getKindredACBonus } from '@dolmenwood/rules-engine';
-import { listEquippedWeapons, fetchEquippedArmorBonus, type EquippedWeapon } from '@/lib/api/inventory';
+import type { ACBreakdown, Character } from '@dolmenwood/types';
+import { getAttackBonus, getSaveTargets, getHitDie, getAbilityModifier } from '@dolmenwood/rules-engine';
+import { listEquippedWeapons, type EquippedWeapon } from '@/lib/api/inventory';
 import { ConditionsSection } from './combat/ConditionsSection';
 import { ArmourClassSection } from './combat/ArmourClassSection';
 import { AttackSection } from './combat/AttackSection';
@@ -17,22 +17,21 @@ import { useMounts } from './combat/use-mounts';
 interface Props {
   character: Character;
   characterId: string;
+  acBreakdown: ACBreakdown | null;
   readOnly?: boolean;
 }
 
 const RANGED_WEAPON_PATTERNS = /bow|crossbow|sling|dart|javelin|thrown/i;
 
-export function CombatTab({ character, characterId, readOnly = false }: Props) {
+export function CombatTab({ character, characterId, acBreakdown, readOnly = false }: Props) {
   const [weapons, setWeapons] = useState<EquippedWeapon[]>([]);
   const [hasRangedWeapon, setHasRangedWeapon] = useState(false);
-  const [equippedArmorBonus, setEquippedArmorBonus] = useState(0);
 
   useEffect(() => {
     listEquippedWeapons(characterId).then(ws => {
       setWeapons(ws);
       setHasRangedWeapon(ws.some(w => RANGED_WEAPON_PATTERNS.test(w.item_name)));
     });
-    fetchEquippedArmorBonus(characterId).then(setEquippedArmorBonus);
   }, [characterId]);
 
   const ammo = useAmmoTracking(characterId);
@@ -43,13 +42,7 @@ export function CombatTab({ character, characterId, readOnly = false }: Props) {
   const strMod = getAbilityModifier(character.abilityScores.str);
   const dexMod = getAbilityModifier(character.abilityScores.dex);
 
-  const ac = calculateAC({
-    dexScore: character.abilityScores.dex,
-    armorBonus: equippedArmorBonus,
-    kindredACBonus: getKindredACBonus(character.kindred),
-    classACBonus: 0,
-    shieldBonus: 0,
-  });
+  const ac = acBreakdown?.total ?? 10;
   const hitDie = getHitDie(character.characterClass);
 
   const battleAmmoName = ammo.ammoItems.find(a => a.id === ammo.battleAmmoId)?.item_name ?? 'Ammo';
