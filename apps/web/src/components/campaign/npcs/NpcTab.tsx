@@ -9,11 +9,12 @@ import { NpcForm } from './NpcForm';
 interface CampaignOption {
   id: string;
   name: string;
+  is_dm: boolean;
 }
 
 const EMPTY_INPUT: NpcInput = { name: '', relationship: '', status: 'alive', note: '' };
 
-export function NpcTab({ userId, isDM }: { userId: string; isDM: boolean }) {
+export function NpcTab({ userId }: { userId: string }) {
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
   const [campaignId, setCampaignId] = useState('');
   const [npcs, setNpcs] = useState<Npc[]>([]);
@@ -24,6 +25,9 @@ export function NpcTab({ userId, isDM }: { userId: string; isDM: boolean }) {
   const [formValue, setFormValue] = useState<NpcInput>(EMPTY_INPUT);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // DM-ship is per campaign: derived from the selected campaign, not the account.
+  const isDM = campaigns.find(c => c.id === campaignId)?.is_dm ?? false;
 
   useEffect(() => {
     async function loadCampaigns() {

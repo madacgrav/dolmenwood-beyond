@@ -19,9 +19,10 @@ function firstOfMonth(d: Date): Date {
 interface CampaignOption {
   id: string;
   name: string;
+  is_dm: boolean;
 }
 
-export function ScheduleTab({ userId, isDM }: { userId: string; isDM: boolean }) {
+export function ScheduleTab({ userId }: { userId: string }) {
   const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
   const [campaignId, setCampaignId] = useState('');
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -46,6 +47,9 @@ export function ScheduleTab({ userId, isDM }: { userId: string; isDM: boolean })
   const [view, setView] = useState<'list' | 'grid'>('list');
   const [month, setMonth] = useState<Date>(() => firstOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+
+  // DM-ship is per campaign: derived from the selected campaign, not the account.
+  const isDM = campaigns.find(c => c.id === campaignId)?.is_dm ?? false;
 
   // Load campaigns the user owns or belongs to.
   useEffect(() => {
