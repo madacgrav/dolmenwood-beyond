@@ -2,6 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { fetchCharacterWithNotes } from '@/lib/api/characters';
+import { listInventory, type InventoryItem } from '@/lib/api/inventory';
+import { deriveCharacterAC, type ACItem } from '@dolmenwood/rules-engine';
 import type { CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
@@ -26,6 +28,7 @@ export default function CharacterViewPage() {
   const router = useRouter();
 
   const [character, setCharacter] = useState<CharacterWithNotes | null>(null);
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabName>('stats');
 
@@ -49,6 +52,8 @@ export default function CharacterViewPage() {
   }, [id, router]);
 
   useEffect(() => { fetchCharacter(); }, [fetchCharacter]);
+  // Re-fetch on tab switch so AC stays fresh (same as the owner sheet).
+  useEffect(() => { listInventory(id).then(setItems); }, [id, activeTab]);
 
   if (loading) {
     return (
@@ -68,6 +73,12 @@ export default function CharacterViewPage() {
   }
 
   if (!character) return null;
+
+  const acItems: ACItem[] = items.map((i) => ({
+    location: i.location,
+    armorAcBonus: i.armor_ac_bonus,
+  }));
+  const acBreakdown = deriveCharacterAC(character, acItems);
 
   const tabs: { id: TabName; label: string }[] = [
     { id: 'stats', label: 'Stats' },
@@ -121,8 +132,8 @@ export default function CharacterViewPage() {
       </div>
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
-        {activeTab === 'stats' && <StatsTab character={character} editMode={false} onUpdate={noopUpdate} readOnly />}
-        {activeTab === 'combat' && <CombatTab character={character} characterId={id} readOnly />}
+        {activeTab === 'stats' && <StatsTab character={character} acBreakdown={acBreakdown} editMode={false} onUpdate={noopUpdate} readOnly />}
+        {activeTab === 'combat' && <CombatTab character={character} characterId={id} acBreakdown={acBreakdown} readOnly />}
         {activeTab === 'inventory' && <InventoryTab characterId={id} ownerId={character.ownerId} readOnly />}
         {activeTab === 'magic' && <MagicTab character={character} characterId={id} readOnly />}
         {activeTab === 'notes' && <NotesTab character={character} onUpdate={noopUpdate} readOnly />}

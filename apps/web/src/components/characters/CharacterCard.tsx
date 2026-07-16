@@ -3,30 +3,22 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import type { Character } from '@dolmenwood/types';
-import { calculateAC, getAttackBonus, getKindredACBonus } from '@dolmenwood/rules-engine';
+import { getAttackBonus } from '@dolmenwood/rules-engine';
 import { HPBar } from '@/components/ui/HPBar';
 
 interface CharacterCardProps {
   character: Character;
-  armorBonus?: number;
+  ac: number;
   onDelete: (id: string) => Promise<unknown>;
 }
 
-export function CharacterCard({ character, armorBonus = 0, onDelete }: CharacterCardProps) {
+export function CharacterCard({ character, ac, onDelete }: CharacterCardProps) {
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const touchStartX = useRef<number>(0);
   const SWIPE_THRESHOLD = 80;
-
-  const ac = calculateAC({
-    dexScore: character.abilityScores.dex,
-    armorBonus,
-    kindredACBonus: getKindredACBonus(character.kindred),
-    classACBonus: 0,
-    shieldBonus: 0,
-  });
 
   const attackBonus = getAttackBonus(character.characterClass, character.level);
 

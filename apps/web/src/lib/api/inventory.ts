@@ -55,14 +55,6 @@ export async function listEquippedWeapons(characterId: string): Promise<Equipped
     .map((i) => ({ id: i.id, item_name: i.item_name, weapon_damage_dice: i.weapon_damage_dice ?? null }));
 }
 
-/** Sum of armor_ac_bonus over a character's equipped items. */
-export async function fetchEquippedArmorBonus(characterId: string): Promise<number> {
-  const items = await listInventory(characterId);
-  return items
-    .filter((i) => i.location === 'equipped')
-    .reduce((sum, i) => sum + (i.armor_ac_bonus ?? 0), 0);
-}
-
 /** Payload keeps the snake_case add-form shape (character_id included). */
 export async function insertInventoryItem(
   payload: Record<string, unknown>,

@@ -303,10 +303,10 @@ Leave `equippedArmorBonusOf` (`lib/data/inventory.ts:107-112`) — unrelated; no
 
 ### Verification
 #### Automated
-- [ ] `npm run typecheck` clean (all rename sites updated)
-- [ ] `npm test` green
-- [ ] `npm run lint` clean
-- [ ] `grep -rn "armorByCharacter\|fetchEquippedArmorBonus" apps/web/src` returns nothing
+- [x] `npm run typecheck` clean (all rename sites updated)
+- [x] `npm test` green (118 web + 170 engine)
+- [x] `npm run lint` clean
+- [x] `grep -rn "armorByCharacter\|fetchEquippedArmorBonus" apps/web/src` returns nothing (test assertion updated to acByCharacter=16)
 
 #### Manual
 - [ ] Character with equipped armour shows the **same** AC on Stats tab, Combat tab, roster card, and PDF export.

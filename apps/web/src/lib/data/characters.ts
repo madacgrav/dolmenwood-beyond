@@ -1,4 +1,5 @@
 import type { Character, CharacterWithNotes } from '@dolmenwood/types';
+import { deriveCharacterAC, type ACItem } from '@dolmenwood/rules-engine';
 import { getContainer } from '@/lib/cosmos/client';
 import type { CharacterDoc } from '@/lib/cosmos/types';
 import { requireAccountId } from '@/lib/auth/session';
@@ -76,21 +77,23 @@ export async function listCharacters(): Promise<Character[]> {
 }
 
 /**
- * Roster view: characters plus their equipped-armor AC bonus, computed from
- * the embedded inventory of the same documents — no second query.
+ * Roster view: characters plus their full derived AC, computed from the
+ * embedded inventory of the same documents — no second query.
  */
 export async function listCharactersWithArmor(): Promise<{
   characters: Character[];
-  armorByCharacter: Record<string, number>;
+  acByCharacter: Record<string, number>;
 }> {
   const docs = await listCharacterDocs();
-  const armorByCharacter: Record<string, number> = {};
+  const acByCharacter: Record<string, number> = {};
   for (const doc of docs) {
-    armorByCharacter[doc.id] = (doc.inventory ?? [])
-      .filter((e) => e.location === 'equipped')
-      .reduce((sum, e) => sum + (e.armorAcBonus ?? 0), 0);
+    const items: ACItem[] = (doc.inventory ?? []).map((e) => ({
+      location: e.location,
+      armorAcBonus: e.armorAcBonus,
+    }));
+    acByCharacter[doc.id] = deriveCharacterAC(doc, items).total;
   }
-  return { characters: docs.map(docToCharacter), armorByCharacter };
+  return { characters: docs.map(docToCharacter), acByCharacter };
 }
 
 async function listCharacterDocs(): Promise<CharacterDoc[]> {

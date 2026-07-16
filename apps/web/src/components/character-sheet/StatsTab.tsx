@@ -1,9 +1,9 @@
 'use client';
-import type { CharacterWithNotes } from '@dolmenwood/types';
+import type { ACBreakdown, CharacterWithNotes } from '@dolmenwood/types';
 import {
   getPrimeAbilities, getSaveTargets,
-  getAttackBonus, calculateAC, calculateSpeed,
-  getMaxRetainers, getRetainerLoyaltyBase, getKindredACBonus,
+  getAttackBonus, calculateSpeed,
+  getMaxRetainers, getRetainerLoyaltyBase,
 } from '@dolmenwood/rules-engine';
 import { AbilityScoresSection } from './stats/AbilityScoresSection';
 import { CombatStatsSection } from './stats/CombatStatsSection';
@@ -18,16 +18,17 @@ import { useRetainers } from './stats/use-retainers';
 
 interface Props {
   character: CharacterWithNotes;
+  acBreakdown: ACBreakdown | null;
   editMode: boolean;
   onUpdate: (updates: Partial<CharacterWithNotes>) => void;
   readOnly?: boolean;
 }
 
-export function StatsTab({ character, editMode, onUpdate, readOnly }: Props) {
+export function StatsTab({ character, acBreakdown, editMode, onUpdate, readOnly }: Props) {
   const primes = getPrimeAbilities(character.characterClass);
   const saves = getSaveTargets(character.characterClass, character.level);
   const attackBonus = getAttackBonus(character.characterClass, character.level);
-  const ac = calculateAC({ dexScore: character.abilityScores.dex, armorBonus: 0, kindredACBonus: getKindredACBonus(character.kindred), classACBonus: 0, shieldBonus: 0 });
+  const ac = acBreakdown?.total ?? 10;
   const speed = calculateSpeed(0);
   const maxRetainers = getMaxRetainers(character.abilityScores.cha);
   const loyaltyBase = getRetainerLoyaltyBase(character.abilityScores.cha);

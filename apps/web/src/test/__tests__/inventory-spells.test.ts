@@ -67,14 +67,15 @@ describe('embedded inventory', () => {
     ).rejects.toMatchObject({ status: 400 });
   });
 
-  it('computes equipped armor bonuses for the roster from embedded entries', async () => {
+  it('computes derived AC for the roster from embedded entries', async () => {
     const { id } = await createCharacter(INPUT);
     await addInventoryItem(id, { item_name: 'Chainmail', item_type: 'armour', armor_ac_bonus: 4, location: 'equipped' });
     await addInventoryItem(id, { item_name: 'Shield', item_type: 'armour', armor_ac_bonus: 1, location: 'equipped' });
     await addInventoryItem(id, { item_name: 'Spare helm', item_type: 'armour', armor_ac_bonus: 2, location: 'stowed' });
 
-    const { armorByCharacter } = await listCharactersWithArmor();
-    expect(armorByCharacter[id]).toBe(5); // stowed helm not counted
+    const { acByCharacter } = await listCharactersWithArmor();
+    // 10 base + 1 DEX (13) + 5 equipped armour; stowed helm not counted
+    expect(acByCharacter[id]).toBe(16);
   });
 });
 

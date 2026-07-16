@@ -3,22 +3,23 @@ import { primaryBtn } from '@/components/wizard/shared';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
 import { WizardProgress } from '@/components/wizard/WizardProgress';
-import { getAbilityModifier, getKindredACBonus, calculateAC } from '@dolmenwood/rules-engine';
+import { deriveCharacterAC } from '@dolmenwood/rules-engine';
 
 export function Step9AC({ basePath = '/characters/new/auto' }: { basePath?: string }) {
   const router = useRouter();
-  const { abilityScores, kindred } = useWizardStore();
-  const dexMod = getAbilityModifier(abilityScores.dex);
-  const kindredBonus = kindred ? getKindredACBonus(kindred) : 0;
-  // armour bonus wired in once inventory is tracked; defaults to 0 for now
-  const armorBonus = 0;
-  const ac = calculateAC({ dexScore: abilityScores.dex, armorBonus, kindredACBonus: kindredBonus, classACBonus: 0, shieldBonus: 0 });
+  const { abilityScores, kindred, characterClass } = useWizardStore();
+  // No inventory exists at creation — the sheet picks up armour once items are equipped.
+  const breakdown = deriveCharacterAC(
+    { abilityScores, kindred: kindred ?? 'Human', characterClass: characterClass ?? 'Fighter', level: 1 },
+    [],
+  );
+  const ac = breakdown.total;
 
   const rows: { label: string; value: number }[] = [
     { label: 'Base', value: 10 },
-    { label: 'DEX modifier', value: dexMod },
-    ...(armorBonus ? [{ label: 'Armour', value: armorBonus }] : []),
-    ...(kindredBonus ? [{ label: `${kindred} bonus`, value: kindredBonus }] : []),
+    { label: 'DEX modifier', value: breakdown.dexModifier },
+    ...(breakdown.kindredBonus ? [{ label: `${kindred} bonus`, value: breakdown.kindredBonus }] : []),
+    ...(breakdown.classBonus ? [{ label: `${characterClass} bonus`, value: breakdown.classBonus }] : []),
   ];
 
   return (
