@@ -231,8 +231,8 @@ Add the import.
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter web typecheck` passes
-- [ ] `pnpm --filter web test` passes (new `coins-spend.test.ts`)
+- [x] `pnpm --filter web typecheck` passes
+- [x] `pnpm --filter web test` passes (new `coins-spend.test.ts`)
 #### Manual
 - [ ] Spend button beside coins opens the form
 - [ ] Overspend → inline `insufficient funds`, coins unchanged

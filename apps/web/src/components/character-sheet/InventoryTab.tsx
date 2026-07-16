@@ -1,6 +1,7 @@
 'use client';
 import { WeightBar } from './inventory/WeightBar';
 import { CoinPurse } from './inventory/CoinPurse';
+import { SpendForm } from './inventory/SpendForm';
 import { BankPanel } from './inventory/BankPanel';
 import { ItemList } from './inventory/ItemList';
 import { AddItemForm } from './inventory/AddItemForm';
@@ -59,6 +60,11 @@ export function InventoryTab({ characterId, readOnly = false }: Props) {
 
       {/* Coins */}
       <CoinPurse coins={inv.coins} isOwner={isOwner} onCoinChange={inv.handleCoinChange} />
+
+      {/* Spend */}
+      {isOwner && (
+        <SpendForm characterId={characterId} coins={inv.coins} onSpent={next => inv.setCoins(next)} />
+      )}
 
       {/* Bank Balance */}
       <BankPanel
