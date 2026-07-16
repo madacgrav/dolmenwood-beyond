@@ -398,8 +398,8 @@ function classify(name: string): { isShield: boolean; armorBulk: string | null }
 
 ### Verification
 #### Automated
-- [ ] `npx tsx scripts/backfill-armor-classification.ts --dry-run` runs, prints the table.
-- [ ] `npm run typecheck` clean (script compiles).
+- [ ] `npx tsx scripts/backfill-armor-classification.ts` (dry-run) runs, prints the table — **blocked locally: COSMOS_ENDPOINT/COSMOS_KEY not in the local env; run where creds exist.**
+- [x] `npm run typecheck` clean (script compiles standalone; classify logic verified offline: Chain mail armour→medium, Plate armour→heavy, Leather→light, Shield→isShield, unknown→UNMATCHED).
 
 #### Manual
 - [ ] Review the dry-run table: confirm `Chain mail armour`→medium, `Plate armour`→heavy, `Leather`→light, `Shield`→isShield; resolve any **unmatched** armour names by extending `normalise`/alias map; investigate any **suspect** `armorAcBonus >= 10`.
