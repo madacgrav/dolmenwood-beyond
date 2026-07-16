@@ -5,8 +5,8 @@ import { store, fakeState, resetFake } from '@/test/cosmos-fake';
 
 const docs = store('characters') as unknown as Map<string, CharacterDoc & { _etag: string }>;
 
-const PLAYER = { id: 'player-1', role: 'player' } as AccountDoc;
-const REFEREE = { id: 'ref-1', role: 'referee' } as AccountDoc;
+const PLAYER = { id: 'player-1' } as AccountDoc;
+const REFEREE = { id: 'ref-1' } as AccountDoc;
 let currentAccount: AccountDoc = PLAYER;
 
 vi.mock('@/lib/auth/session', () => ({
@@ -92,7 +92,7 @@ describe('recordBankTransaction (port of bank_transaction RPC)', () => {
 
   it('non-owner non-referee cannot even deposit; zero amount rejected', async () => {
     const id = await makeCharacter();
-    currentAccount = { id: 'stranger', role: 'player' } as AccountDoc;
+    currentAccount = { id: 'stranger' } as AccountDoc;
     await expect(recordBankTransaction(id, 10, '')).rejects.toMatchObject({ status: 403 });
     currentAccount = PLAYER;
     await expect(recordBankTransaction(id, 0, '')).rejects.toMatchObject({ status: 400 });

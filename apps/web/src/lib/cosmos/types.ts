@@ -11,9 +11,6 @@ import type { DwDate } from '@dolmenwood/rules-engine';
 export interface AccountDoc {
   id: string;
   email: string;
-  // 'referee' is the stored value for the Dungeon Master (DM) role — kept for
-  // storage compatibility (no data migration). UI and identifiers say "DM".
-  role: 'player' | 'referee';
   displayName: string;
   inviteCode: string;
   isAdmin: boolean;

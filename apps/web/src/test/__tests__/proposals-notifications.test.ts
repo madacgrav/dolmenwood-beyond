@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { AccountDoc, NotificationDoc } from '@/lib/cosmos/types';
 import { store, resetFake } from '@/test/cosmos-fake';
 
-const REFEREE = { id: 'ref-1', role: 'referee', displayName: 'The Referee' } as AccountDoc;
-const ALICE = { id: 'alice-1', role: 'player', displayName: 'Alice' } as AccountDoc;
-const BOB = { id: 'bob-1', role: 'player', displayName: 'Bob' } as AccountDoc;
+const REFEREE = { id: 'ref-1', displayName: 'The Referee' } as AccountDoc;
+const ALICE = { id: 'alice-1', displayName: 'Alice' } as AccountDoc;
+const BOB = { id: 'bob-1', displayName: 'Bob' } as AccountDoc;
 let currentAccount: AccountDoc = REFEREE;
 
 vi.mock('@/lib/auth/session', () => ({

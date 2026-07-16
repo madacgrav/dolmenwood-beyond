@@ -29,11 +29,16 @@ const iso = (v: unknown): string =>
 const isoOrNull = (v: unknown): string | null =>
   v == null ? null : v instanceof Date ? v.toISOString() : String(v);
 
+/** Drop the removed global `role` field from a stored account doc (issue #38). */
+export function stripRole<T extends Record<string, unknown>>(doc: T): Omit<T, 'role'> {
+  const { role: _role, ...rest } = doc;
+  return rest;
+}
+
 export function toAccountDoc(row: Row): AccountDoc {
   return {
     id: String(row.id),
     email: String(row.email).toLowerCase(),
-    role: row.role === 'referee' ? 'referee' : 'player',
     displayName: String(row.display_name ?? ''),
     inviteCode: String(row.invite_code ?? ''),
     isAdmin: Boolean(row.is_admin),

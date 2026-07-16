@@ -3,12 +3,11 @@
 import { DungeonMasterView } from './overview/DungeonMasterView';
 import { PlayerView } from './overview/PlayerView';
 
-interface Props {
-  isDM: boolean;
-  userId: string;
-}
-
-export function OverviewTab({ isDM, userId }: Props) {
-  if (isDM) return <DungeonMasterView userId={userId} />;
-  return <PlayerView userId={userId} />;
+export function OverviewTab({ userId }: { userId: string }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <DungeonMasterView userId={userId} />
+      <PlayerView userId={userId} />
+    </div>
+  );
 }

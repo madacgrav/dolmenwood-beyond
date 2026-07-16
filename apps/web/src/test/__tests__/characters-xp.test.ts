@@ -3,8 +3,8 @@ import type { AccountDoc } from '@/lib/cosmos/types';
 import type { XPLogEntry } from '@dolmenwood/types';
 import { store, resetFake } from '@/test/cosmos-fake';
 
-const PLAYER = { id: 'player-1', role: 'player', displayName: 'Alice' } as AccountDoc;
-const OUTSIDER = { id: 'outsider-1', role: 'player', displayName: 'Mallory' } as AccountDoc;
+const PLAYER = { id: 'player-1', displayName: 'Alice' } as AccountDoc;
+const OUTSIDER = { id: 'outsider-1', displayName: 'Mallory' } as AccountDoc;
 let currentAccount: AccountDoc = PLAYER;
 
 vi.mock('@/lib/auth/session', () => ({

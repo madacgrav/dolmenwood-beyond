@@ -17,7 +17,6 @@ export type Account = {
   id: string;
   display_name: string;
   email: string;
-  role: string;
   invite_code: string;
   phone: string | null;
   email_opt_in: boolean;
@@ -28,7 +27,6 @@ export type Account = {
 export interface SignUpInput {
   email: string;
   password: string;
-  role: 'player' | 'referee';
   displayName?: string;
 }
 
@@ -39,7 +37,6 @@ function docToAccount(doc: AccountDoc): Account {
     id: doc.id,
     display_name: doc.displayName,
     email: doc.email,
-    role: doc.role,
     invite_code: doc.inviteCode,
     phone: doc.phone,
     email_opt_in: doc.emailOptIn,
@@ -94,8 +91,8 @@ async function generateInviteCode(): Promise<string> {
 
 /**
  * Port of the handle_new_user() trigger: creates the account document at
- * sign-up (default role, generated invite code, display name defaulting to
- * the email local part).
+ * sign-up (generated invite code, display name defaulting to the email
+ * local part).
  */
 export async function createAccount(input: SignUpInput): Promise<AccountDoc> {
   const email = input.email.trim().toLowerCase();
@@ -106,7 +103,6 @@ export async function createAccount(input: SignUpInput): Promise<AccountDoc> {
   const doc: AccountDoc = {
     id: crypto.randomUUID(),
     email,
-    role: input.role === 'referee' ? 'referee' : 'player',
     displayName: input.displayName?.trim() || (email.split('@')[0] ?? email),
     inviteCode: await generateInviteCode(),
     isAdmin: false,

@@ -17,26 +17,25 @@ beforeEach(() => resetFake());
 
 describe('createAccount', () => {
   it('creates an account with a bcrypt-verifiable hash and 6-char invite code', async () => {
-    const doc = await createAccount({ email: 'Test@Example.com', password: 'hunter2boat', role: 'player' });
+    const doc = await createAccount({ email: 'Test@Example.com', password: 'hunter2boat' });
     expect(doc.email).toBe('test@example.com'); // normalized
     expect(doc.inviteCode).toMatch(/^[A-Z2-9]{6}$/);
     expect(doc.displayName).toBe('test'); // defaults to email local part
-    expect(doc.role).toBe('player');
     expect(doc.isAdmin).toBe(false);
     expect(doc.requiresPasswordReset).toBe(false);
     expect(await bcrypt.compare('hunter2boat', doc.passwordHash!)).toBe(true);
   });
 
   it('rejects a duplicate email', async () => {
-    await createAccount({ email: 'dup@example.com', password: 'password1', role: 'player' });
+    await createAccount({ email: 'dup@example.com', password: 'password1' });
     await expect(
-      createAccount({ email: 'DUP@example.com', password: 'password2', role: 'referee' }),
+      createAccount({ email: 'DUP@example.com', password: 'password2' }),
     ).rejects.toThrow(/already exists/);
   });
 
   it('generates unique invite codes across accounts', async () => {
-    const a = await createAccount({ email: 'a@example.com', password: 'password1', role: 'player' });
-    const b = await createAccount({ email: 'b@example.com', password: 'password1', role: 'referee' });
+    const a = await createAccount({ email: 'a@example.com', password: 'password1' });
+    const b = await createAccount({ email: 'b@example.com', password: 'password1' });
     expect(a.inviteCode).not.toBe(b.inviteCode);
   });
 });
@@ -48,7 +47,7 @@ describe('verifyPassword', () => {
   });
 
   it('accepts the right password and rejects the wrong one', async () => {
-    const doc = await createAccount({ email: 'v@example.com', password: 'correcthorse', role: 'player' });
+    const doc = await createAccount({ email: 'v@example.com', password: 'correcthorse' });
     expect(await verifyPassword(doc, 'correcthorse')).toBe(true);
     expect(await verifyPassword(doc, 'wronghorse')).toBe(false);
   });
@@ -56,7 +55,7 @@ describe('verifyPassword', () => {
 
 describe('setPassword', () => {
   it('sets a new hash and clears requiresPasswordReset', async () => {
-    const doc = await createAccount({ email: 's@example.com', password: 'oldpassword', role: 'player' });
+    const doc = await createAccount({ email: 's@example.com', password: 'oldpassword' });
     store('accounts').set(doc.id, { ...doc, passwordHash: null, requiresPasswordReset: true });
 
     await setPassword(doc.id, 'newpassword1');
@@ -68,13 +67,12 @@ describe('setPassword', () => {
 
 describe('fetchAccount / deleteAccount', () => {
   it('returns the narrow snake_case shape the settings UI consumes', async () => {
-    const doc = await createAccount({ email: 'n@example.com', password: 'password1', role: 'referee', displayName: 'Narrator' });
+    const doc = await createAccount({ email: 'n@example.com', password: 'password1', displayName: 'Narrator' });
     const account = await fetchAccount(doc.id);
     expect(account).toEqual({
       id: doc.id,
       display_name: 'Narrator',
       email: 'n@example.com',
-      role: 'referee',
       invite_code: doc.inviteCode,
       phone: null,
       email_opt_in: true,
@@ -84,7 +82,7 @@ describe('fetchAccount / deleteAccount', () => {
   });
 
   it('cascades: deletes the account plus its characters and notifications', async () => {
-    const doc = await createAccount({ email: 'd@example.com', password: 'password1', role: 'player' });
+    const doc = await createAccount({ email: 'd@example.com', password: 'password1' });
     store('characters').set('char-1', { id: 'char-1', ownerId: doc.id });
     store('notifications').set('note-1', { id: 'note-1', accountId: doc.id });
     store('characters').set('char-2', { id: 'char-2', ownerId: 'someone-else' });

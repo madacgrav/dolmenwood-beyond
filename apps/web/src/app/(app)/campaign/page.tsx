@@ -6,26 +6,28 @@ import { BankingTab } from '@/components/campaign/BankingTab';
 import { OverviewTab } from '@/components/campaign/OverviewTab';
 import { ScheduleTab } from '@/components/campaign/ScheduleTab';
 import { NpcTab } from '@/components/campaign/npcs/NpcTab';
+import { loadDMCampaigns } from '@/lib/api/campaigns';
 
 type TabId = 'overview' | 'bank' | 'schedule' | 'npcs';
 
 export default function CampaignPage() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
-  const [isDM, setIsDM] = useState(false);
+  const [hasDMCampaigns, setHasDMCampaigns] = useState(false);
   const [userId, setUserId] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function checkRole() {
+    async function init() {
       const res = await fetch('/api/account');
       if (res.ok) {
-        const account: { id: string; role: string } = await res.json();
+        const account: { id: string } = await res.json();
         setUserId(account.id);
-        setIsDM(account.role === 'referee');
       }
+      const dm = await loadDMCampaigns();
+      setHasDMCampaigns(!!dm && dm.campaigns.length > 0);
       setLoading(false);
     }
-    checkRole();
+    init();
   }, []);
 
   const tabs: { id: TabId; label: string; dmOnly?: boolean }[] = [
@@ -35,7 +37,7 @@ export default function CampaignPage() {
     { id: 'npcs', label: '👥 NPCs' },
   ];
 
-  const visibleTabs = tabs.filter(t => !t.dmOnly || isDM);
+  const visibleTabs = tabs.filter(t => !t.dmOnly || hasDMCampaigns);
 
   if (loading) {
     return (
@@ -56,11 +58,6 @@ export default function CampaignPage() {
         }}>
           Campaign
         </h1>
-        {isDM && (
-          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '0 0 0.75rem' }}>
-            DM view
-          </p>
-        )}
         <Link href="/campaign/houses" style={{ display: 'inline-block', fontSize: '0.8rem', color: 'var(--color-primary)', textDecoration: 'none', marginBottom: '0.75rem' }}>
           🏰 Noble Houses →
         </Link>
@@ -100,10 +97,10 @@ export default function CampaignPage() {
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
         {activeTab === 'overview' && userId && (
-          <OverviewTab isDM={isDM} userId={userId} />
+          <OverviewTab userId={userId} />
         )}
 
-        {activeTab === 'bank' && isDM && (
+        {activeTab === 'bank' && hasDMCampaigns && (
           <div>
             <div style={{ marginBottom: '1rem' }}>
               <h2 style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: '1.1rem', color: 'var(--color-text)', margin: '0 0 0.25rem' }}>
@@ -118,11 +115,11 @@ export default function CampaignPage() {
         )}
 
         {activeTab === 'schedule' && userId && (
-          <ScheduleTab userId={userId} isDM={isDM} />
+          <ScheduleTab userId={userId} />
         )}
 
         {activeTab === 'npcs' && userId && (
-          <NpcTab userId={userId} isDM={isDM} />
+          <NpcTab userId={userId} />
         )}
       </div>
     </div>

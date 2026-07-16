@@ -1,8 +1,5 @@
 // Core entity types matching the Dolmenwood Beyond data model
 
-// 'referee' is the stored value for the Dungeon Master (DM) role — kept for
-// storage compatibility (no data migration). UI and identifiers say "DM".
-export type Role = 'player' | 'referee';
 export type Alignment = 'lawful' | 'neutral' | 'chaotic';
 export type WeightLocation = 'equipped' | 'stowed' | 'tiny';
 export type ItemType = 'weapon' | 'armor' | 'gear' | 'spell_component' | 'ammo' | 'coin';
@@ -42,7 +39,6 @@ export interface SaveTargets {
 export interface Account {
   id: string;
   email: string;
-  role: Role;
   displayName: string;
 }
 

@@ -251,17 +251,18 @@ export async function loadPlayerCampaigns(): Promise<CampaignData[]> {
   return Promise.all(memberOf.map(hydrateCampaign));
 }
 
-/** Lightweight id+name list of campaigns the caller participates in. */
-export async function listMyCampaignNames(): Promise<{ id: string; name: string }[]> {
+/** Lightweight id+name+is_dm list of campaigns the caller participates in. */
+export async function listMyCampaignNames(): Promise<{ id: string; name: string; is_dm: boolean }[]> {
   const me = await requireAccountId();
   const [runByMe, memberOf] = await Promise.all([
     listCampaignsRunByDM(me),
     listCampaignsWithMember(me),
   ]);
-  const seen = new Map<string, string>();
-  for (const c of [...runByMe, ...memberOf]) seen.set(c.id, c.name);
+  const seen = new Map<string, { name: string; is_dm: boolean }>();
+  for (const c of memberOf) seen.set(c.id, { name: c.name, is_dm: false });
+  for (const c of runByMe) seen.set(c.id, { name: c.name, is_dm: true });
   return [...seen.entries()]
-    .map(([id, name]) => ({ id, name }))
+    .map(([id, { name, is_dm }]) => ({ id, name, is_dm }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

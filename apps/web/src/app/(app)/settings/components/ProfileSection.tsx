@@ -53,7 +53,6 @@ export function ProfileSection({
   }
 
   const initials = displayName.charAt(0).toUpperCase() || '?';
-  const roleBadgeColor = account?.role === 'referee' ? 'var(--color-gold)' : 'var(--color-primary)';
 
   return (
     <section style={sectionStyle}>
@@ -91,12 +90,7 @@ export function ProfileSection({
         {account?.email ?? '—'}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-        {account?.role && (
-          <span style={{ display: 'inline-block', padding: '0.25rem 0.75rem', borderRadius: '999px', backgroundColor: roleBadgeColor, color: 'white', fontSize: '0.75rem', fontWeight: '600' }}>
-            {account.role === 'referee' ? 'Dungeon Master' : 'Player'}
-          </span>
-        )}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '0.5rem' }}>
         <button
           onClick={handleChangePassword}
           style={{ background: 'none', border: 'none', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '0.875rem', textDecoration: 'underline', padding: 0, minHeight: '44px' }}

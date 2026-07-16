@@ -72,8 +72,8 @@ export async function loadPlayerCampaigns(): Promise<CampaignData[]> {
   return body.campaigns ?? [];
 }
 
-/** Campaigns the caller participates in — id + name only (schedule picker). */
-export async function listMyCampaignNames(): Promise<{ id: string; name: string }[]> {
+/** Campaigns the caller participates in — id + name + is_dm (schedule picker). */
+export async function listMyCampaignNames(): Promise<{ id: string; name: string; is_dm: boolean }[]> {
   const res = await fetch('/api/campaigns?as=names');
   if (!res.ok) return [];
   const body = await res.json();
