@@ -17,6 +17,9 @@ type ArmorBulk = 'none' | 'light' | 'medium' | 'heavy';
 interface Classification {
   isShield: boolean;
   armorBulk: ArmorBulk | null;
+  /** Corrected armorAcBonus, when the stored value is the rulebook's ABSOLUTE
+   *  AC (legacy Supabase seed bug) rather than the delta the formula expects. */
+  fixedAcBonus?: number;
 }
 
 // Catalog names drift from equipment.json ("Chain mail armour" vs "Chainmail",
@@ -27,16 +30,23 @@ const normalise = (name: string): string =>
     .replace(/armour|armor|mail/g, '') // substring, not word-bounded: "Chainmail" ≡ "Chain mail"
     .replace(/[^a-z]/g, '');
 
-const BULK_BY_NAME = new Map<string, ArmorBulk>(
-  (equipment.armour as { name: string; bulk: string }[]).map((a) => [
+const ARMOUR_BY_NAME = new Map<string, { bulk: ArmorBulk; ac: number | string }>(
+  (equipment.armour as { name: string; bulk: string; ac: number | string }[]).map((a) => [
     normalise(a.name),
-    a.bulk.toLowerCase() as ArmorBulk,
+    { bulk: a.bulk.toLowerCase() as ArmorBulk, ac: a.ac },
   ]),
 );
 
-function classify(name: string): Classification {
+function classify(name: string, storedAcBonus: number | null): Classification {
   if (name.toLowerCase().includes('shield')) return { isShield: true, armorBulk: 'none' };
-  return { isShield: false, armorBulk: BULK_BY_NAME.get(normalise(name)) ?? null };
+  const entry = ARMOUR_BY_NAME.get(normalise(name));
+  if (!entry) return { isShield: false, armorBulk: null };
+  // Legacy seed stored the rulebook's absolute AC (Leather 12, Chainmail 14…)
+  // in armorAcBonus; the formula expects a delta over base 10. Convert when
+  // the stored value matches the rulebook absolute.
+  const fixedAcBonus =
+    typeof entry.ac === 'number' && storedAcBonus === entry.ac ? entry.ac - 10 : undefined;
+  return { isShield: false, armorBulk: entry.bulk, fixedAcBonus };
 }
 
 const isArmorish = (itemType: string | null | undefined, acBonus: number | null | undefined) =>
@@ -57,13 +67,18 @@ function buildRow(
   acBonus: number | null,
   current: { isShield?: boolean | null; armorBulk?: ArmorBulk | null },
 ): Row {
-  const proposed = classify(name);
+  const proposed = classify(name, acBonus);
   const pending =
     (current.isShield ?? false) !== proposed.isShield ||
-    (current.armorBulk ?? null) !== proposed.armorBulk;
+    (current.armorBulk ?? null) !== proposed.armorBulk ||
+    proposed.fixedAcBonus !== undefined;
   const flags = [
     !proposed.isShield && proposed.armorBulk === null ? 'UNMATCHED' : '',
-    (acBonus ?? 0) >= 10 ? 'SUSPECT-AC' : '',
+    proposed.fixedAcBonus !== undefined
+      ? `FIX-AC ${acBonus}→${proposed.fixedAcBonus}`
+      : (acBonus ?? 0) >= 10
+        ? 'SUSPECT-AC'
+        : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -97,7 +112,12 @@ async function main() {
     const row = buildRow('catalog', doc.name, doc.armorAcBonus, doc);
     rows.push(row);
     if (apply && row.pending) {
-      await catalog.items.upsert({ ...doc, ...row.proposed });
+      const { fixedAcBonus, ...classification } = row.proposed;
+      await catalog.items.upsert({
+        ...doc,
+        ...classification,
+        ...(fixedAcBonus !== undefined ? { armorAcBonus: fixedAcBonus } : {}),
+      });
     }
   }
 
@@ -128,6 +148,7 @@ async function main() {
         docPending = true;
         entry.isShield = row.proposed.isShield;
         entry.armorBulk = row.proposed.armorBulk;
+        if (row.proposed.fixedAcBonus !== undefined) entry.armorAcBonus = row.proposed.fixedAcBonus;
       }
     }
     if (apply && docPending) {
