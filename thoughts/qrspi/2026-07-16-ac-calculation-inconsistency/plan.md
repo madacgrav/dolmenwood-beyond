@@ -356,8 +356,8 @@ resolve to real fields — no code change, just types line up. Confirm typecheck
 
 ### Verification
 #### Automated
-- [ ] `npm run typecheck` clean
-- [ ] `npm test` green
+- [x] `npm run typecheck` clean
+- [x] `npm test` green
 
 #### Manual
 - [ ] Seed one catalog doc locally with `isShield:true` (or via Phase 4 dry-run apply), add it to a character → AC breakdown shows a shield contribution separate from body armour.

@@ -1,4 +1,4 @@
-import type { AbilityScores, SessionNote, PersonOfNote, LevelUpChange, XPLogEntry } from '@dolmenwood/types';
+import type { AbilityScores, ArmorBulk, SessionNote, PersonOfNote, LevelUpChange, XPLogEntry } from '@dolmenwood/types';
 import type { DwDate } from '@dolmenwood/rules-engine';
 
 /**
@@ -40,6 +40,9 @@ export interface InventoryEntryDoc {
   location: 'equipped' | 'stowed' | 'tiny';
   weaponDamageDice: string | null;
   armorAcBonus: number | null;
+  /** Optional: absent on entries created before the armor-classification backfill. */
+  isShield?: boolean;
+  armorBulk?: ArmorBulk | null;
   catalogItemId: string | null;
 }
 
@@ -267,6 +270,9 @@ export interface CatalogItemDoc {
   costCp: number | null;
   weaponDamageDice: string | null;
   armorAcBonus: number | null;
+  /** Optional: absent on docs created before the armor-classification backfill. */
+  isShield?: boolean;
+  armorBulk?: ArmorBulk | null;
   qualities: string[];
   size: string | null;
   notes: string | null;

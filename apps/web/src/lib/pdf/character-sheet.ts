@@ -112,6 +112,8 @@ export async function fillCharacterSheet(
   const acItems: ACItem[] = c.inventory.map((e) => ({
     location: e.location,
     armorAcBonus: e.armorAcBonus,
+    isShield: e.isShield,
+    armorBulk: e.armorBulk,
   }));
   set('Armour Class', deriveCharacterAC(c, acItems).total);
 

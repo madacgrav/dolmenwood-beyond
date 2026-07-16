@@ -90,6 +90,8 @@ export async function listCharactersWithArmor(): Promise<{
     const items: ACItem[] = (doc.inventory ?? []).map((e) => ({
       location: e.location,
       armorAcBonus: e.armorAcBonus,
+      isShield: e.isShield,
+      armorBulk: e.armorBulk,
     }));
     acByCharacter[doc.id] = deriveCharacterAC(doc, items).total;
   }

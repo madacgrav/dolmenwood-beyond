@@ -1,5 +1,6 @@
 import { requireAccountId } from '@/lib/auth/session';
 import { assertCharacterOwner, badRequest, notFound } from '@/lib/authz';
+import type { ArmorBulk } from '@dolmenwood/types';
 import type { CharacterDoc, InventoryEntryDoc } from '@/lib/cosmos/types';
 import type { InventoryItem, ItemLocation } from '@/lib/api/inventory';
 import { mutateOwnedCharacterDoc } from './characters';
@@ -22,6 +23,8 @@ function entryToItem(characterId: string, e: InventoryEntryDoc): InventoryItem {
     location: e.location,
     weapon_damage_dice: e.weaponDamageDice,
     armor_ac_bonus: e.armorAcBonus,
+    is_shield: e.isShield ?? false,
+    armor_bulk: e.armorBulk ?? null,
   };
 }
 
@@ -51,6 +54,8 @@ export interface NewInventoryEntryInput {
   location?: ItemLocation;
   weapon_damage_dice?: string | null;
   armor_ac_bonus?: number | null;
+  is_shield?: boolean;
+  armor_bulk?: ArmorBulk | null;
   catalog_item_id?: string | null;
 }
 
@@ -72,6 +77,8 @@ export async function addInventoryItem(
       : 'stowed',
     weaponDamageDice: input.weapon_damage_dice ?? null,
     armorAcBonus: input.armor_ac_bonus ?? null,
+    isShield: input.is_shield ?? false,
+    armorBulk: input.armor_bulk ?? null,
     catalogItemId: input.catalog_item_id ?? null,
   };
   await mutateOwnedCharacterDoc(characterId, (doc) => {

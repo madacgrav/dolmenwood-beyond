@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import type { ArmorBulk } from '@dolmenwood/types';
 import type { InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
 
 export interface CatalogItem {
@@ -9,6 +10,8 @@ export interface CatalogItem {
   cost_gp: number | null;
   weapon_damage_dice: string | null;
   armor_ac_bonus: number | null;
+  is_shield: boolean;
+  armor_bulk: ArmorBulk | null;
   notes: string | null;
 }
 
@@ -39,4 +42,6 @@ export interface NewItemDraft {
   location: DBInventoryItem['location'];
   weapon_damage_dice: string;
   armor_ac_bonus: string;
+  is_shield: boolean;
+  armor_bulk: ArmorBulk | null;
 }

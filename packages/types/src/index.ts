@@ -156,6 +156,8 @@ export interface InventoryItem {
   weaponDamageDice?: string;
   weaponAttackBonus?: number;
   armorAcBonus?: number;
+  isShield?: boolean;
+  armorBulk?: ArmorBulk;
   isFromCatalog: boolean;
 }
 

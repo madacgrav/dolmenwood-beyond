@@ -77,6 +77,8 @@ export default function CharacterViewPage() {
   const acItems: ACItem[] = items.map((i) => ({
     location: i.location,
     armorAcBonus: i.armor_ac_bonus,
+    isShield: i.is_shield,
+    armorBulk: i.armor_bulk,
   }));
   const acBreakdown = deriveCharacterAC(character, acItems);
 

@@ -3,6 +3,7 @@
  * snake_case UI shapes the inventory/combat components were built against
  * (kept from the Supabase era to avoid churn).
  */
+import type { ArmorBulk } from '@dolmenwood/types';
 
 export type ItemLocation = 'equipped' | 'stowed' | 'tiny';
 
@@ -17,6 +18,8 @@ export interface InventoryItem {
   location: ItemLocation;
   weapon_damage_dice?: string | null;
   armor_ac_bonus?: number | null;
+  is_shield?: boolean;
+  armor_bulk?: ArmorBulk | null;
 }
 
 export interface AmmoItem {
