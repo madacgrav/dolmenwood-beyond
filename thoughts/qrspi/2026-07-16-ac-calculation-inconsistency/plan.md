@@ -398,13 +398,13 @@ function classify(name: string): { isShield: boolean; armorBulk: string | null }
 
 ### Verification
 #### Automated
-- [ ] `npx tsx scripts/backfill-armor-classification.ts` (dry-run) runs, prints the table — **blocked locally: COSMOS_ENDPOINT/COSMOS_KEY not in the local env; run where creds exist.**
+- [x] `npx tsx scripts/backfill-armor-classification.ts` (dry-run) runs, prints the table (creds pulled via az CLI).
 - [x] `npm run typecheck` clean (script compiles standalone; classify logic verified offline: Chain mail armour→medium, Plate armour→heavy, Leather→light, Shield→isShield, unknown→UNMATCHED).
 
 #### Manual
-- [ ] Review the dry-run table: confirm `Chain mail armour`→medium, `Plate armour`→heavy, `Leather`→light, `Shield`→isShield; resolve any **unmatched** armour names by extending `normalise`/alias map; investigate any **suspect** `armorAcBonus >= 10`.
-- [ ] `--apply`, then re-run `--dry-run` → zero pending changes.
-- [ ] Spot-check a Breggle-in-plate and a Friar-in-plate existing character → bonus now gated.
+- [x] Reviewed dry-run: 11 items, 0 unmatched. **All 9 suspects confirmed as legacy absolute-AC values** (Leather 12, Chainmail 14, Plate mail 16… — design risk #3 real); script extended to convert them to deltas (FIX-AC), user approved.
+- [x] `--apply` run against prod (8 catalog + 2 character docs: Brion Blackhorn plate 16→6 + shield flagged, Kitty Grisner chainmail 14→4); re-run dry-run → **0 pending**.
+- [ ] Spot-check in the UI: Brion Blackhorn / Kitty Grisner AC now rules-correct on all screens; a Breggle/Friar in medium+ armour loses the bonus.
 
 ---
 
