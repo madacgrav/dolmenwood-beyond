@@ -1,5 +1,6 @@
 export * from './ability-modifiers';
 export * from './ac';
+export * from './character-ac';
 export * from './xp';
 export * from './speed';
 export * from './advancement';

@@ -6,6 +6,7 @@ export type Role = 'player' | 'referee';
 export type Alignment = 'lawful' | 'neutral' | 'chaotic';
 export type WeightLocation = 'equipped' | 'stowed' | 'tiny';
 export type ItemType = 'weapon' | 'armor' | 'gear' | 'spell_component' | 'ammo' | 'coin';
+export type ArmorBulk = 'none' | 'light' | 'medium' | 'heavy';
 export type WageType = 'daily' | 'share';
 export type OwnerType = 'character' | 'retainer' | 'mount';
 export type SpellRank = 1 | 2 | 3 | 4 | 5 | 6;
