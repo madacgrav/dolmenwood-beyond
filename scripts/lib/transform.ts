@@ -33,7 +33,6 @@ export function toAccountDoc(row: Row): AccountDoc {
   return {
     id: String(row.id),
     email: String(row.email).toLowerCase(),
-    role: row.role === 'referee' ? 'referee' : 'player',
     displayName: String(row.display_name ?? ''),
     inviteCode: String(row.invite_code ?? ''),
     isAdmin: Boolean(row.is_admin),

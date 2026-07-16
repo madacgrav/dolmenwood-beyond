@@ -11,7 +11,7 @@ import type { AccountDoc, CampaignDoc, CharacterDoc } from '@/lib/cosmos/types';
 
 export interface AdminData {
   accounts: {
-    id: string; email: string; display_name: string; role: string;
+    id: string; email: string; display_name: string;
     is_admin: boolean; created_at: string;
   }[];
   characters: {
@@ -55,7 +55,6 @@ export async function getAdminData(): Promise<AdminData> {
       id: a.id,
       email: a.email,
       display_name: a.displayName,
-      role: a.role,
       is_admin: a.isAdmin,
       created_at: a.createdAt,
     })),

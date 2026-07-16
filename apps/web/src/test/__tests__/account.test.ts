@@ -21,7 +21,6 @@ describe('createAccount', () => {
     expect(doc.email).toBe('test@example.com'); // normalized
     expect(doc.inviteCode).toMatch(/^[A-Z2-9]{6}$/);
     expect(doc.displayName).toBe('test'); // defaults to email local part
-    expect(doc.role).toBe('player');
     expect(doc.isAdmin).toBe(false);
     expect(doc.requiresPasswordReset).toBe(false);
     expect(await bcrypt.compare('hunter2boat', doc.passwordHash!)).toBe(true);
@@ -74,7 +73,6 @@ describe('fetchAccount / deleteAccount', () => {
       id: doc.id,
       display_name: 'Narrator',
       email: 'n@example.com',
-      role: 'player',
       invite_code: doc.inviteCode,
       phone: null,
       email_opt_in: true,

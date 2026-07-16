@@ -7,7 +7,6 @@ interface AdminAccount {
   id: string;
   email: string;
   display_name: string;
-  role: string;
   is_admin: boolean;
   created_at: string;
 }
@@ -175,7 +174,6 @@ export default async function AdminPage() {
                 <tr>
                   <th style={TABLE_HEADER}>Name</th>
                   <th style={TABLE_HEADER}>Email</th>
-                  <th style={TABLE_HEADER}>Role</th>
                   <th style={TABLE_HEADER}>Admin</th>
                   <th style={TABLE_HEADER}>Joined</th>
                 </tr>
@@ -185,7 +183,6 @@ export default async function AdminPage() {
                   <tr key={acc.id} style={{ backgroundColor: i % 2 === 0 ? 'transparent' : 'color-mix(in srgb, var(--color-border) 20%, transparent)' }}>
                     <td style={TABLE_CELL}>{acc.display_name || '—'}</td>
                     <td style={MUTED_CELL}>{acc.email}</td>
-                    <td style={MUTED_CELL}>{acc.role === 'referee' ? 'Dungeon Master' : 'Player'}</td>
                     <td style={TABLE_CELL}>{acc.is_admin ? '🛡️' : '—'}</td>
                     <td style={MUTED_CELL}>{new Date(acc.created_at).toLocaleDateString()}</td>
                   </tr>

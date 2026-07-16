@@ -21,7 +21,6 @@ describe('toAccountDoc', () => {
     expect(doc).toMatchObject({
       id: 'a-1',
       email: 'alice@example.com', // normalized for the Auth.js lookup
-      role: 'referee',
       displayName: 'Alice',
       inviteCode: 'ABC123',
       isAdmin: true,

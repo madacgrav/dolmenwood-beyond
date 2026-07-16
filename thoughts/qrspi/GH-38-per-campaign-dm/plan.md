@@ -195,9 +195,9 @@ Land all together — deleting the type breaks the readers otherwise.
 
 ### Verification
 #### Automated
-- [ ] `npm --prefix apps/web run typecheck` passes
-- [ ] `npm --prefix apps/web run test` passes
-- [ ] `grep -rn "\.role\|'referee'\|\"referee\"" apps/web/src packages/types/src` returns only `refereeId` and the `?as=referee` param (no account-role references)
+- [x] `npm --prefix apps/web run typecheck` passes
+- [x] `npm --prefix apps/web run test` passes
+- [x] `grep -rn "\.role\|'referee'\|\"referee\"" apps/web/src packages/types/src` returns only `refereeId` and the `?as=referee` param (no account-role references)
 #### Manual
 - [ ] Settings shows no role badge; admin table has no Role column.
 
