@@ -54,6 +54,12 @@ describe('embedded inventory', () => {
     expect(stored.quantity).toBe(2);
     expect(stored.character_id).toBe(id);
 
+    // Quantity floors at 0 and has no ceiling — the ItemRow editor relies on both.
+    await updateInventoryEntry(id, sword.id, { quantity: 0 });
+    expect((await listInventory(id)).find((i) => i.id === sword.id)!.quantity).toBe(0);
+    await updateInventoryEntry(id, sword.id, { quantity: 999 });
+    expect((await listInventory(id)).find((i) => i.id === sword.id)!.quantity).toBe(999);
+
     await removeInventoryItem(id, sword.id);
     expect((await listInventory(id)).map((i) => i.item_name)).toEqual(['Rope']);
   });

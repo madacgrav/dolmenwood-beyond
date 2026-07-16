@@ -96,3 +96,18 @@ export async function saveCoins(characterId: string, coins: Coins): Promise<stri
   });
   return res.ok ? null : errorText(res);
 }
+
+/** Server-enforced spend: deducts across denominations, 400 on insufficient funds. */
+export async function spendCoins(
+  characterId: string,
+  amount: number,
+  denom: 'gp' | 'sp' | 'cp',
+): Promise<{ coins: Coins | null; error: string | null }> {
+  const res = await fetch(`/api/characters/${characterId}/coins/spend`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount, denom }),
+  });
+  if (!res.ok) return { coins: null, error: await errorText(res) };
+  return { coins: await res.json(), error: null };
+}

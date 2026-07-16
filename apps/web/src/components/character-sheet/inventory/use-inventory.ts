@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   listInventory,
   updateItemLocation,
+  updateItemQuantity,
   deleteInventoryItem,
   type InventoryItem as DBInventoryItem,
 } from '@/lib/api/inventory';
@@ -61,12 +62,18 @@ export function useInventory(characterId: string) {
     await deleteInventoryItem(characterId, id);
   }
 
+  async function setItemQuantity(id: string, quantity: number) {
+    const q = Math.max(0, Math.floor(quantity) || 0);
+    setItems(prev => prev.map(i => i.id === id ? { ...i, quantity: q } : i));
+    await updateItemQuantity(characterId, id, q);
+  }
+
   return {
     items, setItems,
     loading,
     coins, setCoins,
     bankBalance, fetchBankBalance,
     saveCoins, handleCoinChange,
-    toggleLocation, deleteItem,
+    toggleLocation, deleteItem, setItemQuantity,
   };
 }

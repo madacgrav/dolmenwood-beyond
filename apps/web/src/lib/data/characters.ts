@@ -11,6 +11,7 @@ import {
   forbidden,
   notFound,
 } from '@/lib/authz';
+import { toCp, fromCp } from '@/lib/coins';
 import {
   docToCharacter,
   docToCharacterWithNotes,
@@ -181,6 +182,21 @@ export async function saveCoins(characterId: string, coins: Coins): Promise<void
     doc.coinsSp = coins.sp;
     doc.coinsCp = coins.cp;
   });
+}
+
+/** Owner-only spend: deducts amountCp across the purse (making change from
+ *  larger denominations), guarding against overspend. Returns the new counts. */
+export async function spendCoins(characterId: string, amountCp: number): Promise<Coins> {
+  if (!Number.isInteger(amountCp) || amountCp <= 0) throw badRequest('amount must be a positive integer');
+  const doc = await mutateOwnedCharacterDoc(characterId, (d) => {
+    const have = toCp({ gp: d.coinsGp ?? 0, sp: d.coinsSp ?? 0, cp: d.coinsCp ?? 0 });
+    if (have < amountCp) throw badRequest('insufficient funds');
+    const next = fromCp(have - amountCp);
+    d.coinsGp = next.gp;
+    d.coinsSp = next.sp;
+    d.coinsCp = next.cp;
+  });
+  return { gp: doc.coinsGp, sp: doc.coinsSp, cp: doc.coinsCp };
 }
 
 // ── Creation ──────────────────────────────────────────────────────────────────
