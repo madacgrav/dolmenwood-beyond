@@ -46,6 +46,16 @@ export interface InventoryEntryDoc {
   catalogItemId: string | null;
 }
 
+/** A currently-burning light/heat source, tracked in turns (10 min each).
+ *  Burn-down is manual: the player taps "turn passes" — there is no clock. */
+export interface ActiveLightDoc {
+  id: string;
+  itemName: string;
+  turnsRemaining: number;
+  totalTurns: number;
+  litAt: string;
+}
+
 export interface SpellSlotDoc {
   id: string;
   rank: number;
@@ -160,6 +170,8 @@ export interface CharacterDoc {
   xpLog?: XPLogEntry[];
   mounts?: MountEntryDoc[];
   retainers?: RetainerEntryDoc[];
+  /** Burning light sources; absent on docs created before the light tracker. */
+  activeLights?: ActiveLightDoc[];
   /** Last in-world date this character rested. Absent = never rested. */
   lastRestDate?: DwDate | null;
   createdAt: string;

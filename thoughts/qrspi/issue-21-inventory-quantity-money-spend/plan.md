@@ -341,8 +341,8 @@ Wrap in `handleRouteError`.
 
 ### Verification
 #### Automated
-- [ ] `pnpm --filter web typecheck` passes
-- [ ] `pnpm --filter web test` passes (new `light.test.ts`)
+- [x] `pnpm --filter web typecheck` passes
+- [x] `pnpm --filter web test` passes (new `light.test.ts`)
 #### Manual
 - [ ] Light a torch → inventory torch −1, tracker shows 6 turns
 - [ ] "Turn passes" 6× → burned-out state
@@ -352,6 +352,6 @@ Wrap in `handleRouteError`.
 ---
 
 ## Cross-phase final checks
-- [ ] `pnpm --filter web typecheck` and `pnpm --filter web test` green
-- [ ] `pnpm --filter web lint` clean on changed files
-- [ ] Each phase committed separately so P1/P2 stand alone if P3 is deferred
+- [x] `pnpm --filter web typecheck` and `pnpm --filter web test` green
+- [x] `pnpm --filter web lint` clean on changed files (lint-staged eslint --fix ran on every commit)
+- [x] Each phase committed separately so P1/P2 stand alone if P3 is deferred

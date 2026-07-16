@@ -6,6 +6,7 @@ import { BankPanel } from './inventory/BankPanel';
 import { ItemList } from './inventory/ItemList';
 import { AddItemForm } from './inventory/AddItemForm';
 import { RestockSheet } from './inventory/RestockSheet';
+import { LightTracker } from './inventory/LightTracker';
 import { useInventory } from './inventory/use-inventory';
 import { useAddItem } from './inventory/use-add-item';
 import { useRestock } from './inventory/use-restock';
@@ -103,6 +104,14 @@ export function InventoryTab({ characterId, readOnly = false }: Props) {
         onToggleLocation={inv.toggleLocation}
         onSetQuantity={inv.setItemQuantity}
         onDelete={inv.deleteItem}
+      />
+
+      {/* Light & fire burn tracker */}
+      <LightTracker
+        characterId={characterId}
+        items={inv.items}
+        isOwner={isOwner}
+        onItemConsumed={id => inv.setItems(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(0, i.quantity - 1) } : i))}
       />
 
       {inv.items.length === 0 && !addItemCtl.showAddForm && (
