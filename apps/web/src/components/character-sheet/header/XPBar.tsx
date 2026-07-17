@@ -18,9 +18,11 @@ interface Props {
 
 export function XPBar({ character, readOnly, xpEditOpen, onToggle, onAdjustXP, variant = 'owner', onCorrectXP }: Props) {
   const [xpInputVal, setXpInputVal] = useState('');
+  const [xpMode, setXpMode] = useState<'add' | 'set'>('add');
   const router = useRouter();
   const isDM = variant === 'dm-correction';
   const editable = !readOnly || isDM;
+  const isSet = !isDM && xpMode === 'set';
 
   const nextLevelXP = getXPThresholdForNextLevel(character.characterClass, character.level);
   const xpPct = nextLevelXP > 0 ? Math.min(1, character.xp / nextLevelXP) : 1;
@@ -33,15 +35,15 @@ export function XPBar({ character, readOnly, xpEditOpen, onToggle, onAdjustXP, v
 
   function commitXPInput() {
     const val = parseInt(xpInputVal, 10);
-    if (!isNaN(val) && val !== 0) {
-      if (isDM) {
-        onCorrectXP?.(val); // raw signed delta, no modifier
-      } else {
-        const gain = val > 0
-          ? applyXPModifiers(val, character.characterClass, character.abilityScores as unknown as Record<string, number>, character.kindred)
-          : val;
-        onAdjustXP?.(Math.max(0, character.xp + gain));
-      }
+    if (isDM) {
+      if (!isNaN(val) && val !== 0) onCorrectXP?.(val); // raw signed delta, no modifier
+    } else if (isSet) {
+      if (!isNaN(val) && val >= 0) onAdjustXP?.(val); // typed value is the new total, no modifier
+    } else if (!isNaN(val) && val !== 0) {
+      const gain = val > 0
+        ? applyXPModifiers(val, character.characterClass, character.abilityScores as unknown as Record<string, number>, character.kindred)
+        : val;
+      onAdjustXP?.(Math.max(0, character.xp + gain));
     }
     setXpInputVal('');
     onToggle();
@@ -77,12 +79,31 @@ export function XPBar({ character, readOnly, xpEditOpen, onToggle, onAdjustXP, v
         const previewGain = isPositive && totalXpMod !== 0
           ? Math.round(inputVal * (1 + totalXpMod / 100))
           : inputVal || 0;
-        const showPreview = !isNaN(inputVal) && inputVal !== 0 && isPositive && totalXpMod !== 0 && !isDM;
+        const showPreview = !isNaN(inputVal) && inputVal !== 0 && isPositive && totalXpMod !== 0 && !isDM && !isSet;
         return (
           <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            {!isDM && (
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                {(['add', 'set'] as const).map(m => (
+                  <button
+                    key={m}
+                    onClick={() => setXpMode(m)}
+                    style={{
+                      padding: '0.125rem 0.625rem', borderRadius: '6px', fontSize: '0.7rem',
+                      border: '1px solid var(--color-border)', cursor: 'pointer', minHeight: '28px',
+                      backgroundColor: xpMode === m ? 'var(--color-gold)' : 'var(--color-bg)',
+                      color: xpMode === m ? 'white' : 'var(--color-text-muted)',
+                      fontWeight: xpMode === m ? '700' : '400',
+                    }}
+                  >
+                    {m === 'add' ? 'Add' : 'Set'}
+                  </button>
+                ))}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                {isDM ? 'Correct XP:' : isNegative ? 'Correct XP:' : 'Add XP:'}
+                {isDM ? 'Correct XP:' : isSet ? 'Set XP total:' : isNegative ? 'Correct XP:' : 'Add XP:'}
               </span>
               <input
                 type="number"
@@ -100,7 +121,7 @@ export function XPBar({ character, readOnly, xpEditOpen, onToggle, onAdjustXP, v
                 onClick={commitXPInput}
                 style={{ padding: '0.25rem 0.75rem', borderRadius: '6px', backgroundColor: 'var(--color-gold)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '700', minHeight: '44px' }}
               >
-                {isDM ? '±XP' : isNegative ? '−XP' : '+XP'}
+                {isDM ? '±XP' : isSet ? 'Set' : isNegative ? '−XP' : '+XP'}
               </button>
             </div>
             {showPreview && (

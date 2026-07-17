@@ -288,8 +288,8 @@ async function handleAdjustXP(newTotal: number) {
 
 ### Verification
 #### Automated
-- [ ] `pnpm typecheck` passes
-- [ ] `pnpm test` passes (owner `adjustXP` server behavior unchanged; Set-mode
+- [x] `pnpm typecheck` passes
+- [x] `pnpm test` passes (owner `adjustXP` server behavior unchanged; Set-mode
       is pure client conversion)
 
 #### Manual (`pnpm dev`)
