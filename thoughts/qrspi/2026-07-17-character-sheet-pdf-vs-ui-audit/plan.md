@@ -77,9 +77,9 @@ export const ITEM_TYPE_LABELS: Record<ItemType, string> = {
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` — `inventory-spells.test.ts` passes
-- [ ] `pnpm typecheck` passes (catches any remaining `'armour'`/`'consumable'`/`'other'` literal)
-- [ ] `rg "'armour'|'consumable'|'other'" apps/web/src` returns no live item-type usages
+- [x] `pnpm test` — `inventory-spells.test.ts` passes
+- [x] `pnpm typecheck` passes (catches any remaining `'armour'`/`'consumable'`/`'other'` literal)
+- [x] `rg "'armour'|'consumable'|'other'" apps/web/src` returns no live item-type usages (also fixed: `use-add-item.ts` armor→armour catalog mapping removed; `use-restock.ts` ammo restock now `'ammo'` not `'consumable'`; test literals updated)
 #### Manual
 - [ ] INT card reads "Intelligence"
 - [ ] Add-item type dropdown shows Weapon/Armour/Gear/Spell Component/Ammo/Coin; selecting Armour reveals the AC field; Weapon reveals damage dice

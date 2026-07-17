@@ -75,9 +75,9 @@ describe('embedded inventory', () => {
 
   it('computes derived AC for the roster from embedded entries', async () => {
     const { id } = await createCharacter(INPUT);
-    await addInventoryItem(id, { item_name: 'Chainmail', item_type: 'armour', armor_ac_bonus: 4, location: 'equipped' });
-    await addInventoryItem(id, { item_name: 'Shield', item_type: 'armour', armor_ac_bonus: 1, location: 'equipped' });
-    await addInventoryItem(id, { item_name: 'Spare helm', item_type: 'armour', armor_ac_bonus: 2, location: 'stowed' });
+    await addInventoryItem(id, { item_name: 'Chainmail', item_type: 'armor', armor_ac_bonus: 4, location: 'equipped' });
+    await addInventoryItem(id, { item_name: 'Shield', item_type: 'armor', armor_ac_bonus: 1, location: 'equipped' });
+    await addInventoryItem(id, { item_name: 'Spare helm', item_type: 'armor', armor_ac_bonus: 2, location: 'stowed' });
 
     const { acByCharacter } = await listCharactersWithArmor();
     // 10 base + 1 DEX (13) + 5 equipped armour; stowed helm not counted

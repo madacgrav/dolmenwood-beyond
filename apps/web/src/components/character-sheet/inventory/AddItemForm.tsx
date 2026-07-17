@@ -1,6 +1,6 @@
 'use client';
 import type { InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
-import { ITEM_TYPES, type ItemType } from './types';
+import { ITEM_TYPES, ITEM_TYPE_LABELS, type ItemType } from './types';
 import type { AddItemController } from './use-add-item';
 
 interface Props {
@@ -98,7 +98,7 @@ export function AddItemForm({ controller }: Props) {
               onChange={e => setNewItem(p => ({ ...p, item_type: e.target.value as ItemType }))}
               style={{ flex: 1, padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px' }}
             >
-              {ITEM_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+              {ITEM_TYPES.map(t => <option key={t} value={t}>{ITEM_TYPE_LABELS[t]}</option>)}
             </select>
             <select
               value={newItem.location}
@@ -135,7 +135,7 @@ export function AddItemForm({ controller }: Props) {
               />
             </div>
           )}
-          {newItem.item_type === 'armour' && (
+          {newItem.item_type === 'armor' && (
             <div>
               <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>AC Value (total, e.g. 14 for chainmail)</label>
               <input type="number" placeholder="12" value={newItem.armor_ac_bonus}

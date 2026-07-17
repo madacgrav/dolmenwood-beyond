@@ -6,7 +6,7 @@ import { formatMod, sectionHead } from './shared';
 
 const ABILITY_KEYS: { key: keyof AbilityScores; abbr: string; label: string }[] = [
   { key: 'str', abbr: 'STR', label: 'Strength' },
-  { key: 'int', abbr: 'INT', label: 'Intellect' },
+  { key: 'int', abbr: 'INT', label: 'Intelligence' },
   { key: 'wis', abbr: 'WIS', label: 'Wisdom' },
   { key: 'dex', abbr: 'DEX', label: 'Dexterity' },
   { key: 'con', abbr: 'CON', label: 'Constitution' },
