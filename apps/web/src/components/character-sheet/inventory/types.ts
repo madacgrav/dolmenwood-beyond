@@ -15,8 +15,13 @@ export interface CatalogItem {
   notes: string | null;
 }
 
-export const ITEM_TYPES = ['weapon', 'armour', 'gear', 'consumable', 'other'] as const;
+export const ITEM_TYPES = ['weapon', 'armor', 'gear', 'spell_component', 'ammo', 'coin'] as const;
 export type ItemType = typeof ITEM_TYPES[number];
+
+export const ITEM_TYPE_LABELS: Record<ItemType, string> = {
+  weapon: 'Weapon', armor: 'Armour', gear: 'Gear',
+  spell_component: 'Spell Component', ammo: 'Ammo', coin: 'Coin',
+};
 
 export const LOCATION_LABELS: Record<string, string> = {
   equipped: '⚔️ Equipped',

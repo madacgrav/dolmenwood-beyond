@@ -4,9 +4,12 @@ import {
   getPrimeAbilities, getSaveTargets,
   getAttackBonus, calculateSpeed,
   getMaxRetainers, getRetainerLoyaltyBase,
+  getMagicResistance, getKindredMagicResistance,
+  getExplorationRate, getOverlandRate,
 } from '@dolmenwood/rules-engine';
 import { AbilityScoresSection } from './stats/AbilityScoresSection';
 import { CombatStatsSection } from './stats/CombatStatsSection';
+import { TraitsSection } from './stats/TraitsSection';
 import { SkillsSection } from './stats/SkillsSection';
 import { SavingThrowsSection } from './stats/SavingThrowsSection';
 import { LanguagesSection } from './stats/LanguagesSection';
@@ -19,17 +22,22 @@ import { useRetainers } from './stats/use-retainers';
 interface Props {
   character: CharacterWithNotes;
   acBreakdown: ACBreakdown | null;
+  /** Carried weight in coins (non-tiny inventory), for the encumbrance-based Speed. */
+  carriedWeight: number;
   editMode: boolean;
   onUpdate: (updates: Partial<CharacterWithNotes>) => void;
   readOnly?: boolean;
 }
 
-export function StatsTab({ character, acBreakdown, editMode, onUpdate, readOnly }: Props) {
+export function StatsTab({ character, acBreakdown, carriedWeight, editMode, onUpdate, readOnly }: Props) {
   const primes = getPrimeAbilities(character.characterClass);
   const saves = getSaveTargets(character.characterClass, character.level);
   const attackBonus = getAttackBonus(character.characterClass, character.level);
   const ac = acBreakdown?.total ?? 10;
-  const speed = calculateSpeed(0);
+  const speed = calculateSpeed(carriedWeight);
+  const exploring = getExplorationRate(speed);
+  const overland = getOverlandRate(speed);
+  const magicResistance = getMagicResistance(character.abilityScores.wis, getKindredMagicResistance(character.kindred));
   const maxRetainers = getMaxRetainers(character.abilityScores.cha);
   const loyaltyBase = getRetainerLoyaltyBase(character.abilityScores.cha);
 
@@ -46,7 +54,9 @@ export function StatsTab({ character, acBreakdown, editMode, onUpdate, readOnly 
         onUpdate={onUpdate}
       />
 
-      <CombatStatsSection ac={ac} attackBonus={attackBonus} speed={speed} />
+      <CombatStatsSection ac={ac} attackBonus={attackBonus} speed={speed} exploring={exploring} overland={overland} />
+
+      <TraitsSection traits={character.traits} onUpdate={onUpdate} readOnly={readOnly} />
 
       <SkillsSection
         characterClass={character.characterClass}
@@ -54,7 +64,7 @@ export function StatsTab({ character, acBreakdown, editMode, onUpdate, readOnly 
         kindred={character.kindred}
       />
 
-      <SavingThrowsSection saves={saves} />
+      <SavingThrowsSection saves={saves} magicResistance={magicResistance} />
 
       <LanguagesSection
         kindred={character.kindred}

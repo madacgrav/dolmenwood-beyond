@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import type { ACBreakdown, Character } from '@dolmenwood/types';
-import { getAttackBonus, getSaveTargets, getHitDie, getAbilityModifier } from '@dolmenwood/rules-engine';
+import { getAttackBonus, getSaveTargets, getHitDie, getAbilityModifier, getMagicResistance, getKindredMagicResistance } from '@dolmenwood/rules-engine';
 import { listEquippedWeapons, type EquippedWeapon } from '@/lib/api/inventory';
 import { ConditionsSection } from './combat/ConditionsSection';
 import { ArmourClassSection } from './combat/ArmourClassSection';
@@ -41,6 +41,7 @@ export function CombatTab({ character, characterId, acBreakdown, readOnly = fals
   const saves = getSaveTargets(character.characterClass, character.level);
   const strMod = getAbilityModifier(character.abilityScores.str);
   const dexMod = getAbilityModifier(character.abilityScores.dex);
+  const magicResistance = getMagicResistance(character.abilityScores.wis, getKindredMagicResistance(character.kindred));
 
   const ac = acBreakdown?.total ?? 10;
   const hitDie = getHitDie(character.characterClass);
@@ -85,7 +86,7 @@ export function CombatTab({ character, characterId, acBreakdown, readOnly = fals
       <HitDiceSection characterClass={character.characterClass} level={character.level} hitDie={hitDie} />
 
       {/* Saving Throws */}
-      {saves && <SavingThrowsSection saves={saves as Record<string, number>} readOnly={readOnly} />}
+      {saves && <SavingThrowsSection saves={saves as Record<string, number>} magicResistance={magicResistance} readOnly={readOnly} />}
 
       {/* Mounts */}
       <MountsSection readOnly={readOnly} {...mountsState} />

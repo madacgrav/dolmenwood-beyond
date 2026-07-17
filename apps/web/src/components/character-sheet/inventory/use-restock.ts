@@ -67,7 +67,7 @@ export function useRestock({ characterId, items, setItems, coins, setCoins, save
           const mapped = await insertInventoryItem({
             character_id: characterId,
             item_name: entry.name,
-            item_type: entry.category === 'ammo' ? 'consumable' : 'gear',
+            item_type: entry.category === 'ammo' ? 'ammo' : 'gear',
             quantity: totalQty,
             weight_coins: 0,
             location: 'stowed',

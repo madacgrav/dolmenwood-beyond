@@ -55,10 +55,9 @@ export function useAddItem({ characterId, onItemAdded }: {
   }, [addMode]);
 
   function selectCatalogItem(cat: CatalogItem) {
-    const mappedType = cat.item_type === 'armor' ? 'armour' : cat.item_type as ItemType;
     setNewItem({
       item_name: cat.name,
-      item_type: ITEM_TYPES.includes(mappedType as ItemType) ? mappedType as ItemType : 'gear',
+      item_type: ITEM_TYPES.includes(cat.item_type as ItemType) ? cat.item_type as ItemType : 'gear',
       quantity: 1,
       weight_coins: cat.weight,
       location: cat.item_type === 'armor' || cat.item_type === 'weapon' ? 'equipped' : 'stowed',

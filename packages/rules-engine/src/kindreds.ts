@@ -42,6 +42,11 @@ export function getKindredACBonus(kindred: string): number {
   return match ? parseInt(match[1]!, 10) : 0;
 }
 
+export function getKindredMagicResistance(kindred: string): number {
+  const mr = getKindredData(kindred)?.magicResistance;
+  return typeof mr === 'number' ? mr : 0;
+}
+
 /** True when the kindred's AC bonus is conditional on light/no armour (e.g. Breggle). */
 export function isKindredACBonusArmorConditional(kindred: string): boolean {
   const s = getKindredData(kindred)?.acBonus ?? '';

@@ -1,6 +1,6 @@
 'use client';
 import { getSaveTargets } from '@dolmenwood/rules-engine';
-import { sectionHead } from './shared';
+import { formatMod, sectionHead } from './shared';
 
 const SAVE_NAMES = [
   { key: 'doom', label: 'Death / Doom' },
@@ -12,9 +12,10 @@ const SAVE_NAMES = [
 
 interface Props {
   saves: ReturnType<typeof getSaveTargets>;
+  magicResistance: number;
 }
 
-export function SavingThrowsSection({ saves }: Props) {
+export function SavingThrowsSection({ saves, magicResistance }: Props) {
   if (!saves) return null;
   return (
     <section>
@@ -37,9 +38,15 @@ export function SavingThrowsSection({ saves }: Props) {
             </span>
           </div>
         ))}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.875rem', borderTop: '1px solid var(--color-border)' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--color-text)' }}>Magic Resistance</span>
+          <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-primary)', fontVariantNumeric: 'tabular-nums' }}>
+            {formatMod(magicResistance)}
+          </span>
+        </div>
       </div>
       <p style={{ margin: '0.375rem 0 0', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-        Roll d20 equal to or above target number to succeed.
+        Roll d20 equal to or above target number to succeed. Magic Resistance is a bonus to saves against magic.
       </p>
     </section>
   );
