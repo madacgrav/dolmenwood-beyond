@@ -117,6 +117,20 @@ export async function awardXP(
   return { error: { message: await errorMessage(res) } };
 }
 
+/** DM-only signed XP correction; logged server-side as dm_correction. */
+export async function correctXP(
+  characterId: string,
+  delta: number,
+): Promise<{ error: { message: string } | null }> {
+  const res = await fetch(`/api/characters/${characterId}/award-xp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ gain: delta, correction: true }),
+  });
+  if (res.ok) return { error: null };
+  return { error: { message: await errorMessage(res) } };
+}
+
 export async function setCampaignDate(campaignId: string, date: DwDate): Promise<DwDate | null> {
   const res = await fetch(`/api/campaigns/${campaignId}/calendar`, {
     method: 'POST',

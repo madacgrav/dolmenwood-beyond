@@ -50,8 +50,13 @@ export default function CharacterSheetPage() {
 
   async function handleAdjustXP(newTotal: number) {
     if (!character) return;
+    const prevXp = character.xp;
     setCharacter(prev => prev ? { ...prev, xp: newTotal } : prev);
-    await adjustXP(character.id, newTotal);
+    const error = await adjustXP(character.id, newTotal);
+    if (error) {
+      setCharacter(prev => prev ? { ...prev, xp: prevXp } : prev);
+      alert(error);
+    }
   }
 
   async function handleDeleteConfirm() {

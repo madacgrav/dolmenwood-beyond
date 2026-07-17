@@ -183,7 +183,7 @@ export interface LevelUpChange {
   newValue: string | number;
 }
 
-export type XPLogSource = 'dm_award' | 'manual_edit' | 'level_up';
+export type XPLogSource = 'dm_award' | 'manual_edit' | 'level_up' | 'dm_correction';
 
 export interface XPLogEntry {
   id: string;
@@ -191,7 +191,7 @@ export interface XPLogEntry {
   delta: number;       // signed; 0 for level_up
   newTotal: number;    // character xp after the mutation
   source: XPLogSource;
-  actorId: string;     // DM account id for dm_award; owner id otherwise
+  actorId: string;     // DM account id for dm_award / dm_correction; owner id otherwise
   toLevel?: number;    // only on level_up entries
 }
 

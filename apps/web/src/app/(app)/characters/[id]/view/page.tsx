@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { fetchCharacterWithNotes } from '@/lib/api/characters';
+import { correctXP } from '@/lib/api/campaigns';
 import { listInventory, type InventoryItem } from '@/lib/api/inventory';
 import { deriveCharacterAC, type ACItem } from '@dolmenwood/rules-engine';
 import type { CharacterWithNotes } from '@dolmenwood/types';
@@ -94,6 +95,13 @@ export default function CharacterViewPage() {
   // No-op update function — read-only view never persists changes
   const noopUpdate = async () => { /* read-only */ };
 
+  // DM XP correction: no optimistic write — refetch after the server confirms.
+  async function handleCorrectXP(delta: number) {
+    const { error } = await correctXP(id, delta);
+    if (error) { alert(error.message); return; }
+    await fetchCharacter();
+  }
+
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh', paddingBottom: '5rem' }}>
       <CharacterSheetHeader
@@ -101,6 +109,8 @@ export default function CharacterViewPage() {
         editMode={false}
         onToggleEdit={() => { /* no-op */ }}
         onUpdate={noopUpdate}
+        xpVariant="dm-correction"
+        onCorrectXP={handleCorrectXP}
         onBack={() => router.back()}
         readOnly
       />

@@ -8,7 +8,7 @@ export async function POST(request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const body = await request.json();
-    await awardXP(id, Number(body?.gain));
+    await awardXP(id, Number(body?.gain), Boolean(body?.correction));
     return NextResponse.json({ ok: true });
   } catch (e) {
     return handleRouteError(e);

@@ -290,16 +290,19 @@ export async function getCampaignRoster(
     .sort((a, b) => a.display_name.localeCompare(b.display_name));
 }
 
-/** Port of award_xp: DM-of-the-owner's-campaign only, never self. */
-export async function awardXP(characterId: string, gain: number): Promise<void> {
-  if (!Number.isInteger(gain) || gain <= 0) throw badRequest('XP gain must be positive');
+/** Port of award_xp: DM-of-the-owner's-campaign only, never self.
+ *  correction=true allows a signed (non-zero) delta and logs dm_correction. */
+export async function awardXP(characterId: string, gain: number, correction = false): Promise<void> {
+  if (!Number.isInteger(gain) || gain === 0) throw badRequest('XP gain must be a non-zero integer');
+  if (!correction && gain < 0) throw badRequest('XP gain must be positive');
   const me = await requireAccountId();
   await mutateCharacterDoc(
     async () => {
       const doc = await fetchCharacterDocById(characterId);
       if (!doc) throw notFound('character');
-      if (doc.ownerId === me) throw forbidden(); // no self-award
+      if (doc.ownerId === me) throw forbidden(); // no self-award/correct
       if (!(await isDMOfAccount(me, doc.ownerId))) throw forbidden();
+      if (correction && doc.xp + gain < 0) throw badRequest('correction would drop XP below 0');
       return doc;
     },
     (doc) => {
@@ -309,7 +312,7 @@ export async function awardXP(characterId: string, gain: number): Promise<void> 
         timestamp: new Date().toISOString(),
         delta: gain,
         newTotal: doc.xp,
-        source: 'dm_award' as const,
+        source: correction ? 'dm_correction' as const : 'dm_award' as const,
         actorId: me,
       }];
     },

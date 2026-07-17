@@ -118,6 +118,41 @@ describe('awardXP (port of award_xp RPC)', () => {
     await createCampaign('Unrelated');
     await expect(awardXP(charId, 100)).rejects.toMatchObject({ status: 403 });
   });
+
+  it('referee corrections apply signed deltas and log dm_correction', async () => {
+    const charId = await setup();
+    currentAccount = REFEREE;
+    await awardXP(charId, 1500);
+
+    // downward correction (fix a fat-fingered award)
+    await awardXP(charId, -1350, true);
+    expect(store('characters').get(charId)!.xp).toBe(150);
+    let logged = store('characters').get(charId)!.xpLog as import('@dolmenwood/types').XPLogEntry[];
+    expect(logged).toHaveLength(2);
+    expect(logged[1]).toMatchObject({ source: 'dm_correction', delta: -1350, newTotal: 150, actorId: REFEREE.id });
+
+    // upward correction is distinguishable from an award
+    await awardXP(charId, 50, true);
+    logged = store('characters').get(charId)!.xpLog as import('@dolmenwood/types').XPLogEntry[];
+    expect(logged[2]).toMatchObject({ source: 'dm_correction', delta: 50, newTotal: 200 });
+  });
+
+  it('rejects corrections below zero, zero gain in both modes, and non-DM correctors', async () => {
+    const charId = await setup();
+    currentAccount = REFEREE;
+    await awardXP(charId, 100);
+
+    await expect(awardXP(charId, -500, true)).rejects.toMatchObject({ status: 400 });
+    await expect(awardXP(charId, 0, true)).rejects.toMatchObject({ status: 400 });
+    await expect(awardXP(charId, -100)).rejects.toMatchObject({ status: 400 }); // negative needs correction mode
+    // rejected corrections leave no extra log entry
+    expect(store('characters').get(charId)!.xpLog).toHaveLength(1);
+
+    currentAccount = PLAYER; // owner cannot self-correct
+    await expect(awardXP(charId, -10, true)).rejects.toMatchObject({ status: 403 });
+    currentAccount = OUTSIDER;
+    await expect(awardXP(charId, -10, true)).rejects.toMatchObject({ status: 403 });
+  });
 });
 
 describe('referee visibility (port of the referee RLS reads)', () => {

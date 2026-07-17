@@ -7,7 +7,7 @@ import { XPBar } from './header/XPBar';
 import { usePortraitUpload } from './header/use-portrait-upload';
 import type { CharacterSheetHeaderProps as Props } from './header/types';
 
-export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpdate, onAdjustXP, onBack, onDelete, readOnly = false }: Props) {
+export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpdate, onAdjustXP, xpVariant, onCorrectXP, onBack, onDelete, readOnly = false }: Props) {
   const [hpEditOpen, setHpEditOpen] = useState(false);
   const [xpEditOpen, setXpEditOpen] = useState(false);
   const { portraitUrl, portraitUploading, uploadError, fileInputRef, handlePortraitSelect } =
@@ -78,6 +78,8 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
             xpEditOpen={xpEditOpen}
             onToggle={() => { setXpEditOpen(o => !o); setHpEditOpen(false); }}
             onAdjustXP={onAdjustXP}
+            variant={xpVariant}
+            onCorrectXP={onCorrectXP}
           />
         </div>
       </div>
