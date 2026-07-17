@@ -56,6 +56,14 @@ export function CharacterSheetHeader({ character, editMode, onToggleEdit, onUpda
             {character.kindred} {character.characterClass} · Level {character.level}
           </p>
 
+          {(character.alignment || character.moonSign || character.background) && (
+            <div style={{ margin: '-0.375rem 0 0.625rem', fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'flex', flexWrap: 'wrap', gap: '0.25rem 0.75rem' }}>
+              {character.alignment && <span><strong style={{ fontWeight: 600 }}>Alignment:</strong> {character.alignment}</span>}
+              {character.moonSign && <span><strong style={{ fontWeight: 600 }}>Moon Sign:</strong> {character.moonSign}</span>}
+              {character.background && <span><strong style={{ fontWeight: 600 }}>Background:</strong> {character.background}</span>}
+            </div>
+          )}
+
           <HPBar
             character={character}
             readOnly={readOnly}
