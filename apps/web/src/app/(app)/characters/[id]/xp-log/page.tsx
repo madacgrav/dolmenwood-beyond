@@ -13,12 +13,14 @@ const SOURCE_LABELS: Record<XPLogSource, string> = {
   dm_award: 'DM Award',
   manual_edit: 'Manual Edit',
   level_up: 'Level Up',
+  dm_correction: 'DM Correction',
 };
 
 const SOURCE_ICONS: Record<XPLogSource, string> = {
   dm_award: '🎁',
   manual_edit: '✏️',
   level_up: '⬆',
+  dm_correction: '🔧',
 };
 
 function deltaColor(delta: number) {
