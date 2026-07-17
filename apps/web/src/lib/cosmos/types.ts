@@ -212,6 +212,21 @@ export interface NpcEntryDoc {
   updatedAt?: string;
 }
 
+export type QuestStatus = 'active' | 'completed';
+
+/** Campaign quest log entry, embedded on the campaign. */
+export interface QuestEntryDoc {
+  id: string;
+  title: string;
+  /** Free text — who gave the quest. */
+  giver: string;
+  status: QuestStatus;
+  note: string;
+  addedBy: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface ProposalEntryDoc {
   id: string;
   title: string;
@@ -239,6 +254,8 @@ export interface CampaignDoc {
   proposals?: ProposalEntryDoc[];
   /** Optional: absent on documents created before the NPC tracker — default to []. */
   npcs?: NpcEntryDoc[];
+  /** Optional: absent on documents created before the quest log — default to []. */
+  quests?: QuestEntryDoc[];
   /** In-world current date, DM-controlled. Absent/null until the DM sets it. */
   currentDate?: DwDate | null;
   createdAt: string;
