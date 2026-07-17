@@ -70,6 +70,7 @@ export interface Character {
   alignment: Alignment;
   moonSign?: string;
   background?: string;
+  traits?: string;
   level: number;
   xp: number;
   abilityScores: AbilityScores;

@@ -224,8 +224,8 @@ export function TraitsSection({ traits, onUpdate, readOnly }: Props) {
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` — add to `characters-data.test.ts` (or `migration-transform.test.ts`): a doc with `traits` round-trips through `docToCharacterWithNotes` → `applyCharacterUpdates({ traits: 'x' })` → doc has `traits: 'x'`; a doc without `traits` maps to `undefined` (no crash)
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` — added to `characters-data.test.ts`: traits round-trip (create → update → fetch) and legacy doc without `traits` maps to `undefined`
+- [x] `pnpm typecheck` passes
 #### Manual
 - [ ] Type in Traits box → "Saving…" → "Saved ✓"; reload → text persists
 - [ ] View page shows the traits read-only (no editable textarea, no save indicator firing)

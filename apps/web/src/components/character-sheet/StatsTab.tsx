@@ -8,6 +8,7 @@ import {
 } from '@dolmenwood/rules-engine';
 import { AbilityScoresSection } from './stats/AbilityScoresSection';
 import { CombatStatsSection } from './stats/CombatStatsSection';
+import { TraitsSection } from './stats/TraitsSection';
 import { SkillsSection } from './stats/SkillsSection';
 import { SavingThrowsSection } from './stats/SavingThrowsSection';
 import { LanguagesSection } from './stats/LanguagesSection';
@@ -49,6 +50,8 @@ export function StatsTab({ character, acBreakdown, editMode, onUpdate, readOnly 
       />
 
       <CombatStatsSection ac={ac} attackBonus={attackBonus} speed={speed} />
+
+      <TraitsSection traits={character.traits} onUpdate={onUpdate} readOnly={readOnly} />
 
       <SkillsSection
         characterClass={character.characterClass}

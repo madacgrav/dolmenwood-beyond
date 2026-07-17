@@ -143,6 +143,8 @@ export interface CharacterDoc {
   alignment: string;
   moonSign: string | null;
   background: string | null;
+  /** Freeform kindred & class traits text; absent on older documents. */
+  traits?: string | null;
   level: number;
   xp: number;
   abilityScores: AbilityScores;

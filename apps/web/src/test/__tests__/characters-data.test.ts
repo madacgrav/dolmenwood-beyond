@@ -75,6 +75,28 @@ describe('character CRUD (owner-scoped)', () => {
     expect(doc.ownerId).toBe('me-1'); // ownerId is not in the update whitelist
   });
 
+  it('persists traits through update and maps back to the domain shape', async () => {
+    const { id } = await createCharacter(INPUT);
+
+    // New docs default traits to null → domain maps to undefined
+    expect(docs.get(id)!.traits).toBeNull();
+    const fresh = await fetchCharacterWithNotes(id);
+    expect(fresh.traits).toBeUndefined();
+
+    await updateCharacter(id, { traits: 'Infravision 60ft; Spirited (+10% XP)' });
+    expect(docs.get(id)!.traits).toBe('Infravision 60ft; Spirited (+10% XP)');
+    const updated = await fetchCharacterWithNotes(id);
+    expect(updated.traits).toBe('Infravision 60ft; Spirited (+10% XP)');
+  });
+
+  it('maps a legacy doc without a traits field to undefined', async () => {
+    const legacy = newCharacterToDoc('me-1', INPUT);
+    delete (legacy as Partial<CharacterDoc>).traits;
+    docs.set(legacy.id, { ...legacy, _etag: 'etag-legacy' });
+    const fetched = await fetchCharacterWithNotes(legacy.id);
+    expect(fetched.traits).toBeUndefined();
+  });
+
   it('retries a stale-ETag (412) replace against a fresh read and converges', async () => {
     const { id } = await createCharacter(INPUT);
     fakeState.failNextReplaceWith412 = true;
