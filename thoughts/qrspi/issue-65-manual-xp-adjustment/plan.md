@@ -234,8 +234,8 @@ export async function correctXP(
 
 ### Verification
 #### Automated
-- [ ] `pnpm typecheck` passes
-- [ ] `pnpm test` passes (no behavior change to owner XPBar path)
+- [x] `pnpm typecheck` passes
+- [x] `pnpm test` passes (no behavior change to owner XPBar path)
 
 #### Manual (`pnpm dev`)
 - [ ] As a DM, open a party member from the roster (`MemberList` row) → `/view`
