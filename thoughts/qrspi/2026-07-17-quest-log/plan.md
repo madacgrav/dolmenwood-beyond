@@ -819,8 +819,8 @@ export function QuestTab() {
 
 ### Verification
 #### Automated
-- [ ] `npm run build` succeeds
-- [ ] `npm run typecheck` + `npm run lint` + `npm run test` all pass
+- [x] `npm run build` succeeds
+- [x] `npm run typecheck` + `npm run lint` + `npm run test` all pass
 
 #### Manual (dev server, in a shared campaign with a DM + ≥1 player)
 - [ ] Quests tab (📜) appears in the campaign tab bar.

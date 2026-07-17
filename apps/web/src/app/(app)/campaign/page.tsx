@@ -6,9 +6,10 @@ import { BankingTab } from '@/components/campaign/BankingTab';
 import { OverviewTab } from '@/components/campaign/OverviewTab';
 import { ScheduleTab } from '@/components/campaign/ScheduleTab';
 import { NpcTab } from '@/components/campaign/npcs/NpcTab';
+import { QuestTab } from '@/components/campaign/quests/QuestTab';
 import { loadDMCampaigns } from '@/lib/api/campaigns';
 
-type TabId = 'overview' | 'bank' | 'schedule' | 'npcs';
+type TabId = 'overview' | 'bank' | 'schedule' | 'npcs' | 'quests';
 
 export default function CampaignPage() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -35,6 +36,7 @@ export default function CampaignPage() {
     { id: 'bank', label: '🏦 Bank', dmOnly: true },
     { id: 'schedule', label: '📅 Schedule' },
     { id: 'npcs', label: '👥 NPCs' },
+    { id: 'quests', label: '📜 Quests' },
   ];
 
   const visibleTabs = tabs.filter(t => !t.dmOnly || hasDMCampaigns);
@@ -120,6 +122,10 @@ export default function CampaignPage() {
 
         {activeTab === 'npcs' && userId && (
           <NpcTab userId={userId} />
+        )}
+
+        {activeTab === 'quests' && userId && (
+          <QuestTab />
         )}
       </div>
     </div>
