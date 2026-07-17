@@ -93,6 +93,9 @@ export default function CharacterSheetPage() {
     armorBulk: i.armor_bulk,
   }));
   const acBreakdown = deriveCharacterAC(character, acItems);
+  // ponytail: item weight only — the optional coin-weight rule isn't applied here
+  // (coins aren't loaded on this page); the Inventory WeightBar stays authoritative.
+  const carriedWeight = items.reduce((sum, i) => i.location === 'tiny' ? sum : sum + i.weight_coins * i.quantity, 0);
 
   const tabs: { id: TabName; label: string }[] = [
     { id: 'stats', label: 'Stats' },
@@ -144,7 +147,7 @@ export default function CharacterSheetPage() {
       </div>
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
-        {activeTab === 'stats' && <StatsTab character={character} acBreakdown={acBreakdown} editMode={editMode} onUpdate={handleUpdate} />}
+        {activeTab === 'stats' && <StatsTab character={character} acBreakdown={acBreakdown} carriedWeight={carriedWeight} editMode={editMode} onUpdate={handleUpdate} />}
         {activeTab === 'combat' && <CombatTab character={character} characterId={id} acBreakdown={acBreakdown} />}
         {activeTab === 'inventory' && <InventoryTab characterId={id} ownerId={character.ownerId} />}
         {activeTab === 'magic' && <MagicTab character={character} characterId={id} />}

@@ -235,11 +235,10 @@ export function TraitsSection({ traits, onUpdate, readOnly }: Props) {
 
 ## Phase 5: Movement — fix Speed source + Exploring/Overland
 
-> **Blocked on data.** The exact Speed→Exploring→Overland numbers must come from the
-> Dolmenwood Player's Book (`Dolmenwood_Player_s_Book.pdf`, repo root). Do NOT ship the
-> table below unconfirmed. The Speed-source **fix** (step 2) is independent and safe to
-> ship even if the table is deferred. If numbers can't be confirmed, ship steps 1(speed
-> fix)+3(Speed pill from real weight) and defer Exploring/Overland pills.
+> **Blocker RESOLVED during implementation.** Sourced from `Dolmenwood_Player_s_Book.pdf`
+> p148 ("Encounter Movement: Speed / Round", "Exploration: Speed × 3 Per Turn",
+> "Overland Travel: Speed / 5 Travel Points Per Day") and the Travel Points Per Day
+> table on p157 (40→8, 30→6, 20→4, 10→2). Both functions shipped with confirmed values.
 
 ### Changes
 
@@ -284,8 +283,9 @@ export function getOverlandRate(speed: 10 | 20 | 30 | 40): number {
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` — add `speed.test.ts` cases for `getExplorationRate` at 10/20/30/40; add `getOverlandRate` cases once the formula is confirmed
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` — `speed.test.ts` covers `getExplorationRate` and `getOverlandRate` at all four speeds (rulebook-confirmed values)
+- [x] `pnpm typecheck` passes
+- Note: Stats-tab speed uses item weight only (`carriedWeight` prop from the page's already-loaded inventory); the optional coin-weight rule is not applied there (coins aren't loaded on the sheet page) — marked with a `ponytail:` comment; Inventory `WeightBar` remains authoritative when that rule is on.
 #### Manual
 - [ ] Lightly-loaded character → Speed 40′ (as before)
 - [ ] Load a character past 400/600/800-coin thresholds → Stats Speed pill drops and **matches** the Inventory `WeightBar` value (the always-40′ bug is gone)

@@ -81,6 +81,7 @@ export default function CharacterViewPage() {
     armorBulk: i.armor_bulk,
   }));
   const acBreakdown = deriveCharacterAC(character, acItems);
+  const carriedWeight = items.reduce((sum, i) => i.location === 'tiny' ? sum : sum + i.weight_coins * i.quantity, 0);
 
   const tabs: { id: TabName; label: string }[] = [
     { id: 'stats', label: 'Stats' },
@@ -134,7 +135,7 @@ export default function CharacterViewPage() {
       </div>
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
-        {activeTab === 'stats' && <StatsTab character={character} acBreakdown={acBreakdown} editMode={false} onUpdate={noopUpdate} readOnly />}
+        {activeTab === 'stats' && <StatsTab character={character} acBreakdown={acBreakdown} carriedWeight={carriedWeight} editMode={false} onUpdate={noopUpdate} readOnly />}
         {activeTab === 'combat' && <CombatTab character={character} characterId={id} acBreakdown={acBreakdown} readOnly />}
         {activeTab === 'inventory' && <InventoryTab characterId={id} ownerId={character.ownerId} readOnly />}
         {activeTab === 'magic' && <MagicTab character={character} characterId={id} readOnly />}

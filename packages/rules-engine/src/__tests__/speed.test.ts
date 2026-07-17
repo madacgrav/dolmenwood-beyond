@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateSpeed, calculateCoinWeight } from '../speed';
+import { calculateSpeed, calculateCoinWeight, getExplorationRate, getOverlandRate } from '../speed';
 
 describe('calculateSpeed', () => {
   it('returns 40 for 0 coins (unencumbered)', () => {
@@ -32,6 +32,24 @@ describe('calculateSpeed', () => {
 
   it('returns 10 for extreme weight', () => {
     expect(calculateSpeed(9999)).toBe(10);
+  });
+});
+
+describe('getExplorationRate', () => {
+  it('is Speed × 3 feet per Turn', () => {
+    expect(getExplorationRate(40)).toBe(120);
+    expect(getExplorationRate(30)).toBe(90);
+    expect(getExplorationRate(20)).toBe(60);
+    expect(getExplorationRate(10)).toBe(30);
+  });
+});
+
+describe('getOverlandRate', () => {
+  it('is Speed ÷ 5 Travel Points per day', () => {
+    expect(getOverlandRate(40)).toBe(8);
+    expect(getOverlandRate(30)).toBe(6);
+    expect(getOverlandRate(20)).toBe(4);
+    expect(getOverlandRate(10)).toBe(2);
   });
 });
 
