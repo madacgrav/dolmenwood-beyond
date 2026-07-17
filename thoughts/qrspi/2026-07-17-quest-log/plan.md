@@ -782,8 +782,8 @@ export function QuestTab() {
 
 ### Verification
 #### Automated
-- [ ] `npm run typecheck` passes
-- [ ] `npm run lint` passes
+- [x] `npm run typecheck` passes
+- [x] `npm run lint` passes
 
 #### Manual
 - [ ] None — not wired into nav until Phase 3.
