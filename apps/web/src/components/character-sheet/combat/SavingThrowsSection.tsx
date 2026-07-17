@@ -2,7 +2,7 @@
 import { rollDie, type DieType } from '@dolmenwood/rules-engine';
 import { AnimatedDie } from '@/components/wizard/AnimatedDie';
 import { useDiceRoll } from '@/hooks/use-dice-roll';
-import { sectionHead } from './shared';
+import { formatMod, sectionHead } from './shared';
 
 const SAVE_NAMES = [
   { key: 'doom', label: 'Death / Doom' },
@@ -18,6 +18,7 @@ interface RollResult { roll: number; passed: boolean; target: number; }
 
 interface Props {
   saves: Record<string, number>;
+  magicResistance: number;
   readOnly: boolean;
 }
 
@@ -33,7 +34,7 @@ const ResultBadge = ({ pass, roll, target }: { pass: boolean; roll: number; targ
   </span>
 );
 
-export function SavingThrowsSection({ saves, readOnly }: Props) {
+export function SavingThrowsSection({ saves, magicResistance, readOnly }: Props) {
   const { results, rollingKeys, faceValues, roll, clear } = useDiceRoll<RollResult>();
 
   function rollSave(key: SaveKey) {
@@ -82,6 +83,12 @@ export function SavingThrowsSection({ saves, readOnly }: Props) {
             </button>
           );
         })}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.875rem', borderTop: '1px solid var(--color-border)', minHeight: '48px', boxSizing: 'border-box' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--color-text)' }}>Magic Resistance</span>
+          <span style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-primary)', fontVariantNumeric: 'tabular-nums' }}>
+            {formatMod(magicResistance)}
+          </span>
+        </div>
       </div>
       {Object.keys(results).length > 0 && !readOnly && (
         <button

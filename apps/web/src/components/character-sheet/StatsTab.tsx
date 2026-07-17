@@ -4,6 +4,7 @@ import {
   getPrimeAbilities, getSaveTargets,
   getAttackBonus, calculateSpeed,
   getMaxRetainers, getRetainerLoyaltyBase,
+  getMagicResistance, getKindredMagicResistance,
 } from '@dolmenwood/rules-engine';
 import { AbilityScoresSection } from './stats/AbilityScoresSection';
 import { CombatStatsSection } from './stats/CombatStatsSection';
@@ -30,6 +31,7 @@ export function StatsTab({ character, acBreakdown, editMode, onUpdate, readOnly 
   const attackBonus = getAttackBonus(character.characterClass, character.level);
   const ac = acBreakdown?.total ?? 10;
   const speed = calculateSpeed(0);
+  const magicResistance = getMagicResistance(character.abilityScores.wis, getKindredMagicResistance(character.kindred));
   const maxRetainers = getMaxRetainers(character.abilityScores.cha);
   const loyaltyBase = getRetainerLoyaltyBase(character.abilityScores.cha);
 
@@ -54,7 +56,7 @@ export function StatsTab({ character, acBreakdown, editMode, onUpdate, readOnly 
         kindred={character.kindred}
       />
 
-      <SavingThrowsSection saves={saves} />
+      <SavingThrowsSection saves={saves} magicResistance={magicResistance} />
 
       <LanguagesSection
         kindred={character.kindred}

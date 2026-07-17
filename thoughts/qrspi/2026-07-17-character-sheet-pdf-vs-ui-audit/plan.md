@@ -138,8 +138,8 @@ Pass `magicResistance={magicResistance}` to `<SavingThrowsSection />` (`:57`).
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` — add to `packages/rules-engine/src/__tests__/retainers.test.ts`: `getKindredMagicResistance` returns the JSON bonus for a magic-resistant kindred and `0` otherwise; a combined case `getMagicResistance(16, getKindredMagicResistance(<that kindred>))`
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` — tests added in `kindreds.test.ts` (helper lives in `kindreds.ts`, co-located with other kindred accessors): Elf/Grimalkin → 2, Human/Unknown → 0, combined `getMagicResistance(16, getKindredMagicResistance('Elf'))` → 4
+- [x] `pnpm typecheck` passes
 #### Manual
 - [ ] WIS 16 character of a magic-resistant kindred (`kindreds.json:181,260`) → Magic Resistance shows the summed modifier (e.g. `+4`)
 - [ ] WIS 9 human → shows `-1` (or `+0`); row present in both Stats and Combat tabs
