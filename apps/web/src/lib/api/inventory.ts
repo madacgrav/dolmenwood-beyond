@@ -96,6 +96,18 @@ export async function updateItemLocation(
   });
 }
 
+export async function updateItemNotes(
+  characterId: string,
+  itemId: string,
+  notes: string | null,
+): Promise<void> {
+  await fetch(`/api/characters/${characterId}/inventory/${itemId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notes }),
+  });
+}
+
 export async function deleteInventoryItem(characterId: string, itemId: string): Promise<void> {
   await fetch(`/api/characters/${characterId}/inventory/${itemId}`, { method: 'DELETE' });
 }

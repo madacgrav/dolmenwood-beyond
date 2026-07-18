@@ -7,6 +7,7 @@ interface Props {
   isOwner: boolean;
   onToggleLocation: (item: DBInventoryItem) => void;
   onSetQuantity: (id: string, quantity: number) => void;
+  onSetNotes: (id: string, notes: string | null) => void;
   onDelete: (id: string) => void;
 }
 
@@ -18,21 +19,33 @@ const stepBtn: React.CSSProperties = {
 };
 
 /** Single inventory item card: name, type details, qty/weight chips, owner actions. */
-export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onDelete }: Props) {
+export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onSetNotes, onDelete }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(item.quantity));
+  const [showNotes, setShowNotes] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(item.notes ?? '');
 
   useEffect(() => {
     if (!editing) setDraft(String(item.quantity));
   }, [item.quantity, editing]);
+
+  useEffect(() => {
+    if (!showNotes) setNotesDraft(item.notes ?? '');
+  }, [item.notes, showNotes]);
 
   function commitDraft() {
     onSetQuantity(item.id, parseInt(draft) || 0);
     setEditing(false);
   }
 
+  function commitNotes() {
+    const trimmed = notesDraft.trim();
+    if ((item.notes ?? '') !== trimmed) onSetNotes(item.id, trimmed || null);
+  }
+
   return (
-    <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0.625rem 0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+    <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '0.625rem 0.875rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.item_name}</div>
         <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
@@ -93,6 +106,16 @@ export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onDele
           {item.location === 'equipped' ? '⚔️' : item.location === 'stowed' ? '🎒' : '🔮'}
         </button>
       )}
+      {(isOwner || item.notes) && (
+        <button
+          onClick={() => setShowNotes(s => !s)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem', padding: '0.25rem', minHeight: '44px', opacity: item.notes ? 1 : 0.45 }}
+          aria-label={item.notes ? `Show notes for ${item.item_name}` : `Add notes for ${item.item_name}`}
+          aria-expanded={showNotes}
+        >
+          📝
+        </button>
+      )}
       {isOwner && (
         <button
           onClick={() => onDelete(item.id)}
@@ -102,6 +125,23 @@ export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onDele
           ✕
         </button>
       )}
+    </div>
+    {showNotes && (
+      isOwner ? (
+        <textarea
+          value={notesDraft}
+          onChange={e => setNotesDraft(e.target.value)}
+          onBlur={commitNotes}
+          placeholder="Notes (custom gear, quest items…)"
+          rows={2}
+          maxLength={500}
+          style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.82rem', fontFamily: 'inherit' }}
+          aria-label={`Notes for ${item.item_name}`}
+        />
+      ) : (
+        <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', whiteSpace: 'pre-wrap' }}>{item.notes}</div>
+      )
+    )}
     </div>
   );
 }

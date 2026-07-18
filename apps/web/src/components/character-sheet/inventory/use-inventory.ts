@@ -4,6 +4,7 @@ import {
   listInventory,
   updateItemLocation,
   updateItemQuantity,
+  updateItemNotes,
   deleteInventoryItem,
   type InventoryItem as DBInventoryItem,
 } from '@/lib/api/inventory';
@@ -68,12 +69,17 @@ export function useInventory(characterId: string) {
     await updateItemQuantity(characterId, id, q);
   }
 
+  async function setItemNotes(id: string, notes: string | null) {
+    setItems(prev => prev.map(i => i.id === id ? { ...i, notes: notes ?? undefined } : i));
+    await updateItemNotes(characterId, id, notes);
+  }
+
   return {
     items, setItems,
     loading,
     coins, setCoins,
     bankBalance, fetchBankBalance,
     saveCoins, handleCoinChange,
-    toggleLocation, deleteItem, setItemQuantity,
+    toggleLocation, deleteItem, setItemQuantity, setItemNotes,
   };
 }

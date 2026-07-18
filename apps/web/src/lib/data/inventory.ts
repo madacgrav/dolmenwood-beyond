@@ -90,7 +90,7 @@ export async function addInventoryItem(
 export async function updateInventoryEntry(
   characterId: string,
   itemId: string,
-  patch: { quantity?: number; location?: ItemLocation },
+  patch: { quantity?: number; location?: ItemLocation; notes?: string | null },
 ): Promise<void> {
   await mutateOwnedCharacterDoc(characterId, (doc) => {
     const entry = (doc.inventory ?? []).find((e) => e.id === itemId);
@@ -101,6 +101,10 @@ export async function updateInventoryEntry(
         throw badRequest('invalid location');
       }
       entry.location = patch.location;
+    }
+    if (patch.notes !== undefined) {
+      const n = patch.notes === null ? null : String(patch.notes).trim().slice(0, 500);
+      entry.notes = n && n.length ? n : null;
     }
   });
 }

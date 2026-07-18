@@ -8,11 +8,12 @@ interface Props {
   isOwner: boolean;
   onToggleLocation: (item: DBInventoryItem) => void;
   onSetQuantity: (id: string, quantity: number) => void;
+  onSetNotes: (id: string, notes: string | null) => void;
   onDelete: (id: string) => void;
 }
 
 /** Item list grouped by location (equipped → stowed → tiny); empty groups are hidden. */
-export function ItemList({ items, isOwner, onToggleLocation, onSetQuantity, onDelete }: Props) {
+export function ItemList({ items, isOwner, onToggleLocation, onSetQuantity, onSetNotes, onDelete }: Props) {
   return (
     <>
       {(['equipped', 'stowed', 'tiny'] as const).map(loc => {
@@ -29,6 +30,7 @@ export function ItemList({ items, isOwner, onToggleLocation, onSetQuantity, onDe
                   isOwner={isOwner}
                   onToggleLocation={onToggleLocation}
                   onSetQuantity={onSetQuantity}
+                  onSetNotes={onSetNotes}
                   onDelete={onDelete}
                 />
               ))}
