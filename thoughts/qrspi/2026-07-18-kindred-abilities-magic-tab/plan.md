@@ -444,7 +444,7 @@ Manual complete page: untouched (user decision — tab UI is the override path).
 
 ### Verification
 #### Automated
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm typecheck` passes
 #### Manual
 - [ ] Auto wizard as Elf Fighter → finish → sheet already shows a kindred glamour
 - [ ] Auto wizard as Mossling → knack present with level abilities
