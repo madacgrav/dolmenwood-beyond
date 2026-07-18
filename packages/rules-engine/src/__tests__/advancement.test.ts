@@ -126,3 +126,12 @@ describe('getLevelUpFeatures', () => {
     expect(changes).toEqual([]);
   });
 });
+
+describe('Rune Granted reminder', () => {
+  it('emits Rune Granted for Enchanter level-ups only', () => {
+    const enchanter = getLevelUpFeatures('Enchanter', 1, 2);
+    expect(enchanter.some(f => f.name === 'Rune Granted')).toBe(true);
+    const magician = getLevelUpFeatures('Magician', 1, 2);
+    expect(magician.some(f => f.name === 'Rune Granted')).toBe(false);
+  });
+});

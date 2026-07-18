@@ -192,10 +192,10 @@ it('emits Rune Granted reminder for Enchanter level-ups only', () => {
 
 ### Verification
 #### Automated
-- [ ] `npm test -w @dolmenwood/rules-engine` — new tests pass, zero existing failures
-- [ ] `npm run typecheck` passes
+- [x] `npx vitest run` in packages/rules-engine — 183 pass (npm -w flag doesn't resolve; turbo/direct vitest works)
+- [x] `npm run typecheck` passes
 #### Manual
-- [ ] (none — package-level phase; app behavior unchanged)
+- [x] (none — package-level phase; app behavior unchanged)
 
 ---
 

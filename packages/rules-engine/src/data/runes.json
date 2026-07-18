@@ -1,0 +1,28 @@
+{
+  "Enchanter": {
+    "lesser": [
+      "Deathly Blossom",
+      "Fog Cloud",
+      "Gust of Wind",
+      "Proof Against Deadly Harm",
+      "Rune of Vanishing",
+      "Sway the Mortal Mind"
+    ],
+    "greater": [
+      "Arcane Unbinding",
+      "Fairy Gold",
+      "Fairy Steed",
+      "Ice Storm",
+      "Rune of Invisibility",
+      "Sway the Mind"
+    ],
+    "mighty": [
+      "Dream Ship",
+      "Eternal Slumber",
+      "Rune of Death",
+      "Rune of Wishing",
+      "Summon Wild Hunt",
+      "Unravel Death"
+    ]
+  }
+}

@@ -61,6 +61,11 @@ export function getKindredTraits(kindred: string): KindredTrait[] {
   return getKindredData(kindred)?.traits ?? [];
 }
 
+/** True when the kindred innately knows a glamour (trait-driven: Elf, Grimalkin). */
+export function hasInnateGlamours(kindred: string): boolean {
+  return getKindredTraits(kindred).some(t => t.name === 'Glamours');
+}
+
 export function isClassAllowedForKindred(kindred: string, className: string): boolean {
   const data = getKindredData(kindred);
   if (!data) return true;

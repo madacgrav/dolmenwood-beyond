@@ -1,5 +1,6 @@
 import spellSlotData from './data/spell-slots.json';
 import spellData from './data/spells.json';
+import runeData from './data/runes.json';
 
 // ─── Spell name lookup ────────────────────────────────────────────────────────
 
@@ -68,6 +69,33 @@ export function getSpellSlots(className: string, level: number): Record<string |
 
 export function isSpellcaster(className: string): boolean {
   return className in spellSlotData;
+}
+
+// ─── Fairy runes ──────────────────────────────────────────────────────────────
+
+export type RuneTier = 'lesser' | 'greater' | 'mighty';
+
+export interface RuneEntry {
+  name: string;
+  tier: RuneTier;
+}
+
+const RUNE_TIERS: RuneTier[] = ['lesser', 'greater', 'mighty'];
+
+/** All fairy runes a class can learn, flattened in tier order. [] for non-rune classes. */
+export function getRunesForClass(className: string): RuneEntry[] {
+  const entry = (runeData as Record<string, Partial<Record<RuneTier, string[]>>>)[className];
+  if (!entry) return [];
+  return RUNE_TIERS.flatMap(tier => (entry[tier] ?? []).map(name => ({ name, tier })));
+}
+
+export function classHasRunes(className: string): boolean {
+  return getRunesForClass(className).length > 0;
+}
+
+/** Tier of a known rune name, or null for free-text/unknown runes. */
+export function getRuneTier(className: string, runeName: string): RuneTier | null {
+  return getRunesForClass(className).find(r => r.name === runeName)?.tier ?? null;
 }
 
 export const SPELLCASTING_CLASSES = Object.keys(spellSlotData) as SpellcastingClass[];

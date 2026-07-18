@@ -1,5 +1,5 @@
 import classData from './data/class-advancement.json';
-import { isSpellcaster, getSpellSlots } from './spells';
+import { isSpellcaster, getSpellSlots, classHasRunes } from './spells';
 
 export type ClassName = keyof typeof classData;
 
@@ -137,6 +137,13 @@ export function getLevelUpFeatures(
         }
       }
     }
+  }
+
+  if (classHasRunes(className)) {
+    changes.push({
+      name: 'Rune Granted',
+      description: 'Roll 2d6 (modified by level) on the Rune Granted table to see if a new fairy rune is learned.',
+    });
   }
 
   const oldData = getClassLevel(className, fromLevel) as Record<string, unknown> | null;
