@@ -1,7 +1,7 @@
 'use client';
 import { useMemo } from 'react';
 import type { Character } from '@dolmenwood/types';
-import { getSpellSlots, isSpellcaster, classHasRunes, hasInnateGlamours, getMagicalKindredTraits } from '@dolmenwood/rules-engine';
+import { getSpellSlots, isSpellcaster, classHasRunes, getMagicalKindredTraits, getSpellsForClass, pickRandom } from '@dolmenwood/rules-engine';
 import type { DBSpell } from '@/lib/api/spells';
 import { SpellSlotsSection } from './magic/SpellSlotsSection';
 import { PreparedSpellsSection } from './magic/PreparedSpellsSection';
@@ -20,16 +20,20 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
   );
   const isGlamour = slotsData !== null && 'glamours' in slotsData;
   const hasRunes = classHasRunes(character.characterClass);
-  const innateGlamours = hasInnateGlamours(character.kindred);
   const magicalTraits = getMagicalKindredTraits(character.kindred);
 
-  const magic = useSpells({ characterId, spellcaster, isGlamour, slotsData, readOnly, innateGlamours });
+  const magic = useSpells({ characterId, spellcaster, isGlamour, slotsData, readOnly, hasKindredMagic: magicalTraits.length > 0 });
 
   // Legacy entries (no kind) infer glamour from the spell_level 0 sentinel.
   const entryKind = (s: DBSpell) => s.kind ?? (s.spell_level === 0 ? 'glamour' : 'spell');
   const runeEntries = magic.spells.filter(s => s.kind === 'rune');
   const glamourEntries = magic.spells.filter(s => entryKind(s) === 'glamour');
   const spellEntries = magic.spells.filter(s => entryKind(s) === 'spell');
+  // Fallback: pre-existing Elf/Grimalkin glamours were stored as kind 'glamour' via the old
+  // innate-glamour section — for non-Enchanters, surface the first one as the kindred glamour.
+  const kindredGlamourEntry =
+    magic.spells.find(s => s.kind === 'kindred-glamour') ??
+    (!isGlamour ? glamourEntries[0] ?? null : null);
 
   // Valid spell ranks the class can learn at current level
   const validRanks: number[] = useMemo(() => {
@@ -63,7 +67,18 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
 
       {/* ── Section 0: Kindred Abilities (quasi-magical kindred traits) ── */}
       {magicalTraits.length > 0 && (
-        <KindredAbilitiesSection kindred={character.kindred} traits={magicalTraits} />
+        <KindredAbilitiesSection
+          kindred={character.kindred}
+          traits={magicalTraits}
+          readOnly={readOnly}
+          kindredGlamour={kindredGlamourEntry}
+          onRollGlamour={() => {
+            const name = pickRandom(getSpellsForClass('Enchanter').map(s => s.name));
+            return name ? magic.addSpell(0, name, 'kindred-glamour') : Promise.resolve(false);
+          }}
+          onPickGlamour={name => magic.addSpell(0, name, 'kindred-glamour')}
+          onDelete={magic.deleteSpell}
+        />
       )}
 
       {/* ── Section 1: Spell Slots / Glamour Circles (casters only) ── */}
@@ -107,8 +122,8 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
         />
       )}
 
-      {/* ── Section 3b: Glamours Known (Enchanter or innate-glamour kindreds) ── */}
-      {(isGlamour || innateGlamours) && (
+      {/* ── Section 3b: Glamours Known (Enchanter class glamours) ── */}
+      {isGlamour && (
         <SpellBookSection
           characterClass={character.characterClass}
           isGlamour={true}

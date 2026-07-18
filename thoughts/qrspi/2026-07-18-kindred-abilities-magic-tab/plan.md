@@ -211,8 +211,8 @@ Inside the `Glamours` trait card (match `t.name === 'Glamours'`):
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes (incl. `apps/web` `inventory-spells.test.ts`)
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` passes (incl. `apps/web` `inventory-spells.test.ts`)
+- [x] `pnpm typecheck` passes
 #### Manual
 - [ ] Elf Fighter, no glamour: Glamours card shows Roll + pick; Roll → glamour appears, survives reload (check Cosmos entry has `kind: 'kindred-glamour'`)
 - [ ] Delete → Roll/pick UI returns; pick from dropdown works (manual override path)

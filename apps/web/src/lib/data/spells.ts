@@ -68,7 +68,7 @@ export type MagicOp =
   | { op: 'rest'; restDate?: DwDate }
   | { op: 'addPreparation'; slot_rank: number; spell_name: string }
   | { op: 'setPreparationCast'; prepId: string; is_cast: boolean }
-  | { op: 'addSpell'; spell_name: string; spell_level: number; is_memorized?: boolean; notes?: string | null; kind?: 'spell' | 'glamour' | 'rune' }
+  | { op: 'addSpell'; spell_name: string; spell_level: number; is_memorized?: boolean; notes?: string | null; kind?: 'spell' | 'glamour' | 'rune' | 'kindred-glamour' | 'knack' }
   | { op: 'setSpellMemorized'; spellId: string; is_memorized: boolean }
   | { op: 'deleteSpell'; spellId: string };
 
@@ -138,7 +138,11 @@ export async function applyMagicOp(characterId: string, op: MagicOp): Promise<un
         const name = String(op.spell_name ?? '').trim();
         if (!name) throw badRequest('spell_name is required');
         // Route does no body validation — allowlist the discriminator here.
-        const kind = op.kind === 'spell' || op.kind === 'glamour' || op.kind === 'rune' ? op.kind : undefined;
+        const kind =
+          op.kind === 'spell' || op.kind === 'glamour' || op.kind === 'rune' ||
+          op.kind === 'kindred-glamour' || op.kind === 'knack'
+            ? op.kind
+            : undefined;
         const spell: SpellbookEntryDoc = {
           id: crypto.randomUUID(),
           spellName: name,

@@ -31,7 +31,7 @@ export interface DBSpell {
   spell_level: number;
   is_memorized: boolean;
   notes?: string;
-  kind?: 'spell' | 'glamour' | 'rune';
+  kind?: 'spell' | 'glamour' | 'rune' | 'kindred-glamour' | 'knack';
 }
 
 export interface MagicData {
