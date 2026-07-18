@@ -4,7 +4,7 @@ import { insertInventoryItem, type InventoryItem as DBInventoryItem } from '@/li
 import { ITEM_TYPES, type CatalogItem, type ItemType, type NewItemDraft } from './types';
 
 const EMPTY_DRAFT: NewItemDraft = {
-  item_name: '', item_type: 'gear', quantity: 1, weight_coins: 0,
+  item_name: '', item_type: 'gear', quantity: null, weight_coins: null,
   location: 'stowed', weapon_damage_dice: '', armor_ac_bonus: '',
   is_shield: false, armor_bulk: null,
 };
@@ -75,8 +75,8 @@ export function useAddItem({ characterId, onItemAdded }: {
       character_id: characterId,
       item_name: newItem.item_name.trim(),
       item_type: newItem.item_type,
-      quantity: newItem.quantity,
-      weight_coins: newItem.weight_coins,
+      quantity: newItem.quantity ?? 1,
+      weight_coins: newItem.weight_coins ?? 0,
       location: newItem.location,
     };
     if (newItem.weapon_damage_dice.trim()) payload.weapon_damage_dice = newItem.weapon_damage_dice.trim();

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
+import { NumberField } from '@/components/ui/NumberField';
 
 interface Props {
   item: DBInventoryItem;
@@ -14,6 +15,9 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
+/** Round for display so fractional weights don't render float noise. */
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
 const stepBtn: React.CSSProperties = {
   width: '32px', height: '44px', borderRadius: '6px',
   border: '1px solid var(--color-border)',
@@ -24,22 +28,12 @@ const stepBtn: React.CSSProperties = {
 /** Single inventory item card: name, type details, qty/weight chips, owner actions. */
 export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onSetNotes, onMove, canMoveUp, canMoveDown, onDelete }: Props) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(String(item.quantity));
   const [showNotes, setShowNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState(item.notes ?? '');
 
   useEffect(() => {
-    if (!editing) setDraft(String(item.quantity));
-  }, [item.quantity, editing]);
-
-  useEffect(() => {
     if (!showNotes) setNotesDraft(item.notes ?? '');
   }, [item.notes, showNotes]);
-
-  function commitDraft() {
-    onSetQuantity(item.id, parseInt(draft) || 0);
-    setEditing(false);
-  }
 
   function commitNotes() {
     const trimmed = notesDraft.trim();
@@ -66,14 +60,11 @@ export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onSetN
             aria-label={`Remove one ${item.item_name}`}
           >−</button>
           {editing ? (
-            <input
+            <NumberField
               autoFocus
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={draft}
-              onChange={e => setDraft(e.target.value.replace(/[^0-9]/g, ''))}
-              onBlur={commitDraft}
-              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+              value={item.quantity}
+              min={0}
+              onCommit={n => { onSetQuantity(item.id, n ?? 0); setEditing(false); }}
               style={{ width: '4ch', textAlign: 'center', fontVariantNumeric: 'tabular-nums', minHeight: '44px', border: '1px solid var(--color-border)', borderRadius: '6px', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontWeight: '700', fontSize: '1rem' }}
               aria-label={`Set quantity for ${item.item_name}`}
             />
@@ -97,7 +88,7 @@ export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onSetN
       )}
       {item.location !== 'tiny' && (
         <span style={{ fontSize: '0.75rem', backgroundColor: 'var(--color-bg)', borderRadius: '4px', padding: '2px 6px', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>
-          {item.weight_coins * item.quantity}¢
+          {r2(item.weight_coins * item.quantity)}¢
         </span>
       )}
       {isOwner && (

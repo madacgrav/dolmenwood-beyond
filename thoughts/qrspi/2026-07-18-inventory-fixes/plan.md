@@ -234,8 +234,8 @@ export function NumberField({ value, onCommit, allowDecimal = false, min, max, p
 
 ### Verification
 #### Automated
-- [ ] `cd apps/web && pnpm test` — new `number-field` test passes
-- [ ] `pnpm typecheck` passes
+- [x] `cd apps/web && pnpm test` — new `NumberField` test passes (9 tests)
+- [x] `pnpm typecheck` passes
 #### Manual
 - [ ] (deferred to Phase 4 where it's mounted)
 
@@ -290,8 +290,8 @@ Add a tiny formatter (inline, no new file): `const r2 = (n: number) => Math.roun
 
 ### Verification
 #### Automated
-- [ ] `cd apps/web && pnpm test` passes (existing inventory/pdf tests still green)
-- [ ] `pnpm typecheck && pnpm lint` pass
+- [x] `cd apps/web && pnpm test` passes (existing inventory/pdf tests still green)
+- [x] `pnpm typecheck && pnpm lint` pass
 #### Manual
 - [ ] Add item with weight `0.075` → persists, row/bar show rounded (`0.08`/sane total)
 - [ ] Quantity field in add-form starts blank; leaving blank saves as 1

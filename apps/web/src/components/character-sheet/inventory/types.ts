@@ -38,12 +38,13 @@ export const sectionHead: CSSProperties = {
   letterSpacing: '0.08em',
 };
 
-/** Draft state for the add-item form (AC bonus kept as string until submit). */
+/** Draft state for the add-item form (AC bonus kept as string until submit).
+ *  quantity/weight_coins are null while blank; defaults applied on submit. */
 export interface NewItemDraft {
   item_name: string;
   item_type: ItemType;
-  quantity: number;
-  weight_coins: number;
+  quantity: number | null;
+  weight_coins: number | null;
   location: DBInventoryItem['location'];
   weapon_damage_dice: string;
   armor_ac_bonus: string;
