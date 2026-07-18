@@ -1,7 +1,7 @@
 'use client';
 import { useMemo } from 'react';
 import type { Character } from '@dolmenwood/types';
-import { getSpellSlots, isSpellcaster, classHasRunes, getMagicalKindredTraits, getSpellsForClass, pickRandom } from '@dolmenwood/rules-engine';
+import { getSpellSlots, isSpellcaster, classHasRunes, getMagicalKindredTraits, getSpellsForClass, getKnacks, pickRandom } from '@dolmenwood/rules-engine';
 import type { DBSpell } from '@/lib/api/spells';
 import { SpellSlotsSection } from './magic/SpellSlotsSection';
 import { PreparedSpellsSection } from './magic/PreparedSpellsSection';
@@ -34,6 +34,7 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
   const kindredGlamourEntry =
     magic.spells.find(s => s.kind === 'kindred-glamour') ??
     (!isGlamour ? glamourEntries[0] ?? null : null);
+  const knackEntry = magic.spells.find(s => s.kind === 'knack') ?? null;
 
   // Valid spell ranks the class can learn at current level
   const validRanks: number[] = useMemo(() => {
@@ -77,6 +78,13 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
             return name ? magic.addSpell(0, name, 'kindred-glamour') : Promise.resolve(false);
           }}
           onPickGlamour={name => magic.addSpell(0, name, 'kindred-glamour')}
+          knack={knackEntry}
+          characterLevel={character.level}
+          onRollKnack={() => {
+            const name = pickRandom(getKnacks().map(k => k.name));
+            return name ? magic.addSpell(0, name, 'knack') : Promise.resolve(false);
+          }}
+          onPickKnack={name => magic.addSpell(0, name, 'knack')}
           onDelete={magic.deleteSpell}
         />
       )}

@@ -385,8 +385,8 @@ Inside the `Knacks` trait card (`t.name === 'Knacks'`):
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes (knacks tests green)
-- [ ] `pnpm typecheck` passes
+- [x] `pnpm test` passes (knacks tests green)
+- [x] `pnpm typecheck` passes
 #### Manual
 - [ ] Mossling (any class): Knacks card shows Roll (d6) + pick; roll persists `kind:'knack'`, survives reload
 - [ ] Level 1 Mossling: only Level 1 ability full-opacity; Levels 3/5/7 dimmed

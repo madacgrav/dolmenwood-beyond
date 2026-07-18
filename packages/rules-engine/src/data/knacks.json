@@ -1,0 +1,65 @@
+{
+  "_source": "Dolmenwood Player's Book, Mossling Knacks (p112-113). d6 table order.",
+  "knacks": [
+    {
+      "name": "Bird Friend",
+      "description": "The mossling has learned the secret languages of forest birds and earned their trust.",
+      "abilities": [
+        { "level": 1, "name": "Bird speech", "description": "Converse with birds and understand their (typically simplistic) replies." },
+        { "level": 3, "name": "Bird companion", "description": "Charm a bird companion of Level 1 or less (Save Versus Spell to resist). It remains until dismissed. Only one at a time." },
+        { "level": 5, "name": "Twittering message", "description": "Once per day, forest birds relay a message of up to 10 words at 12 miles per hour to a specified person or location." },
+        { "level": 7, "name": "Summon flock", "description": "Once per day, call a flock of woodland birds (Level 3, AC 13, HP 3d8, pecks +2 1d6, Fly 40) that serves for 1d4 Turns." }
+      ]
+    },
+    {
+      "name": "Lock Singer",
+      "description": "The mossling studies closely-guarded songs with the power to charm locks.",
+      "abilities": [
+        { "level": 1, "name": "Open simple locks", "description": "Per Turn of singing to a simple, mundane lock: 2-in-6 chance it is coaxed open." },
+        { "level": 3, "name": "Locate key", "description": "A whispered cant persuades a lock to reveal the location of its key (or the closest, if several exist)." },
+        { "level": 5, "name": "Snap shut", "description": "Simple, mundane locks within 30' instantly snap shut after a single Round of song." },
+        { "level": 7, "name": "Open any lock", "description": "Any lock opens with a 2-in-6 chance per Turn of singing. Magically sealed locks cooperate, but 1-in-6 chance the magic backfires, sealing the mossling's mouth shut for 1d4 days." }
+      ]
+    },
+    {
+      "name": "Root Friend",
+      "description": "Dwelling in subterranean burrows, the mossling has a keen affinity with the roots of forest plants.",
+      "abilities": [
+        { "level": 1, "name": "Root question", "description": "Once per day, ask a root one question about its surroundings; it answers truthfully with 1d6 words." },
+        { "level": 3, "name": "Summon roots", "description": "Once per day, summon edible roots to the surface: 1d4 fresh rations." },
+        { "level": 5, "name": "Root respite", "description": "Once per day, shelter unnoticed in the roots of a tree or large plant for up to an hour." },
+        { "level": 7, "name": "Summon root thing", "description": "Once per day, summon a monstrous root vegetable (Level 3, AC 13, HP 3d8, 2 claws +2 1d4 + entangle). It arrives in 1d6 Rounds and obeys for 1d6 Turns." }
+      ]
+    },
+    {
+      "name": "Thread Whistling",
+      "description": "A mysterious whistling technique grants sympathetic control over threads and strings within 30'.",
+      "abilities": [
+        { "level": 1, "name": "Thread mastery", "description": "Whistling ties, unties, or unravels any textile thinner than rope: string, laces, garment fabric." },
+        { "level": 3, "name": "Animate threads", "description": "Command loose threads to move up to 5' per Round while whistling. They can drag small objects (up to 20 coins weight) but cannot attack." },
+        { "level": 5, "name": "Rope mastery", "description": "Ropes loosen or tighten at the mossling's command." },
+        { "level": 7, "name": "Animate rope", "description": "A rope animates to attack and entangle foes (Level 1, AC 13, HP 1d8, grab entangles; constrict 1d3/Round; Save Versus Hold to escape) while the mossling concentrates and whistles." }
+      ]
+    },
+    {
+      "name": "Wood Kenning",
+      "description": "The mossling's fingers sense the subtle vibrations of tree and wood; 1 Turn of touch gleans knowledge.",
+      "abilities": [
+        { "level": 1, "name": "Sense history", "description": "Learn the name of a wooden item's creator or of the last person to touch it." },
+        { "level": 3, "name": "Sense emotions", "description": "Discern the most recent strong emotion the wood absorbed from a sentient being." },
+        { "level": 5, "name": "See beyond", "description": "Gain a momentary image of what lies on the other side of a wooden barrier (a door or wall)." },
+        { "level": 7, "name": "True name", "description": "Learn a tree's true name. Once per day, invoke a known tree to glimpse its surroundings; invoking a deceased tree's name provokes a vision of the vegetable afterlife." }
+      ]
+    },
+    {
+      "name": "Yeast Master",
+      "description": "The mossling hears the chorus of the deep wood's yeasts and fungal spores, and counts them as companions.",
+      "abilities": [
+        { "level": 1, "name": "Ferment", "description": "Touch ferments sweet liquids (one pint per Turn) into a frothy brew delicious to mosslings; 2-in-6 chance it is palatable to other folk." },
+        { "level": 3, "name": "Commune with yeast", "description": "Sip from a drink partly consumed by someone else to learn that person's name." },
+        { "level": 5, "name": "Yeasty belch", "description": "Once per day, emit a heady belch at an individual within 10'; target must Save Versus Blast or faint for 1d6 Rounds." },
+        { "level": 7, "name": "Yeast feast", "description": "Once per day, conjure a yeasty feast equivalent to 1d6 fresh rations." }
+      ]
+    }
+  ]
+}
