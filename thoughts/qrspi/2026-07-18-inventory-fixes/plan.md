@@ -403,6 +403,6 @@ parseCountSuffix('(3)')                // name empty → { name:'(3)', quantity:
 ---
 
 ## Cross-phase final checks
-- [ ] Repo root `pnpm typecheck && pnpm lint && pnpm test` all green
-- [ ] `git diff` limited to inventory feature + new `ui/NumberField`, `lib/inventory/parse-count`, `scripts/fix-inventory-names`, and their tests
-- [ ] No changes to CoinPurse/Bank/Spend (out of scope), no `weightOverride`/wizard-seed changes
+- [x] Repo root `pnpm typecheck && pnpm lint && pnpm test` all green (153 tests)
+- [x] `git diff` limited to inventory feature + new `ui/NumberField`, `lib/inventory/parse-count`, `scripts/fix-inventory-names`, and their tests
+- [x] No changes to CoinPurse/Bank/Spend (out of scope), no `weightOverride`/wizard-seed changes
