@@ -64,6 +64,25 @@ describe('light tracker', () => {
     await expect(burnTurn(id, 'nope')).rejects.toMatchObject({ status: 404 });
   });
 
+  it('lights plural-named rows via aliases, keeping the row label', async () => {
+    const { id } = await createCharacter(INPUT);
+    const torches = await addInventoryItem(id, { item_name: 'Torches', item_type: 'gear', quantity: 3 });
+
+    const lights = await lightSource(id, torches.id);
+    expect(lights).toHaveLength(1);
+    expect(lights[0]!.itemName).toBe('Torches'); // label unchanged; only matching widened
+    expect(lights[0]!.turnsRemaining).toBe(6);
+
+    const items = await listInventory(id);
+    expect(items.find(i => i.id === torches.id)!.quantity).toBe(2);
+  });
+
+  it('rejects lanterns — the oil flask is the consumable', async () => {
+    const { id } = await createCharacter(INPUT);
+    const lantern = await addInventoryItem(id, { item_name: 'Lantern', item_type: 'gear', quantity: 1 });
+    await expect(lightSource(id, lantern.id)).rejects.toMatchObject({ status: 400 });
+  });
+
   it('extinguish removes the light', async () => {
     const { id } = await createCharacter(INPUT);
     const oil = await addInventoryItem(id, { item_name: 'Oil Flask', item_type: 'gear', quantity: 1 });

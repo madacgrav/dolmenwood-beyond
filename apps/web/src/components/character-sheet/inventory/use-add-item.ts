@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { insertInventoryItem, type InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
 import { parseCountSuffix } from '@/lib/inventory/parse-count';
+import { canonicalName } from '@/lib/inventory/consumables';
 import { ITEM_TYPES, type CatalogItem, type ItemType, type NewItemDraft } from './types';
 
 const EMPTY_DRAFT: NewItemDraft = {
@@ -56,10 +57,11 @@ export function useAddItem({ characterId, onItemAdded }: {
   }, [addMode]);
 
   function selectCatalogItem(cat: CatalogItem) {
-    // Names like "Torches (3)" carry their count in the label; split it into quantity.
+    // Names like "Torches (3)" carry their count in the label; split it into
+    // quantity and use the canonical singular label for known consumables.
     const parsed = parseCountSuffix(cat.name);
     setNewItem({
-      item_name: parsed.name,
+      item_name: canonicalName(cat.name),
       item_type: ITEM_TYPES.includes(cat.item_type as ItemType) ? cat.item_type as ItemType : 'gear',
       quantity: parsed.quantity ?? 1,
       weight_coins: cat.weight,
