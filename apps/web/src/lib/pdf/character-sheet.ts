@@ -188,9 +188,15 @@ export async function fillCharacterSheet(
   set('Other Notes', notes.join('\n'));
 
   // Spells — the paper sheet has no spell page; casters list them in the
-  // Kindred & Class Traits areas (split across the two fields by length)
+  // Kindred & Class Traits areas (split across the two fields by length).
+  // Kindred glamour/knack entries print even for non-casters.
+  const kindredGlamour = c.spellbook.find((s) => s.kind === 'kindred-glamour');
+  const knack = c.spellbook.find((s) => s.kind === 'knack');
+  const bookEntries = c.spellbook.filter((s) => s.kind !== 'kindred-glamour' && s.kind !== 'knack');
+  const lines: string[] = [];
+  if (kindredGlamour) lines.push(`Kindred Glamour: ${kindredGlamour.spellName}`);
+  if (knack) lines.push(`Knack: ${knack.spellName}`);
   if (isSpellcaster(c.characterClass)) {
-    const lines: string[] = [];
     if (c.spellSlots.length) {
       lines.push(
         'Slots: ' + c.spellSlots.map((s) => `R${s.rank} ${s.slotsUsed}/${s.slotsTotal}`).join(', '),
@@ -202,11 +208,13 @@ export async function fillCharacterSheet(
           c.spellPreparations.map((p) => p.spellName + (p.isCast ? ' (cast)' : '')).join(', '),
       );
     }
-    if (c.spellbook.length) {
+    if (bookEntries.length) {
       lines.push(
-        'Spellbook: ' + c.spellbook.map((s) => s.spellName + (s.isMemorized ? '*' : '')).join(', '),
+        'Spellbook: ' + bookEntries.map((s) => s.spellName + (s.isMemorized ? '*' : '')).join(', '),
       );
     }
+  }
+  if (lines.length) {
     const text = lines.join('\n');
     set('Kindred & Class Traits 1', text.slice(0, 900));
     if (text.length > 900) set('Kindred & Class Traits 2', text.slice(900));

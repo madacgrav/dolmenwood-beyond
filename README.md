@@ -5,7 +5,7 @@ A cross-platform PWA for managing characters in the [Dolmenwood](https://necroti
 ## Features
 
 - **Character creation** — guided 13-step wizard (auto with animated dice rolls, or manual entry)
-- **Character sheet** — 5 tabs: Stats, Combat, Inventory, Magic, Notes with inline HP/XP editing
+- **Character sheet** — 5 tabs: Stats, Combat, Inventory, Magic and Abilities, Notes with inline HP/XP editing
 - **Level-up flow** — animated HP roll, level diff preview, XP tracking, atomic Supabase RPC
 - **Retainer management** — hire retainers, track stats, promote to full character
 - **Mount management** — character mounts + campaign pack animals

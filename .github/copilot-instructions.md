@@ -35,7 +35,7 @@ dolmenwood-beyond/
 │   │   │   │   └── settings/
 │   │   │   └── api/health/    # health check endpoint
 │   │   ├── components/
-│   │   │   ├── character-sheet/  # Header, StatsTab, CombatTab, InventoryTab, MagicTab, NotesTab
+│   │   │   ├── character-sheet/  # Header, StatsTab, CombatTab, InventoryTab, MagicTab ("Magic and Abilities"), NotesTab
 │   │   │   ├── characters/       # CharacterCard, HPBar
 │   │   │   ├── layout/           # BottomNav
 │   │   │   ├── ui/               # shared primitives
@@ -73,7 +73,7 @@ dolmenwood-beyond/
 ### Implementation Status
 
 - **Character creation** — Auto, Manual, and Import paths are all complete (all 13 steps).
-- **Character sheet** — Stats / Combat / Inventory / Magic / Notes tabs implemented, including inline dice rollers (skills, weapons, saves), the start-battle ammo tracker, the inventory restock tool, and spell-slot / preparation tracking.
+- **Character sheet** — Stats / Combat / Inventory / Magic and Abilities / Notes tabs implemented, including inline dice rollers (skills, weapons, saves), the start-battle ammo tracker, the inventory restock tool, spell-slot / preparation tracking, and kindred abilities (glamours, knacks, shape-shifting, mad revelry).
 - **Campaign** — Party overview (referee + player views), Bank (referee payouts), and Schedule (sessions + RSVP + month calendar) are wired end-to-end via Supabase RPCs.
 - **Optional rules** (Settings) — sub-par re-roll, HP low-roll re-roll, and coin-weight encumbrance toggles are wired to behavior.
 - **PWA** — real 192×512 PNG icons (no longer an SVG placeholder).

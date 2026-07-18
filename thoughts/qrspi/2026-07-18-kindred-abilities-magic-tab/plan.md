@@ -483,8 +483,8 @@ const knack = c.spellbook.find(s => s.kind === 'knack');
 
 ### Verification
 #### Automated
-- [ ] `pnpm test` passes (pdf-export tests)
-- [ ] `pnpm lint` passes
+- [x] `pnpm test` passes (pdf-export tests)
+- [x] `pnpm lint` passes
 #### Manual
 - [ ] Export PDF for a non-caster Elf with kindred glamour: "Kindred Glamour: X" printed
 - [ ] Export PDF for Mossling with knack: "Knack: Y" printed
