@@ -21,6 +21,8 @@ export interface WizardState {
   weight: string;
   background: string;
   portraitUrl: string | null;
+  equipment: string[];
+  startingGold: number;
 
   // Actions
   setMode: (mode: WizardMode) => void;
@@ -39,6 +41,8 @@ export interface WizardState {
   setWeight: (weight: string) => void;
   setBackground: (background: string) => void;
   setPortraitUrl: (url: string | null) => void;
+  setEquipment: (items: string[]) => void;
+  setStartingGold: (gold: number) => void;
   reset: () => void;
 }
 
@@ -60,6 +64,8 @@ export const useWizardStore = create<WizardState>((set) => ({
   weight: '',
   background: '',
   portraitUrl: null,
+  equipment: [],
+  startingGold: 0,
 
   setMode: (mode) => set({ mode }),
   setStep: (step) => set({ step }),
@@ -77,10 +83,13 @@ export const useWizardStore = create<WizardState>((set) => ({
   setWeight: (weight) => set({ weight }),
   setBackground: (background) => set({ background }),
   setPortraitUrl: (portraitUrl) => set({ portraitUrl }),
+  setEquipment: (equipment) => set({ equipment }),
+  setStartingGold: (startingGold) => set({ startingGold }),
   reset: () => set({
     step: 1, abilityScores: DEFAULT_SCORES, kindred: null,
     characterClass: null, alignment: null, hpMax: 1,
     name: '', sex: '', age: '', height: '', weight: '',
     background: '', portraitUrl: null,
+    equipment: [], startingGold: 0,
   }),
 }));

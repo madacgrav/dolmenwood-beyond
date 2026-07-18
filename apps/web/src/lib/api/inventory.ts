@@ -77,12 +77,13 @@ export async function updateItemQuantity(
   characterId: string,
   itemId: string,
   quantity: number,
-): Promise<void> {
-  await fetch(`/api/characters/${characterId}/inventory/${itemId}`, {
+): Promise<boolean> {
+  const res = await fetch(`/api/characters/${characterId}/inventory/${itemId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ quantity }),
   });
+  return res.ok;
 }
 
 export async function updateItemLocation(

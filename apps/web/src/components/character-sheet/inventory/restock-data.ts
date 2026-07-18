@@ -7,11 +7,11 @@ export interface RestockEntry {
   pack?: number;       // optional quick-add size (e.g. 20 for a quiver); no bundle pricing — just a shortcut
 }
 
-// ponytail: per-item ammo prices/weights are provisional — confirm against the Dolmenwood rulebook before tuning
+// Ammo weights are rulebook-derived: a quiver/case of 20 weighs 20 coins -> 1 coin each.
 export const RESTOCK_ITEMS: RestockEntry[] = [
-  { name: 'Arrow',                priceSp: 0.05,  category: 'ammo', weightCoins: 0.1, pack: 20 },
-  { name: 'Crossbow Quarrel',     priceSp: 0.1,   category: 'ammo', weightCoins: 0.1, pack: 20 },
-  { name: 'Sling Stone',          priceSp: 0.05,  category: 'ammo', weightCoins: 0.2, pack: 20 },
+  { name: 'Arrow',                priceSp: 0.05,  category: 'ammo', weightCoins: 1, pack: 20 },
+  { name: 'Crossbow Quarrel',     priceSp: 0.1,   category: 'ammo', weightCoins: 1, pack: 20 },
+  { name: 'Sling Stone',          priceSp: 0.05,  category: 'ammo', weightCoins: 1, pack: 20 },
   { name: 'Oil Flask',            priceSp: 1,     category: 'gear', weightCoins: 10 },
   { name: 'Torch',                priceSp: 0.05,  category: 'gear', weightCoins: 10 },
   { name: 'Ration',               priceSp: 1,     category: 'gear', weightCoins: 15 },

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { lightSourceFor } from '../../lib/light-data';
 import { canonicalName } from '../../lib/inventory/consumables';
+import { parseCountSuffix } from '../../lib/inventory/parse-count';
 
 describe('lightSourceFor (alias-aware)', () => {
   it('matches exact, plural, cased, and count-suffixed names', () => {
@@ -54,5 +55,29 @@ describe('canonicalName', () => {
     expect(canonicalName('Rope')).toBe('Rope');
     expect(canonicalName('Bag of marbles x 2')).toBe('Bag of marbles');
     expect(canonicalName('Lantern')).toBe('Lantern');
+  });
+
+  it('canonicalizes bundle-phrase ammo names', () => {
+    expect(canonicalName('Arrows (quiver of 20)')).toBe('Arrow');
+    expect(canonicalName('Quarrels (case of 20)')).toBe('Crossbow Quarrel');
+  });
+});
+
+describe('parseCountSuffix (bundle phrases)', () => {
+  it('parses bundle-of-N parentheticals', () => {
+    expect(parseCountSuffix('Arrows (quiver of 20)')).toEqual({ name: 'Arrows', quantity: 20 });
+    expect(parseCountSuffix('Quarrels (case of 20)')).toEqual({ name: 'Quarrels', quantity: 20 });
+    expect(parseCountSuffix('Candles (bundle of 12)')).toEqual({ name: 'Candles', quantity: 12 });
+  });
+
+  it('still parses plain numeric suffixes', () => {
+    expect(parseCountSuffix('Torches (3)')).toEqual({ name: 'Torches', quantity: 3 });
+    expect(parseCountSuffix('Torches x 3')).toEqual({ name: 'Torches', quantity: 3 });
+  });
+
+  it('leaves non-count parentheticals untouched', () => {
+    expect(parseCountSuffix('Rations (1 week)')).toEqual({ name: 'Rations (1 week)', quantity: null });
+    expect(parseCountSuffix('Horse Feed (per day)')).toEqual({ name: 'Horse Feed (per day)', quantity: null });
+    expect(parseCountSuffix('Potion (minor)')).toEqual({ name: 'Potion (minor)', quantity: null });
   });
 });

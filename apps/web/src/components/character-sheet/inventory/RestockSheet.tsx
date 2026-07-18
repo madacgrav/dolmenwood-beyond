@@ -20,7 +20,8 @@ export function RestockSheet({ coins, controller }: Props) {
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, zIndex: 50,
+        // Above BottomNav (zIndex 50), matching the other full-screen modals.
+        position: 'fixed', inset: 0, zIndex: 100,
         backgroundColor: 'rgba(0,0,0,0.55)',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
       }}
@@ -195,7 +196,7 @@ export function RestockSheet({ coins, controller }: Props) {
 
           {restockError === 'error' && (
             <div style={{ fontSize: '0.82rem', color: 'var(--color-danger)' }}>
-              Something went wrong. Please try again.
+              Some items could not be added — coins were only deducted for successful purchases. Please try again.
             </div>
           )}
 
