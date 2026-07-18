@@ -223,8 +223,8 @@ Run app (`preview_start`), open a character sheet as owner:
 
 ### Verification
 #### Automated
-- [ ] `npm test` passes
-- [ ] `npm run typecheck` passes
+- [x] `npm test` passes
+- [x] `npm run typecheck` passes
 #### Manual
 - [ ] Restock arrows for migrated character → merges into existing `Arrow` row (quantity increases, no duplicate row)
 - [ ] Restock on fresh character → new `Arrow` row, weight 1¢/unit

@@ -52,42 +52,51 @@ export function useRestock({ characterId, items, setItems, coins, setCoins, save
     }
     setRestockLoading(true);
     setRestockError('');
+    let succeededSp = 0;
+    let anyFailed = false;
     try {
       for (const entry of RESTOCK_ITEMS) {
         const qty = restockQtys[entry.name] ?? 0;
         if (qty <= 0) continue;
-        const totalQty = qty; // qty is individual items; packs are just a stepper shortcut
         // Alias-aware: a new "Arrow" purchase merges into an existing "Arrows" row.
         const existing = items.find(
           i => canonicalName(i.item_name) === canonicalName(entry.name),
         );
         if (existing) {
-          const newQty = existing.quantity + totalQty;
-          await updateItemQuantity(characterId, existing.id, newQty);
+          const newQty = existing.quantity + qty;
+          const ok = await updateItemQuantity(characterId, existing.id, newQty);
+          if (!ok) { anyFailed = true; continue; }
           setItems(prev => prev.map(i => i.id === existing.id ? { ...i, quantity: newQty } : i));
         } else {
           const mapped = await insertInventoryItem({
             character_id: characterId,
             item_name: entry.name,
             item_type: entry.category === 'ammo' ? 'ammo' : 'gear',
-            quantity: totalQty,
+            quantity: qty,
             weight_coins: entry.weightCoins,
             location: 'stowed',
           });
-          if (mapped) setItems(prev => [...prev, mapped]);
+          if (!mapped) { anyFailed = true; continue; }
+          setItems(prev => [...prev, mapped]);
         }
+        succeededSp += qty * entry.priceSp;
       }
-      if (totalSp > 0) {
-        const newCoins = deductSp(coins, totalSp);
+      // Only charge for items that actually wrote.
+      if (succeededSp > 0) {
+        const newCoins = deductSp(coins, succeededSp);
         await saveCoins(newCoins);
         setCoins(newCoins);
       }
-      setRestockQtys({});
-      setRestockSuccess(true);
-      setTimeout(() => {
-        setRestockSuccess(false);
-        setShowRestock(false);
-      }, 1500);
+      if (anyFailed) {
+        setRestockError('error');
+      } else {
+        setRestockQtys({});
+        setRestockSuccess(true);
+        setTimeout(() => {
+          setRestockSuccess(false);
+          setShowRestock(false);
+        }, 1500);
+      }
     } catch {
       setRestockError('error');
     }
