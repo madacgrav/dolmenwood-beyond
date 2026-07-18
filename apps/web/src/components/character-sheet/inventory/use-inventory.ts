@@ -5,6 +5,7 @@ import {
   updateItemLocation,
   updateItemQuantity,
   updateItemNotes,
+  moveInventoryItem,
   deleteInventoryItem,
   type InventoryItem as DBInventoryItem,
 } from '@/lib/api/inventory';
@@ -74,12 +75,30 @@ export function useInventory(characterId: string) {
     await updateItemNotes(characterId, id, notes);
   }
 
+  async function moveItem(id: string, direction: 'up' | 'down') {
+    // Optimistic: swap with the adjacent item in the same location section.
+    setItems(prev => {
+      const item = prev.find(i => i.id === id);
+      if (!item) return prev;
+      const section = prev.filter(i => i.location === item.location);
+      const idx = section.findIndex(i => i.id === id);
+      const swapWith = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapWith < 0 || swapWith >= section.length) return prev;
+      const other = section[swapWith]!;
+      const a = prev.indexOf(item), b = prev.indexOf(other);
+      const next = [...prev];
+      [next[a], next[b]] = [next[b]!, next[a]!];
+      return next;
+    });
+    await moveInventoryItem(characterId, id, direction);
+  }
+
   return {
     items, setItems,
     loading,
     coins, setCoins,
     bankBalance, fetchBankBalance,
     saveCoins, handleCoinChange,
-    toggleLocation, deleteItem, setItemQuantity, setItemNotes,
+    toggleLocation, deleteItem, setItemQuantity, setItemNotes, moveItem,
   };
 }

@@ -160,7 +160,7 @@ export async function moveInventoryItem(characterId: string, itemId: string, mov
 
 ### Verification
 #### Automated
-- [ ] `cd apps/web && pnpm test` passes; `pnpm typecheck && pnpm lint` pass
+- [x] `cd apps/web && pnpm test` passes; `pnpm typecheck && pnpm lint` pass
 #### Manual
 - [ ] Reorder two Stowed items with ▲/▼, reload → order held
 - [ ] ▲ disabled on first row of a section, ▼ on last

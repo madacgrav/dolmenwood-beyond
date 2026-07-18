@@ -9,11 +9,12 @@ interface Props {
   onToggleLocation: (item: DBInventoryItem) => void;
   onSetQuantity: (id: string, quantity: number) => void;
   onSetNotes: (id: string, notes: string | null) => void;
+  onMove: (id: string, direction: 'up' | 'down') => void;
   onDelete: (id: string) => void;
 }
 
 /** Item list grouped by location (equipped → stowed → tiny); empty groups are hidden. */
-export function ItemList({ items, isOwner, onToggleLocation, onSetQuantity, onSetNotes, onDelete }: Props) {
+export function ItemList({ items, isOwner, onToggleLocation, onSetQuantity, onSetNotes, onMove, onDelete }: Props) {
   return (
     <>
       {(['equipped', 'stowed', 'tiny'] as const).map(loc => {
@@ -23,7 +24,7 @@ export function ItemList({ items, isOwner, onToggleLocation, onSetQuantity, onSe
           <section key={loc}>
             <h3 style={sectionHead}>{LOCATION_LABELS[loc]} ({locItems.length})</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {locItems.map(item => (
+              {locItems.map((item, i) => (
                 <ItemRow
                   key={item.id}
                   item={item}
@@ -31,6 +32,9 @@ export function ItemList({ items, isOwner, onToggleLocation, onSetQuantity, onSe
                   onToggleLocation={onToggleLocation}
                   onSetQuantity={onSetQuantity}
                   onSetNotes={onSetNotes}
+                  onMove={onMove}
+                  canMoveUp={i > 0}
+                  canMoveDown={i < locItems.length - 1}
                   onDelete={onDelete}
                 />
               ))}

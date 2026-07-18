@@ -8,6 +8,9 @@ interface Props {
   onToggleLocation: (item: DBInventoryItem) => void;
   onSetQuantity: (id: string, quantity: number) => void;
   onSetNotes: (id: string, notes: string | null) => void;
+  onMove: (id: string, direction: 'up' | 'down') => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
   onDelete: (id: string) => void;
 }
 
@@ -19,7 +22,7 @@ const stepBtn: React.CSSProperties = {
 };
 
 /** Single inventory item card: name, type details, qty/weight chips, owner actions. */
-export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onSetNotes, onDelete }: Props) {
+export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onSetNotes, onMove, canMoveUp, canMoveDown, onDelete }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(item.quantity));
   const [showNotes, setShowNotes] = useState(false);
@@ -105,6 +108,22 @@ export function ItemRow({ item, isOwner, onToggleLocation, onSetQuantity, onSetN
         >
           {item.location === 'equipped' ? '⚔️' : item.location === 'stowed' ? '🎒' : '🔮'}
         </button>
+      )}
+      {isOwner && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <button
+            onClick={() => onMove(item.id, 'up')}
+            disabled={!canMoveUp}
+            style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: '4px', cursor: canMoveUp ? 'pointer' : 'default', color: 'var(--color-text-muted)', fontSize: '0.6rem', padding: '0 0.3rem', minHeight: '21px', opacity: canMoveUp ? 1 : 0.35 }}
+            aria-label={`Move ${item.item_name} up`}
+          >▲</button>
+          <button
+            onClick={() => onMove(item.id, 'down')}
+            disabled={!canMoveDown}
+            style={{ background: 'none', border: '1px solid var(--color-border)', borderRadius: '4px', cursor: canMoveDown ? 'pointer' : 'default', color: 'var(--color-text-muted)', fontSize: '0.6rem', padding: '0 0.3rem', minHeight: '21px', opacity: canMoveDown ? 1 : 0.35 }}
+            aria-label={`Move ${item.item_name} down`}
+          >▼</button>
+        </div>
       )}
       {(isOwner || item.notes) && (
         <button
