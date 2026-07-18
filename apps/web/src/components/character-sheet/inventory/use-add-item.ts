@@ -60,11 +60,16 @@ export function useAddItem({ characterId, onItemAdded }: {
     // Names like "Torches (3)" carry their count in the label; split it into
     // quantity and use the canonical singular label for known consumables.
     const parsed = parseCountSuffix(cat.name);
+    // Bundle-named catalog rows ("Arrows (quiver of 20)") carry whole-bundle
+    // weight; store per-unit weight so weight × quantity stays correct.
+    const weight = parsed.quantity
+      ? Math.round((cat.weight / parsed.quantity) * 100) / 100
+      : cat.weight;
     setNewItem({
       item_name: canonicalName(cat.name),
       item_type: ITEM_TYPES.includes(cat.item_type as ItemType) ? cat.item_type as ItemType : 'gear',
       quantity: parsed.quantity ?? 1,
-      weight_coins: cat.weight,
+      weight_coins: weight,
       location: cat.item_type === 'armor' || cat.item_type === 'weapon' ? 'equipped' : 'stowed',
       weapon_damage_dice: cat.weapon_damage_dice ?? '',
       armor_ac_bonus: cat.armor_ac_bonus != null ? String(cat.armor_ac_bonus) : '',
