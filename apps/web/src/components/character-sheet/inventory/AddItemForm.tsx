@@ -1,5 +1,6 @@
 'use client';
 import type { InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
+import { NumberField } from '@/components/ui/NumberField';
 import { ITEM_TYPES, ITEM_TYPE_LABELS, type ItemType } from './types';
 import type { AddItemController } from './use-add-item';
 
@@ -113,15 +114,17 @@ export function AddItemForm({ controller }: Props) {
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Qty</label>
-              <input type="number" min={1} value={newItem.quantity}
-                onChange={e => setNewItem(p => ({ ...p, quantity: Math.max(1, parseInt(e.target.value) || 1) }))}
+              <NumberField value={newItem.quantity} min={1} placeholder="1"
+                onCommit={n => setNewItem(p => ({ ...p, quantity: n }))}
+                aria-label="Quantity"
                 style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px', boxSizing: 'border-box' }}
               />
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '0.2rem' }}>Weight (¢)</label>
-              <input type="number" min={0} value={newItem.weight_coins}
-                onChange={e => setNewItem(p => ({ ...p, weight_coins: Math.max(0, parseInt(e.target.value) || 0) }))}
+              <NumberField value={newItem.weight_coins} min={0} allowDecimal placeholder="0"
+                onCommit={n => setNewItem(p => ({ ...p, weight_coins: n }))}
+                aria-label="Weight in coins"
                 style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-bg)', color: 'var(--color-text)', fontSize: '0.9rem', minHeight: '44px', boxSizing: 'border-box' }}
               />
             </div>

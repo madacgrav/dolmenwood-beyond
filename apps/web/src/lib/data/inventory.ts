@@ -25,16 +25,19 @@ function entryToItem(characterId: string, e: InventoryEntryDoc): InventoryItem {
     armor_ac_bonus: e.armorAcBonus,
     is_shield: e.isShield ?? false,
     armor_bulk: e.armorBulk ?? null,
+    sort_order: e.sortOrder,
   };
 }
 
 const LOCATION_ORDER: Record<string, number> = { equipped: 0, stowed: 1, tiny: 2 };
 
 function sortedEntries(doc: CharacterDoc): InventoryEntryDoc[] {
-  // Preserve the old list ordering: by location, then item type.
+  // By location, then manual sort order (entries without one sink to the end
+  // of their section, keeping the old item-type ordering as the fallback).
   return [...(doc.inventory ?? [])].sort(
     (a, b) =>
       (LOCATION_ORDER[a.location] ?? 9) - (LOCATION_ORDER[b.location] ?? 9) ||
+      (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER) ||
       a.itemType.localeCompare(b.itemType),
   );
 }
@@ -82,6 +85,9 @@ export async function addInventoryItem(
     catalogItemId: input.catalog_item_id ?? null,
   };
   await mutateOwnedCharacterDoc(characterId, (doc) => {
+    // Append to the end of the item's location section.
+    const sameLoc = (doc.inventory ?? []).filter((e) => e.location === entry.location);
+    entry.sortOrder = sameLoc.reduce((m, e) => Math.max(m, e.sortOrder ?? 0), 0) + 1;
     doc.inventory = [...(doc.inventory ?? []), entry];
   });
   return entryToItem(characterId, entry);
@@ -90,7 +96,7 @@ export async function addInventoryItem(
 export async function updateInventoryEntry(
   characterId: string,
   itemId: string,
-  patch: { quantity?: number; location?: ItemLocation },
+  patch: { quantity?: number; location?: ItemLocation; notes?: string | null; move?: 'up' | 'down' },
 ): Promise<void> {
   await mutateOwnedCharacterDoc(characterId, (doc) => {
     const entry = (doc.inventory ?? []).find((e) => e.id === itemId);
@@ -101,6 +107,29 @@ export async function updateInventoryEntry(
         throw badRequest('invalid location');
       }
       entry.location = patch.location;
+    }
+    if (patch.notes !== undefined) {
+      const n = patch.notes === null ? null : String(patch.notes).trim().slice(0, 500);
+      entry.notes = n && n.length ? n : null;
+    }
+    if (patch.move !== undefined) {
+      if (patch.move !== 'up' && patch.move !== 'down') throw badRequest('invalid move');
+      const list = (doc.inventory ?? [])
+        .filter((e) => e.location === entry.location)
+        // Same ordering as sortedEntries so the swap matches what's displayed.
+        .sort(
+          (a, b) =>
+            (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER) ||
+            a.itemType.localeCompare(b.itemType),
+        );
+      // Backfill entries created before manual reordering so swaps are stable.
+      list.forEach((e, i) => { if (e.sortOrder == null) e.sortOrder = i + 1; });
+      const idx = list.findIndex((e) => e.id === entry.id);
+      const swapWith = patch.move === 'up' ? idx - 1 : idx + 1;
+      if (swapWith >= 0 && swapWith < list.length) {
+        const a = list[idx]!, b = list[swapWith]!;
+        [a.sortOrder, b.sortOrder] = [b.sortOrder, a.sortOrder];
+      }
     }
   });
 }

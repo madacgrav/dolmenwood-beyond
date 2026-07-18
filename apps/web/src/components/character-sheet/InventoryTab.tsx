@@ -103,6 +103,8 @@ export function InventoryTab({ characterId, readOnly = false }: Props) {
         isOwner={isOwner}
         onToggleLocation={inv.toggleLocation}
         onSetQuantity={inv.setItemQuantity}
+        onSetNotes={inv.setItemNotes}
+        onMove={inv.moveItem}
         onDelete={inv.deleteItem}
       />
 

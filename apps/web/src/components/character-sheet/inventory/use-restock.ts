@@ -69,7 +69,7 @@ export function useRestock({ characterId, items, setItems, coins, setCoins, save
             item_name: entry.name,
             item_type: entry.category === 'ammo' ? 'ammo' : 'gear',
             quantity: totalQty,
-            weight_coins: 0,
+            weight_coins: entry.weightCoins,
             location: 'stowed',
           });
           if (mapped) setItems(prev => [...prev, mapped]);

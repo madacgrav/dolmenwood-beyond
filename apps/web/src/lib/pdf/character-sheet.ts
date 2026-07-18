@@ -53,7 +53,8 @@ function fillSlots(
   overflow: string[],
 ) {
   items.forEach((e, i) => {
-    const w = e.weightCoins * e.quantity;
+    // Round for display so fractional weights don't render float noise.
+    const w = Math.round(e.weightCoins * e.quantity * 100) / 100;
     if (i < max) {
       trySet(form, `${itemPrefix} ${i + 1}`, itemLabel(e));
       trySet(form, `${weightPrefix} ${i + 1}`, w);

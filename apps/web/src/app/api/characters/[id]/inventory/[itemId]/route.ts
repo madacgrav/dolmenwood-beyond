@@ -8,7 +8,12 @@ export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id, itemId } = await params;
     const body = await request.json();
-    await updateInventoryEntry(id, itemId, { quantity: body?.quantity, location: body?.location });
+    await updateInventoryEntry(id, itemId, {
+      quantity: body?.quantity,
+      location: body?.location,
+      notes: body?.notes,
+      move: body?.move,
+    });
     return NextResponse.json({ ok: true });
   } catch (e) {
     return handleRouteError(e);

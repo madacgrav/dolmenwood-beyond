@@ -20,6 +20,7 @@ export interface InventoryItem {
   armor_ac_bonus?: number | null;
   is_shield?: boolean;
   armor_bulk?: ArmorBulk | null;
+  sort_order?: number;
 }
 
 export interface AmmoItem {
@@ -93,6 +94,30 @@ export async function updateItemLocation(
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ location }),
+  });
+}
+
+export async function moveInventoryItem(
+  characterId: string,
+  itemId: string,
+  move: 'up' | 'down',
+): Promise<void> {
+  await fetch(`/api/characters/${characterId}/inventory/${itemId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ move }),
+  });
+}
+
+export async function updateItemNotes(
+  characterId: string,
+  itemId: string,
+  notes: string | null,
+): Promise<void> {
+  await fetch(`/api/characters/${characterId}/inventory/${itemId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notes }),
   });
 }
 

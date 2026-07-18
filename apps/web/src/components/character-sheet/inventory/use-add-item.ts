@@ -1,10 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { insertInventoryItem, type InventoryItem as DBInventoryItem } from '@/lib/api/inventory';
+import { parseCountSuffix } from '@/lib/inventory/parse-count';
 import { ITEM_TYPES, type CatalogItem, type ItemType, type NewItemDraft } from './types';
 
 const EMPTY_DRAFT: NewItemDraft = {
-  item_name: '', item_type: 'gear', quantity: 1, weight_coins: 0,
+  item_name: '', item_type: 'gear', quantity: null, weight_coins: null,
   location: 'stowed', weapon_damage_dice: '', armor_ac_bonus: '',
   is_shield: false, armor_bulk: null,
 };
@@ -55,10 +56,12 @@ export function useAddItem({ characterId, onItemAdded }: {
   }, [addMode]);
 
   function selectCatalogItem(cat: CatalogItem) {
+    // Names like "Torches (3)" carry their count in the label; split it into quantity.
+    const parsed = parseCountSuffix(cat.name);
     setNewItem({
-      item_name: cat.name,
+      item_name: parsed.name,
       item_type: ITEM_TYPES.includes(cat.item_type as ItemType) ? cat.item_type as ItemType : 'gear',
-      quantity: 1,
+      quantity: parsed.quantity ?? 1,
       weight_coins: cat.weight,
       location: cat.item_type === 'armor' || cat.item_type === 'weapon' ? 'equipped' : 'stowed',
       weapon_damage_dice: cat.weapon_damage_dice ?? '',
@@ -75,8 +78,8 @@ export function useAddItem({ characterId, onItemAdded }: {
       character_id: characterId,
       item_name: newItem.item_name.trim(),
       item_type: newItem.item_type,
-      quantity: newItem.quantity,
-      weight_coins: newItem.weight_coins,
+      quantity: newItem.quantity ?? 1,
+      weight_coins: newItem.weight_coins ?? 0,
       location: newItem.location,
     };
     if (newItem.weapon_damage_dice.trim()) payload.weapon_damage_dice = newItem.weapon_damage_dice.trim();

@@ -41,6 +41,8 @@ export interface InventoryEntryDoc {
   isShield?: boolean;
   armorBulk?: ArmorBulk | null;
   catalogItemId: string | null;
+  /** Optional: absent on entries created before manual reordering. */
+  sortOrder?: number;
 }
 
 /** A currently-burning light/heat source, tracked in turns (10 min each).

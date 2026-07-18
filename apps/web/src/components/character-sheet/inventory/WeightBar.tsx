@@ -7,6 +7,9 @@ interface Props {
   coinWeight?: number;
 }
 
+/** Round for display so fractional weights don't render float noise. */
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
 /** Encumbrance + Speed card. Tiny items don't count toward carried weight. */
 export function WeightBar({ items, coinWeight = 0 }: Props) {
   const itemWeight = items.reduce((sum, item) => {
@@ -24,7 +27,7 @@ export function WeightBar({ items, coinWeight = 0 }: Props) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.625rem' }}>
         <div>
           <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Carried Weight (Equipped + Stowed)</div>
-          <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text)' }}>{totalWeight} / 800 coins</div>
+          <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--color-text)' }}>{r2(totalWeight)} / 800 coins</div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Speed</div>
