@@ -328,7 +328,7 @@ the script's report. No repo code change here.
 
 ### Verification
 #### Automated
-- [ ] `cd apps/web && pnpm test` passes
+- [x] `cd apps/web && pnpm test` passes
 #### Manual
 - [ ] Restock 1 bundle of Arrows (qty 20) → row weight = `20 × 0.1 = 2¢`, not inflated
 - [ ] WeightBar total reflects the fractional ammo weight
