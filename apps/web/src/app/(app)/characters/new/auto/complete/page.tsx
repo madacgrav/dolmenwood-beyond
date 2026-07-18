@@ -2,7 +2,55 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
-import { createCharacter } from '@/lib/api/characters';
+import { createCharacter, saveCoins } from '@/lib/api/characters';
+import { insertInventoryItem } from '@/lib/api/inventory';
+import { parseCountSuffix } from '@/lib/inventory/parse-count';
+import { canonicalName } from '@/lib/inventory/consumables';
+
+interface CatalogDoc {
+  name: string; itemType: string; weight: number;
+  weaponDamageDice: string | null; armorAcBonus: number | null;
+  isShield?: boolean; armorBulk?: string | null;
+}
+
+/** Best-effort: the character exists either way; a failed insert is logged and skipped. */
+async function seedInventory(characterId: string, equipment: string[], startingGold: number) {
+  let catalog: CatalogDoc[] = [];
+  try {
+    const res = await fetch('/api/catalog');
+    if (res.ok) catalog = await res.json();
+  } catch { /* fall back to zero-weight gear */ }
+
+  for (const raw of equipment) {
+    const parsed = parseCountSuffix(raw);
+    const name = canonicalName(raw);
+    const cat = catalog.find(c => canonicalName(c.name) === name);
+    const catCount = cat ? parseCountSuffix(cat.name).quantity : null;
+    const weight = cat ? Math.round((cat.weight / (catCount ?? 1)) * 100) / 100 : 0;
+    const itemType = cat?.itemType ?? 'gear';
+    const payload: Record<string, unknown> = {
+      character_id: characterId,
+      item_name: name,
+      item_type: itemType,
+      quantity: parsed.quantity ?? 1,
+      weight_coins: weight,
+      location: itemType === 'armor' || itemType === 'weapon' ? 'equipped' : 'stowed',
+    };
+    if (cat?.weaponDamageDice) payload.weapon_damage_dice = cat.weaponDamageDice;
+    if (cat?.armorAcBonus != null) payload.armor_ac_bonus = cat.armorAcBonus;
+    if (cat?.isShield) payload.is_shield = true;
+    if (cat?.armorBulk) payload.armor_bulk = cat.armorBulk;
+    try {
+      await insertInventoryItem(payload);
+    } catch (e) {
+      console.error('starting equipment insert failed', raw, e);
+    }
+  }
+  if (startingGold > 0) {
+    try { await saveCoins(characterId, { gp: startingGold, sp: 0, cp: 0 }); }
+    catch (e) { console.error('starting gold save failed', e); }
+  }
+}
 
 export default function CharacterCompletePage() {
   const router = useRouter();
@@ -37,6 +85,7 @@ export default function CharacterCompletePage() {
       if (insertError) {
         setError(insertError);
       } else if (id) {
+        await seedInventory(id, wizard.equipment, wizard.startingGold);
         setCharacterId(id);
         wizard.reset();
       }

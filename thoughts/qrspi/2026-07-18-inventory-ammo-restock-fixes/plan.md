@@ -323,8 +323,8 @@ Notes:
 
 ### Verification
 #### Automated
-- [ ] `npm test` passes
-- [ ] `npm run typecheck` passes
+- [x] `npm test` passes
+- [x] `npm run typecheck` passes
 #### Manual
 - [ ] Auto wizard as Hunter, Roll Equipment → new character inventory has Short bow, `Arrow ×20` (weight 20¢ total), Leather armour, up to 3 gear items, kindred trinket
 - [ ] Auto wizard, Buy Equipment → no items, coins show rolled gp

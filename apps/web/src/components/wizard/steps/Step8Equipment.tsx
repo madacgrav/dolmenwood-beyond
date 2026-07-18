@@ -31,7 +31,7 @@ function classItemsFor(cls: string): string[] {
 
 export function Step8Equipment({ basePath = '/characters/new/auto' }: { basePath?: string }) {
   const router = useRouter();
-  const { characterClass, kindred } = useWizardStore();
+  const { characterClass, kindred, setEquipment, setStartingGold } = useWizardStore();
   const [items, setItems] = useState<string[]>([]);
   const [rolling, setRolling] = useState(false);
   const [rolled, setRolled] = useState(false);
@@ -54,7 +54,10 @@ export function Step8Equipment({ basePath = '/characters/new/auto' }: { basePath
     }
 
     const trinket = `${kindred ?? 'Human'} trinket`;
-    setItems([...classItems, ...gearRolls, trinket]);
+    const rolledItems = [...classItems, ...gearRolls, trinket];
+    setItems(rolledItems);
+    setEquipment(rolledItems);
+    setStartingGold(0);
     setRolled(true);
     setRolling(false);
   }
@@ -63,6 +66,8 @@ export function Step8Equipment({ basePath = '/characters/new/auto' }: { basePath
     setBuyMode(true);
     const g = (Math.ceil(Math.random() * 6) + Math.ceil(Math.random() * 6) + Math.ceil(Math.random() * 6)) * 10;
     setGold(g);
+    setStartingGold(g);
+    setEquipment([]);
   }
 
   return (
@@ -74,7 +79,7 @@ export function Step8Equipment({ basePath = '/characters/new/auto' }: { basePath
         {/* Mode toggle */}
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <button
-            onClick={() => { setBuyMode(false); setRolled(false); setItems([]); }}
+            onClick={() => { setBuyMode(false); setRolled(false); setItems([]); setEquipment([]); setStartingGold(0); }}
             style={{
               flex: 1, padding: '0.5rem', borderRadius: '8px', cursor: 'pointer',
               backgroundColor: !buyMode ? 'var(--color-primary)' : 'var(--color-surface)',
