@@ -101,8 +101,8 @@ No new wiring — `LightTracker.tsx:36` filter and `light.ts:27` gate both call 
 
 ### Verification
 #### Automated
-- [ ] `cd apps/web && pnpm test light` passes
-- [ ] `pnpm typecheck` passes
+- [x] `cd apps/web && pnpm test light` passes (6 tests incl. plural + lantern-reject)
+- [x] `pnpm typecheck` passes
 #### Manual
 - [ ] Character with a "Torches" row shows the Light button; light → burn → extinguish work
 - [ ] "Lantern" row shows no Light button
