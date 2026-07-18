@@ -393,8 +393,8 @@ parseCountSuffix('(3)')                // name empty → { name:'(3)', quantity:
 
 ### Verification
 #### Automated
-- [ ] `cd apps/web && pnpm test` — `parse-count` test passes
-- [ ] `pnpm typecheck && pnpm lint` pass
+- [x] `cd apps/web && pnpm test` — `parse-count` test passes (7 tests)
+- [x] `pnpm typecheck && pnpm lint` pass
 #### Manual
 - [ ] Catalog-pick an item named "Torches (3)" → form shows name "Torches", qty 3
 - [ ] `npx tsx scripts/fix-inventory-names.ts` (dry-run) prints the intended changes without writing
