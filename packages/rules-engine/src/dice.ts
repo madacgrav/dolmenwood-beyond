@@ -27,6 +27,12 @@ export function rollFromNotation(notation: string): number {
   return rollMultiple(count, sides).reduce((a, b) => a + b, 0);
 }
 
+/** Uniform random pick from a non-empty list. Returns undefined for an empty list. */
+export function pickRandom<T>(list: readonly T[]): T | undefined {
+  if (list.length === 0) return undefined;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 /**
  * Parse and roll a dice notation string like "2d6+1".
  */

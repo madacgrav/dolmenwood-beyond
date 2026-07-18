@@ -166,4 +166,20 @@ describe.skipIf(!existsSync(BLANK_PATH))('fillCharacterSheet', () => {
     const knightForm = (await PDFDocument.load(knightBytes)).getForm();
     expect(knightForm.getTextField('Kindred & Class Traits 1').getText() ?? '').toBe('');
   });
+
+  it('prints kindred glamour and knack lines even for non-casters', async () => {
+    const blank = readFileSync(BLANK_PATH);
+    const doc = makeDoc({
+      spellbook: [
+        { id: 'g1', spellName: 'Sleep', spellLevel: 0, isMemorized: false, notes: null, kind: 'kindred-glamour' },
+        { id: 'k1', spellName: 'Wood Kenning', spellLevel: 0, isMemorized: false, notes: null, kind: 'knack' },
+      ],
+    });
+    const bytes = await fillCharacterSheet(new Uint8Array(blank), docToFullCharacter(doc));
+    const form = (await PDFDocument.load(bytes)).getForm();
+    const traits = form.getTextField('Kindred & Class Traits 1').getText() ?? '';
+    expect(traits).toContain('Kindred Glamour: Sleep');
+    expect(traits).toContain('Knack: Wood Kenning');
+    expect(traits).not.toContain('Spellbook:');
+  });
 });

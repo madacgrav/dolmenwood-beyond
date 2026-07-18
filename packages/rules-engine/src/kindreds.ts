@@ -66,6 +66,21 @@ export function hasInnateGlamours(kindred: string): boolean {
   return getKindredTraits(kindred).some(t => t.name === 'Glamours');
 }
 
+/** Kindred trait names that are quasi-magical and shown on the Magic and Abilities tab. */
+export const MAGICAL_KINDRED_TRAITS = ['Glamours', 'Shape-Shifting', 'Mad Revelry', 'Knacks'] as const;
+
+/** Quasi-magical traits for this kindred (subset of getKindredTraits). */
+export function getMagicalKindredTraits(kindred: string): KindredTrait[] {
+  return getKindredTraits(kindred).filter(t =>
+    (MAGICAL_KINDRED_TRAITS as readonly string[]).includes(t.name)
+  );
+}
+
+/** True when the kindred knows a knack (trait-driven: Mossling). */
+export function hasKnacks(kindred: string): boolean {
+  return getKindredTraits(kindred).some(t => t.name === 'Knacks');
+}
+
 export function isClassAllowedForKindred(kindred: string, className: string): boolean {
   const data = getKindredData(kindred);
   if (!data) return true;

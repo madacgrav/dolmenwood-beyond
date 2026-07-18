@@ -5,6 +5,7 @@ export * from './xp';
 export * from './speed';
 export * from './advancement';
 export * from './kindreds';
+export * from './knacks';
 export * from './spells';
 export * from './skills';
 export * from './retainers';

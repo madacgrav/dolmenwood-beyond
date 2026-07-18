@@ -4,8 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useWizardStore } from '@/stores/wizard-store';
 import { createCharacter, saveCoins } from '@/lib/api/characters';
 import { insertInventoryItem } from '@/lib/api/inventory';
+import { insertCharacterSpell } from '@/lib/api/spells';
 import { parseCountSuffix } from '@/lib/inventory/parse-count';
 import { canonicalName } from '@/lib/inventory/consumables';
+import { hasInnateGlamours, hasKnacks, getSpellsForClass, getKnacks, pickRandom } from '@dolmenwood/rules-engine';
 
 interface CatalogDoc {
   name: string; itemType: string; weight: number;
@@ -52,6 +54,32 @@ async function seedInventory(characterId: string, equipment: string[], startingG
   }
 }
 
+/** Best-effort: rolls the kindred's random glamour/knack. Failures are logged and skipped. */
+async function seedKindredAbilities(characterId: string, kindred: string) {
+  try {
+    if (hasInnateGlamours(kindred)) {
+      const name = pickRandom(getSpellsForClass('Enchanter').map(s => s.name));
+      if (name) {
+        await insertCharacterSpell(characterId, {
+          character_id: characterId, spell_name: name, spell_level: 0,
+          is_memorized: false, kind: 'kindred-glamour',
+        });
+      }
+    }
+    if (hasKnacks(kindred)) {
+      const name = pickRandom(getKnacks().map(k => k.name));
+      if (name) {
+        await insertCharacterSpell(characterId, {
+          character_id: characterId, spell_name: name, spell_level: 0,
+          is_memorized: false, kind: 'knack',
+        });
+      }
+    }
+  } catch (e) {
+    console.error('kindred ability seed failed', e);
+  }
+}
+
 export default function CharacterCompletePage() {
   const router = useRouter();
   const wizard = useWizardStore();
@@ -86,6 +114,7 @@ export default function CharacterCompletePage() {
         setError(insertError);
       } else if (id) {
         await seedInventory(id, wizard.equipment, wizard.startingGold);
+        await seedKindredAbilities(id, wizard.kindred ?? 'Human');
         setCharacterId(id);
         wizard.reset();
       }

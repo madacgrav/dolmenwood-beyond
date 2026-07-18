@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ALL_KINDREDS, getKindredACBonus, getKindredLanguages, getKindredTraits, getKindredData, isClassAllowedForKindred, getKindredXPBonus, getKindredMagicResistance, hasInnateGlamours } from '../kindreds';
+import { ALL_KINDREDS, getKindredACBonus, getKindredLanguages, getKindredTraits, getKindredData, isClassAllowedForKindred, getKindredXPBonus, getKindredMagicResistance, hasInnateGlamours, getMagicalKindredTraits, hasKnacks } from '../kindreds';
 import { getMagicResistance } from '../retainers';
 
 describe('Kindreds', () => {
@@ -92,5 +92,32 @@ describe('hasInnateGlamours', () => {
     expect(hasInnateGlamours('Grimalkin')).toBe(true);
     expect(hasInnateGlamours('Human')).toBe(false);
     expect(hasInnateGlamours('Breggle')).toBe(false);
+  });
+});
+
+describe('getMagicalKindredTraits', () => {
+  it('returns Glamours for Elf', () => {
+    expect(getMagicalKindredTraits('Elf').map(t => t.name)).toEqual(['Glamours']);
+  });
+  it('returns Glamours and Shape-Shifting for Grimalkin', () => {
+    expect(getMagicalKindredTraits('Grimalkin').map(t => t.name).sort()).toEqual(['Glamours', 'Shape-Shifting']);
+  });
+  it('returns Mad Revelry for Woodgrue', () => {
+    expect(getMagicalKindredTraits('Woodgrue').map(t => t.name)).toEqual(['Mad Revelry']);
+  });
+  it('returns Knacks for Mossling', () => {
+    expect(getMagicalKindredTraits('Mossling').map(t => t.name)).toEqual(['Knacks']);
+  });
+  it('returns empty for Human and Breggle', () => {
+    expect(getMagicalKindredTraits('Human')).toEqual([]);
+    expect(getMagicalKindredTraits('Breggle')).toEqual([]);
+  });
+});
+
+describe('hasKnacks', () => {
+  it('is true only for Mossling', () => {
+    expect(hasKnacks('Mossling')).toBe(true);
+    expect(hasKnacks('Elf')).toBe(false);
+    expect(hasKnacks('Human')).toBe(false);
   });
 });
