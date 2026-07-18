@@ -24,6 +24,8 @@ interface UseSpellsArgs {
   isGlamour: boolean;
   slotsData: SlotsData | null;
   readOnly?: boolean;
+  /** Kindred grants an innate glamour (Elf/Grimalkin) — load the book even for non-casters. */
+  innateGlamours?: boolean;
 }
 
 /**
@@ -32,7 +34,7 @@ interface UseSpellsArgs {
  * rows, and applies optimistic local updates alongside Supabase writes —
  * matching the original inline behavior.
  */
-export function useSpells({ characterId, spellcaster, isGlamour, slotsData, readOnly }: UseSpellsArgs) {
+export function useSpells({ characterId, spellcaster, isGlamour, slotsData, readOnly, innateGlamours }: UseSpellsArgs) {
   const [dbSlots, setDbSlots] = useState<DBSpellSlot[]>([]);
   const [preparations, setPreparations] = useState<DBPreparation[]>([]);
   const [spells, setSpells] = useState<DBSpell[]>([]);
@@ -95,9 +97,9 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
   }, [characterId, spellcaster, isGlamour, slotsData, readOnly]);
 
   useEffect(() => {
-    if (!spellcaster) { setLoading(false); return; }
+    if (!spellcaster && !innateGlamours) { setLoading(false); return; }
     loadData();
-  }, [spellcaster, loadData]);
+  }, [spellcaster, innateGlamours, loadData]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   /** How many preparation slots are still free for a given rank */

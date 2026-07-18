@@ -389,7 +389,7 @@ const spellEntries = magic.spells.filter(s => entryKind(s) === 'spell');
 
 ### Verification
 #### Automated
-- [ ] `npm test -w @dolmenwood/web` && `npm run typecheck` && `npm run lint` pass
+- [x] web vitest (165) && `npm run typecheck` && `npm run lint` pass (non-caster persistence test landed with Phase 3 commit)
 #### Manual
 - [ ] Elf Fighter: Magic tab shows only "Glamours Known" (no slots, no prep, no Rest, no 🚫 empty state); add glamour via free text; persists on reload; API magic GET shows `slots: []`
 - [ ] Human Fighter: unchanged 🚫 "no magical abilities"
