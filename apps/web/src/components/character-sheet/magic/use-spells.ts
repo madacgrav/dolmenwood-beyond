@@ -24,6 +24,8 @@ interface UseSpellsArgs {
   isGlamour: boolean;
   slotsData: SlotsData | null;
   readOnly?: boolean;
+  /** Kindred grants an innate glamour (Elf/Grimalkin) — load the book even for non-casters. */
+  innateGlamours?: boolean;
 }
 
 /**
@@ -32,7 +34,7 @@ interface UseSpellsArgs {
  * rows, and applies optimistic local updates alongside Supabase writes —
  * matching the original inline behavior.
  */
-export function useSpells({ characterId, spellcaster, isGlamour, slotsData, readOnly }: UseSpellsArgs) {
+export function useSpells({ characterId, spellcaster, isGlamour, slotsData, readOnly, innateGlamours }: UseSpellsArgs) {
   const [dbSlots, setDbSlots] = useState<DBSpellSlot[]>([]);
   const [preparations, setPreparations] = useState<DBPreparation[]>([]);
   const [spells, setSpells] = useState<DBSpell[]>([]);
@@ -95,9 +97,9 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
   }, [characterId, spellcaster, isGlamour, slotsData, readOnly]);
 
   useEffect(() => {
-    if (!spellcaster) { setLoading(false); return; }
+    if (!spellcaster && !innateGlamours) { setLoading(false); return; }
     loadData();
-  }, [spellcaster, loadData]);
+  }, [spellcaster, innateGlamours, loadData]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   /** How many preparation slots are still free for a given rank */
@@ -176,12 +178,14 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
   }
 
   /** Returns true on success so the form can close itself. */
-  async function addSpell(rank: number, name: string): Promise<boolean> {
+  async function addSpell(rank: number, name: string, kind?: 'spell' | 'glamour' | 'rune'): Promise<boolean> {
+    const resolvedKind = kind ?? (isGlamour ? 'glamour' : 'spell');
     const payload = {
       character_id: characterId,
       spell_name: name,
-      spell_level: isGlamour ? 0 : rank,
+      spell_level: resolvedKind === 'spell' ? rank : 0,
       is_memorized: false,
+      kind: resolvedKind,
     };
     const data = await insertCharacterSpell(characterId, payload);
     if (data) {

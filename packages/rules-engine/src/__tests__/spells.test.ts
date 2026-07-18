@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getSpellSlots, isSpellcaster, SPELLCASTING_CLASSES, getSpellsForClass } from '../spells';
+import { getSpellSlots, isSpellcaster, SPELLCASTING_CLASSES, getSpellsForClass, getRunesForClass, classHasRunes, getRuneTier } from '../spells';
 
 describe('Spell Slots', () => {
   it('Cleric level 1 has no spell slots', () => {
@@ -187,5 +187,34 @@ describe('Spell Slots', () => {
     expect(SPELLCASTING_CLASSES).toContain('Cleric');
     expect(SPELLCASTING_CLASSES).toContain('Magician');
     expect(SPELLCASTING_CLASSES).toContain('Friar');
+  });
+});
+
+describe('getRunesForClass', () => {
+  it('returns 18 Enchanter runes, 6 per tier, in tier order', () => {
+    const runes = getRunesForClass('Enchanter');
+    expect(runes).toHaveLength(18);
+    expect(runes.filter(r => r.tier === 'lesser')).toHaveLength(6);
+    expect(runes.filter(r => r.tier === 'greater')).toHaveLength(6);
+    expect(runes.filter(r => r.tier === 'mighty')).toHaveLength(6);
+    expect(runes[0]).toEqual({ name: 'Deathly Blossom', tier: 'lesser' });
+  });
+
+  it('returns [] for non-rune classes', () => {
+    expect(getRunesForClass('Magician')).toEqual([]);
+    expect(getRunesForClass('Fighter')).toEqual([]);
+  });
+});
+
+describe('classHasRunes / getRuneTier', () => {
+  it('only Enchanter has runes', () => {
+    expect(classHasRunes('Enchanter')).toBe(true);
+    expect(classHasRunes('Magician')).toBe(false);
+  });
+
+  it('looks up tier by name, null for unknown', () => {
+    expect(getRuneTier('Enchanter', 'Fairy Gold')).toBe('greater');
+    expect(getRuneTier('Enchanter', 'Rune of Death')).toBe('mighty');
+    expect(getRuneTier('Enchanter', 'Homebrew Rune')).toBeNull();
   });
 });

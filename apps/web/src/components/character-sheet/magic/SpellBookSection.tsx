@@ -36,7 +36,7 @@ export function SpellBookSection({
             fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer', minHeight: '36px',
           }}
         >
-          + Add Spell
+          {isGlamour ? '+ Add Glamour' : '+ Add Spell'}
         </button>
         )}
       </div>
@@ -54,7 +54,7 @@ export function SpellBookSection({
 
       {spells.length === 0 && !showAddSpellForm && (
         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '2rem 0' }}>
-          {isGlamour ? 'No glamours recorded. Tap + Add Spell.' : 'No spells in book. Tap + Add Spell.'}
+          {isGlamour ? 'No glamours recorded. Tap + Add Glamour.' : 'No spells in book. Tap + Add Spell.'}
         </p>
       )}
 

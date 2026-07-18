@@ -39,6 +39,7 @@ const spellToUi = (characterId: string, s: SpellbookEntryDoc): DBSpell => ({
   spell_level: s.spellLevel,
   is_memorized: s.isMemorized,
   notes: s.notes ?? undefined,
+  kind: s.kind,
 });
 
 function magicDataOf(characterId: string, doc: CharacterDoc): MagicData {
@@ -67,7 +68,7 @@ export type MagicOp =
   | { op: 'rest'; restDate?: DwDate }
   | { op: 'addPreparation'; slot_rank: number; spell_name: string }
   | { op: 'setPreparationCast'; prepId: string; is_cast: boolean }
-  | { op: 'addSpell'; spell_name: string; spell_level: number; is_memorized?: boolean; notes?: string | null }
+  | { op: 'addSpell'; spell_name: string; spell_level: number; is_memorized?: boolean; notes?: string | null; kind?: 'spell' | 'glamour' | 'rune' }
   | { op: 'setSpellMemorized'; spellId: string; is_memorized: boolean }
   | { op: 'deleteSpell'; spellId: string };
 
@@ -136,12 +137,15 @@ export async function applyMagicOp(characterId: string, op: MagicOp): Promise<un
       case 'addSpell': {
         const name = String(op.spell_name ?? '').trim();
         if (!name) throw badRequest('spell_name is required');
+        // Route does no body validation — allowlist the discriminator here.
+        const kind = op.kind === 'spell' || op.kind === 'glamour' || op.kind === 'rune' ? op.kind : undefined;
         const spell: SpellbookEntryDoc = {
           id: crypto.randomUUID(),
           spellName: name,
           spellLevel: Number(op.spell_level) || 0,
           isMemorized: Boolean(op.is_memorized),
           notes: op.notes ?? null,
+          ...(kind ? { kind } : {}),
         };
         doc.spellbook = [...(doc.spellbook ?? []), spell];
         result = spellToUi(characterId, spell);

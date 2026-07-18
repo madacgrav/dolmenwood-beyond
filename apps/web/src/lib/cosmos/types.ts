@@ -76,6 +76,8 @@ export interface SpellbookEntryDoc {
   spellLevel: number;
   isMemorized: boolean;
   notes: string | null;
+  /** Discriminates spells / glamours / runes. Absent on legacy entries (infer glamour from spellLevel 0). */
+  kind?: 'spell' | 'glamour' | 'rune';
 }
 
 /** Character-owned mount (Knights get full combat stats). */

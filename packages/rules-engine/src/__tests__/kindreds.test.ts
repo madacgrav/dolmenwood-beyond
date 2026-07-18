@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ALL_KINDREDS, getKindredACBonus, getKindredLanguages, getKindredTraits, getKindredData, isClassAllowedForKindred, getKindredXPBonus, getKindredMagicResistance } from '../kindreds';
+import { ALL_KINDREDS, getKindredACBonus, getKindredLanguages, getKindredTraits, getKindredData, isClassAllowedForKindred, getKindredXPBonus, getKindredMagicResistance, hasInnateGlamours } from '../kindreds';
 import { getMagicResistance } from '../retainers';
 
 describe('Kindreds', () => {
@@ -83,5 +83,14 @@ describe('Kindreds', () => {
       // WIS 16 = +2 modifier, Elf kindred bonus +2 = +4 total
       expect(getMagicResistance(16, getKindredMagicResistance('Elf'))).toBe(4);
     });
+  });
+});
+
+describe('hasInnateGlamours', () => {
+  it('true for Elf and Grimalkin, false otherwise', () => {
+    expect(hasInnateGlamours('Elf')).toBe(true);
+    expect(hasInnateGlamours('Grimalkin')).toBe(true);
+    expect(hasInnateGlamours('Human')).toBe(false);
+    expect(hasInnateGlamours('Breggle')).toBe(false);
   });
 });
