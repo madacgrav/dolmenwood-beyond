@@ -229,7 +229,7 @@ Run app (`preview_start`), open a character sheet as owner:
 - [ ] Restock arrows for migrated character → merges into existing `Arrow` row (quantity increases, no duplicate row)
 - [ ] Restock on fresh character → new `Arrow` row, weight 1¢/unit
 - [ ] Simulate failure (devtools offline after sheet open) → error message shown, coins unchanged
-- [ ] "🛒 Restock" button visible for owner; cause found/fixed if not
+- [x] "🛒 Restock" button visible for owner; cause found/fixed if not — LIVE FINDING: trigger button renders fine, but the sheet's submit button was painted over by BottomNav (both zIndex 50); raised sheet to zIndex 100 (commit d2b7db4). This was the root cause of "restock adds nothing" + "no purchase button".
 
 ---
 
