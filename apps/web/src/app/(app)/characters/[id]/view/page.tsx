@@ -88,7 +88,7 @@ export default function CharacterViewPage() {
     { id: 'stats', label: 'Stats' },
     { id: 'combat', label: 'Combat' },
     { id: 'inventory', label: 'Inventory' },
-    { id: 'magic', label: 'Magic' },
+    { id: 'magic', label: 'Magic and Abilities' },
     { id: 'notes', label: 'Notes' },
   ];
 

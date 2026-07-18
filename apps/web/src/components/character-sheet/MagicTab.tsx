@@ -1,12 +1,13 @@
 'use client';
 import { useMemo } from 'react';
 import type { Character } from '@dolmenwood/types';
-import { getSpellSlots, isSpellcaster, classHasRunes, hasInnateGlamours } from '@dolmenwood/rules-engine';
+import { getSpellSlots, isSpellcaster, classHasRunes, hasInnateGlamours, getMagicalKindredTraits } from '@dolmenwood/rules-engine';
 import type { DBSpell } from '@/lib/api/spells';
 import { SpellSlotsSection } from './magic/SpellSlotsSection';
 import { PreparedSpellsSection } from './magic/PreparedSpellsSection';
 import { SpellBookSection } from './magic/SpellBookSection';
 import { RunesSection } from './magic/RunesSection';
+import { KindredAbilitiesSection } from './magic/KindredAbilitiesSection';
 import { useSpells } from './magic/use-spells';
 
 interface Props { character: Character; characterId: string; readOnly?: boolean; }
@@ -20,6 +21,7 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
   const isGlamour = slotsData !== null && 'glamours' in slotsData;
   const hasRunes = classHasRunes(character.characterClass);
   const innateGlamours = hasInnateGlamours(character.kindred);
+  const magicalTraits = getMagicalKindredTraits(character.kindred);
 
   const magic = useSpells({ characterId, spellcaster, isGlamour, slotsData, readOnly, innateGlamours });
 
@@ -37,7 +39,7 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
       .filter(r => !isNaN(r));
   }, [slotsData, isGlamour]);
 
-  if (!spellcaster && !innateGlamours) {
+  if (!spellcaster && magicalTraits.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
         <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🚫</div>
@@ -58,6 +60,11 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '5rem' }}>
+
+      {/* ── Section 0: Kindred Abilities (quasi-magical kindred traits) ── */}
+      {magicalTraits.length > 0 && (
+        <KindredAbilitiesSection kindred={character.kindred} traits={magicalTraits} />
+      )}
 
       {/* ── Section 1: Spell Slots / Glamour Circles (casters only) ── */}
       {spellcaster && (
