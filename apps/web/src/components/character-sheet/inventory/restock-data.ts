@@ -9,12 +9,12 @@ export interface RestockEntry {
 
 // ponytail: ammo per-unit weights are provisional — confirm against the Dolmenwood rulebook before tuning
 export const RESTOCK_ITEMS: RestockEntry[] = [
-  { name: 'Arrows',               unit: 20, priceSp: 1,    category: 'ammo', weightCoins: 0.1 },
-  { name: 'Crossbow Quarrels',    unit: 20, priceSp: 2,    category: 'ammo', weightCoins: 0.1 },
-  { name: 'Sling Stones',         unit: 20, priceSp: 0.25, category: 'ammo', weightCoins: 0.2 },
+  { name: 'Arrow',                unit: 20, priceSp: 1,    category: 'ammo', weightCoins: 0.1 },
+  { name: 'Crossbow Quarrel',     unit: 20, priceSp: 2,    category: 'ammo', weightCoins: 0.1 },
+  { name: 'Sling Stone',          unit: 20, priceSp: 0.25, category: 'ammo', weightCoins: 0.2 },
   { name: 'Oil Flask',            unit: 1,  priceSp: 1,    category: 'gear', weightCoins: 10 },
   { name: 'Torch',                unit: 1,  priceSp: 0.05, category: 'gear', weightCoins: 10 },
-  { name: 'Preserved Rations',    unit: 1,  priceSp: 1,    category: 'gear', weightCoins: 15 },
+  { name: 'Ration',               unit: 1,  priceSp: 1,    category: 'gear', weightCoins: 15 },
   { name: 'Waterskin Refill',     unit: 1,  priceSp: 0.05, category: 'gear', weightCoins: 0 },
   { name: 'Horse Feed (per day)', unit: 1,  priceSp: 0.25, category: 'gear', weightCoins: 0 },
   { name: 'Dog Feed (per day)',   unit: 1,  priceSp: 0.10, category: 'gear', weightCoins: 0 },

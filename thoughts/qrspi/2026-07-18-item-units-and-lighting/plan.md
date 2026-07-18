@@ -144,7 +144,7 @@ const existing = items.find(
 
 ### Verification
 #### Automated
-- [ ] `cd apps/web && pnpm test` passes; `pnpm typecheck && pnpm lint` pass
+- [x] `cd apps/web && pnpm test` passes; `pnpm typecheck && pnpm lint` pass
 #### Manual
 - [ ] Catalog-pick "Torches (3)" → row "Torch" qty 3
 - [ ] Restock arrows when an "Arrows" row already exists → single merged "Arrows" row (no duplicate), quantity increased
