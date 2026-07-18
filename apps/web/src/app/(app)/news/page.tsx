@@ -21,14 +21,22 @@ export default async function NewsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
           {[
             {
+              icon: '📰',
               href: 'https://necroticgnome.com/blogs/news/tagged/dolmenwood',
               title: 'Dolmenwood News',
               desc: 'Latest Dolmenwood posts from the official Necrotic Gnome blog.',
             },
             {
+              icon: '✍️',
               href: 'https://necroticgnome.com/blogs/news',
               title: 'Necrotic Gnome Blog',
               desc: 'News from the makers of Dolmenwood and Old-School Essentials.',
+            },
+            {
+              icon: '📖',
+              href: 'https://www.dolmenwood.necroticgnome.com/rules/doku.php?id=wiki:welcome',
+              title: 'Dolmenwood Wiki',
+              desc: 'The official online rules reference — classes, kindreds, magic, and more.',
             },
           ].map(link => (
             <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
@@ -38,33 +46,24 @@ export default async function NewsPage() {
                 borderRadius: '12px',
                 padding: '1rem',
                 cursor: 'pointer',
+                display: 'flex',
+                gap: '0.75rem',
+                alignItems: 'flex-start',
               }}>
-                <h2 style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: '1.1rem', color: 'var(--color-text)', margin: '0 0 0.25rem', lineHeight: 1.3 }}>
-                  {link.title} <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>↗</span>
-                </h2>
-                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
-                  {link.desc}
-                </p>
+                <span style={{ fontSize: '1.5rem', lineHeight: 1 }} aria-hidden="true">{link.icon}</span>
+                <div>
+                  <h2 style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: '1.1rem', color: 'var(--color-text)', margin: '0 0 0.25rem', lineHeight: 1.3 }}>
+                    {link.title} <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>↗</span>
+                  </h2>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+                    {link.desc}
+                  </p>
+                </div>
               </article>
             </a>
           ))}
         </div>
-        {!hasWordPress ? (
-          <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📜</div>
-            <h2 style={{ fontFamily: 'var(--font-display), Georgia, serif', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>
-              News Coming Soon
-            </h2>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
-              Connect a WordPress site to see news and updates here.<br />
-              Set{' '}
-              <code style={{ backgroundColor: 'var(--color-surface)', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.8rem' }}>
-                NEXT_PUBLIC_WORDPRESS_URL
-              </code>{' '}
-              in your environment.
-            </p>
-          </div>
-        ) : posts.length === 0 ? (
+        {!hasWordPress ? null : posts.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
             No posts found.
           </div>
