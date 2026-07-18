@@ -189,7 +189,7 @@ export interface RestockEntry {
 
 ### Verification
 #### Automated
-- [ ] `cd apps/web && pnpm test` passes; `pnpm typecheck && pnpm lint` pass
+- [x] `cd apps/web && pnpm test` passes; `pnpm typecheck && pnpm lint` pass
 #### Manual
 - [ ] Buy 3 arrows → row qty 3, cost 3 × per-item price; no "×N per purchase" text
 - [ ] Tap "+20" on Arrow → count jumps by 20; total scales per item
@@ -198,6 +198,6 @@ export interface RestockEntry {
 ---
 
 ## Cross-phase final checks
-- [ ] Repo root `pnpm typecheck && pnpm lint && pnpm test` all green
-- [ ] `git diff` limited to: `light-data.ts`, new `lib/inventory/consumables.ts`, `use-add-item.ts`, `restock-data.ts`, `use-restock.ts`, `RestockSheet.tsx`, and the two new/extended tests
-- [ ] No Lantern in `LIGHT_SOURCES`; no schema/`ActiveLightDoc`/`fix-inventory-names.ts` changes; ammo/weight math untouched
+- [x] Repo root `pnpm typecheck && pnpm lint && pnpm test` all green (163 tests)
+- [x] `git diff` limited to: `light-data.ts`, new `lib/inventory/consumables.ts`, `use-add-item.ts`, `restock-data.ts`, `use-restock.ts`, `RestockSheet.tsx`, and the two new/extended tests
+- [x] No Lantern in `LIGHT_SOURCES`; no schema/`ActiveLightDoc`/`fix-inventory-names.ts` changes; ammo/weight math untouched

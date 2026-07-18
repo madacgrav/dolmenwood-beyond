@@ -56,7 +56,7 @@ export function useRestock({ characterId, items, setItems, coins, setCoins, save
       for (const entry of RESTOCK_ITEMS) {
         const qty = restockQtys[entry.name] ?? 0;
         if (qty <= 0) continue;
-        const totalQty = qty * entry.unit;
+        const totalQty = qty; // qty is individual items; packs are just a stepper shortcut
         // Alias-aware: a new "Arrow" purchase merges into an existing "Arrows" row.
         const existing = items.find(
           i => canonicalName(i.item_name) === canonicalName(entry.name),

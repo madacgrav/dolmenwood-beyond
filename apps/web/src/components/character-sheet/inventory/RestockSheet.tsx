@@ -91,7 +91,6 @@ export function RestockSheet({ coins, controller }: Props) {
               }}>
                 <div>
                   <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text)' }}>{entry.name}</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>×{entry.unit} per purchase</div>
                 </div>
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', textAlign: 'right' }}>
                   {fmtSp(entry.priceSp)}
@@ -125,6 +124,18 @@ export function RestockSheet({ coins, controller }: Props) {
                     }}
                     aria-label={`Increase ${entry.name}`}
                   >+</button>
+                  {entry.pack != null && (
+                    <button
+                      onClick={() => setRestockQtys(q => ({ ...q, [entry.name]: (q[entry.name] ?? 0) + entry.pack! }))}
+                      style={{
+                        height: '44px', padding: '0 0.5rem', borderRadius: '6px',
+                        border: '1px solid var(--color-border)',
+                        backgroundColor: 'var(--color-bg)', color: 'var(--color-primary)',
+                        fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap',
+                      }}
+                      aria-label={`Add ${entry.pack} ${entry.name}`}
+                    >+{entry.pack}</button>
+                  )}
                 </div>
                 <span style={{
                   fontSize: '0.82rem', fontWeight: qty > 0 ? '700' : '400',
