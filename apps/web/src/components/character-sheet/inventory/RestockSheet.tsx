@@ -20,7 +20,8 @@ export function RestockSheet({ coins, controller }: Props) {
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, zIndex: 50,
+        // Above BottomNav (zIndex 50), matching the other full-screen modals.
+        position: 'fixed', inset: 0, zIndex: 100,
         backgroundColor: 'rgba(0,0,0,0.55)',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
       }}
