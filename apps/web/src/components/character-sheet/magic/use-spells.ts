@@ -176,12 +176,14 @@ export function useSpells({ characterId, spellcaster, isGlamour, slotsData, read
   }
 
   /** Returns true on success so the form can close itself. */
-  async function addSpell(rank: number, name: string): Promise<boolean> {
+  async function addSpell(rank: number, name: string, kind?: 'spell' | 'glamour' | 'rune'): Promise<boolean> {
+    const resolvedKind = kind ?? (isGlamour ? 'glamour' : 'spell');
     const payload = {
       character_id: characterId,
       spell_name: name,
-      spell_level: isGlamour ? 0 : rank,
+      spell_level: resolvedKind === 'spell' ? rank : 0,
       is_memorized: false,
+      kind: resolvedKind,
     };
     const data = await insertCharacterSpell(characterId, payload);
     if (data) {

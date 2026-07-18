@@ -268,8 +268,8 @@ it('persists and round-trips the kind discriminator', async () => {
 
 ### Verification
 #### Automated
-- [ ] `npm test -w @dolmenwood/web` — new test passes, zero existing failures
-- [ ] `npm run typecheck` passes
+- [x] `npx vitest run` in apps/web — 165 pass (includes new kind round-trip test; Phase 5's non-caster persistence test also added here)
+- [x] `npm run typecheck` passes
 #### Manual
 - [ ] Existing Magician and Enchanter sheets render unchanged (legacy entries without `kind` still labeled correctly)
 

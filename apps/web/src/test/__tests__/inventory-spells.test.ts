@@ -148,4 +148,27 @@ describe('embedded spell tracking', () => {
     await applyMagicOp(id, { op: 'deleteSpell', spellId: spell.id });
     expect((await fetchMagicData(id)).spells).toHaveLength(0);
   });
+
+  it('persists and round-trips the kind discriminator', async () => {
+    const { id } = await createCharacter({ ...INPUT, characterClass: 'Enchanter' });
+    await applyMagicOp(id, { op: 'addSpell', spell_name: 'Fairy Gold', spell_level: 0, kind: 'rune' });
+    await applyMagicOp(id, { op: 'addSpell', spell_name: 'Charm Animal', spell_level: 0, kind: 'glamour' });
+    await applyMagicOp(id, { op: 'addSpell', spell_name: 'Legacy Entry', spell_level: 0 });
+
+    const data = await fetchMagicData(id);
+    expect(data.spells.find(s => s.spell_name === 'Fairy Gold')!.kind).toBe('rune');
+    expect(data.spells.find(s => s.spell_name === 'Charm Animal')!.kind).toBe('glamour');
+    expect(data.spells.find(s => s.spell_name === 'Legacy Entry')!.kind).toBeUndefined();
+  });
+
+  it('creates no slot rows for a non-caster; glamour add round-trips (innate kindred glamours)', async () => {
+    const { id } = await createCharacter({ ...INPUT, kindred: 'Elf', characterClass: 'Fighter' });
+    let data = await fetchMagicData(id);
+    expect(data.slots).toHaveLength(0);
+
+    await applyMagicOp(id, { op: 'addSpell', spell_name: 'Bewitchment', spell_level: 0, kind: 'glamour' });
+    data = await fetchMagicData(id);
+    expect(data.slots).toHaveLength(0);
+    expect(data.spells[0]!.kind).toBe('glamour');
+  });
 });
