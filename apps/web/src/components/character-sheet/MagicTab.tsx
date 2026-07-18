@@ -1,10 +1,11 @@
 'use client';
 import { useMemo } from 'react';
 import type { Character } from '@dolmenwood/types';
-import { getSpellSlots, isSpellcaster } from '@dolmenwood/rules-engine';
+import { getSpellSlots, isSpellcaster, classHasRunes } from '@dolmenwood/rules-engine';
 import { SpellSlotsSection } from './magic/SpellSlotsSection';
 import { PreparedSpellsSection } from './magic/PreparedSpellsSection';
 import { SpellBookSection } from './magic/SpellBookSection';
+import { RunesSection } from './magic/RunesSection';
 import { useSpells } from './magic/use-spells';
 
 interface Props { character: Character; characterId: string; readOnly?: boolean; }
@@ -16,8 +17,12 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
     [spellcaster, character.characterClass, character.level]
   );
   const isGlamour = slotsData !== null && 'glamours' in slotsData;
+  const hasRunes = classHasRunes(character.characterClass);
 
   const magic = useSpells({ characterId, spellcaster, isGlamour, slotsData, readOnly });
+
+  const runeEntries = magic.spells.filter(s => s.kind === 'rune');
+  const bookEntries = magic.spells.filter(s => s.kind !== 'rune');
 
   // Valid spell ranks the class can learn at current level
   const validRanks: number[] = useMemo(() => {
@@ -79,12 +84,23 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
         characterClass={character.characterClass}
         isGlamour={isGlamour}
         validRanks={validRanks}
-        spells={magic.spells}
+        spells={bookEntries}
         readOnly={readOnly}
         onAdd={magic.addSpell}
         onToggleMemorized={magic.toggleMemorized}
         onDelete={magic.deleteSpell}
       />
+
+      {/* ── Section 4: Runes Known (rune classes only) ── */}
+      {hasRunes && (
+        <RunesSection
+          characterClass={character.characterClass}
+          runes={runeEntries}
+          readOnly={readOnly}
+          onAdd={name => magic.addSpell(0, name, 'rune')}
+          onDelete={magic.deleteSpell}
+        />
+      )}
     </div>
   );
 }

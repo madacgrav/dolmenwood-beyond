@@ -335,7 +335,7 @@ const bookEntries = magic.spells.filter(s => s.kind !== 'rune');
 
 ### Verification
 #### Automated
-- [ ] `npm run typecheck` && `npm run lint` && `npm test -w @dolmenwood/web` pass
+- [x] `npm run typecheck` && `npm run lint` && web vitest (165) pass
 #### Manual
 - [ ] Enchanter sheet: Glamour Circles → Glamours Known → Runes Known; "+ Add Glamour" button label; "+ Add Rune" opens tiered dropdown (3 optgroups, 6 each) + Other free text
 - [ ] Add "Fairy Gold" → row shows "Greater Rune"; free-text rune shows "Rune"; delete works; entries survive reload; glamour list does NOT show the rune (split works)
