@@ -401,12 +401,16 @@ proposal border, dimmed past sessions.
 
 ### Verification
 #### Automated
-- [ ] test + typecheck + lint pass — full suite final run
+- [x] test + typecheck + lint pass — full suite final run (365 tests)
 #### Manual
-- [ ] Schedule: propose → vote → auto-session; RSVP from row; edit/delete gated to DM/owner; calendar reachable
-- [ ] Quests/NPCs/Bank: CRUD flows unchanged, restyled
-- [ ] Every redesigned screen in dark theme, incl. sheet + hub + empty states
-- [ ] Side-by-side vs mockup gallery: shell, Stats, Inventory, Party, Schedule, empty states
+- [ ] Schedule: propose → vote → auto-session; RSVP from expanded row; edit/delete gated to DM/owner; calendar reachable (auth-gated, user to verify)
+- [ ] Quests/NPCs/Bank: CRUD flows unchanged, restyled (auth-gated)
+- [x] Dark theme spot-checked in browser (campaign segmented nav, app-bar, tokens resolve dark values); auth-gated screens pending user
+- [ ] Side-by-side vs mockup gallery: shell, Stats, Inventory, Party, Schedule, empty states (user)
+
+**Phase-6 notes**: session rows are now single-line expandable (tap row for
+notes/RSVP/edit); list is default view with a text-button toggle to calendar;
+MagicTab's small non-caster empty state left as-is (not a campaign surface).
 
 ---
 

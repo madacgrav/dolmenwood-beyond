@@ -11,6 +11,7 @@ import { SessionForm, type SessionFormField } from '@/components/campaign/schedu
 import { SessionCalendar } from '@/components/campaign/schedule/SessionCalendar';
 import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
 import { ProposalsSection } from '@/components/campaign/schedule/ProposalsSection';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 function firstOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -166,12 +167,7 @@ export function ScheduleTab({ userId }: { userId: string }) {
   }
 
   if (campaigns.length === 0 && !loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📅</div>
-        <p>Join or create a campaign to schedule sessions.</p>
-      </div>
-    );
+    return <EmptyState emoji="📅" headline="No Schedule Yet" message="Join or create a campaign to schedule sessions." />;
   }
 
   return (
@@ -194,7 +190,9 @@ export function ScheduleTab({ userId }: { userId: string }) {
       )}
 
       {campaignId && (
-        <ProposalsSection campaignId={campaignId} userId={userId} isDM={isDM} roster={roster} onConfirmed={refetch} />
+        <div style={{ border: '1px solid var(--color-gold)', borderRadius: 'var(--radius-md)', padding: '0.625rem' }}>
+          <ProposalsSection campaignId={campaignId} userId={userId} isDM={isDM} roster={roster} onConfirmed={refetch} />
+        </div>
       )}
 
       {showForm ? (
@@ -213,8 +211,9 @@ export function ScheduleTab({ userId }: { userId: string }) {
         <button
           onClick={() => setShowForm(true)}
           style={{
-            padding: '0.625rem', borderRadius: '8px', border: 'none',
-            backgroundColor: 'var(--color-primary)', color: 'white',
+            padding: '0.625rem', borderRadius: '8px',
+            border: '1px dashed var(--color-border)',
+            backgroundColor: 'transparent', color: 'var(--color-primary)',
             fontWeight: '600', fontSize: '0.875rem', cursor: 'pointer', minHeight: '44px',
           }}
         >
@@ -222,27 +221,18 @@ export function ScheduleTab({ userId }: { userId: string }) {
         </button>
       )}
 
-      {/* List / grid toggle */}
-      <div style={{ display: 'flex', gap: '0.375rem' }}>
-        {(['list', 'grid'] as const).map(v => {
-          const active = view === v;
-          return (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              style={{
-                flex: 1, padding: '0.4rem', borderRadius: '8px',
-                border: active ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-                backgroundColor: active ? 'var(--color-primary)' : 'transparent',
-                color: active ? 'white' : 'var(--color-text-muted)',
-                fontWeight: active ? '700' : '500',
-                fontSize: '0.8rem', cursor: 'pointer', minHeight: '36px',
-              }}
-            >
-              {v === 'list' ? '📋 List' : '📅 Month'}
-            </button>
-          );
-        })}
+      {/* Calendar is the secondary view — list is the default */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => { setView(v => v === 'list' ? 'grid' : 'list'); setSelectedDay(null); }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--color-primary)', fontSize: '0.8rem', fontWeight: 600,
+            padding: '0.25rem 0.5rem', minHeight: '36px',
+          }}
+        >
+          {view === 'list' ? '📅 Calendar view' : '📋 List view'}
+        </button>
       </div>
 
       {loading ? (

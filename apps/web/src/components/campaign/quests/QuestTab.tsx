@@ -7,6 +7,7 @@ import {
 import { listMyCampaignNames } from '@/lib/api/campaigns';
 import { QuestList } from './QuestList';
 import { QuestForm } from './QuestForm';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface CampaignOption {
   id: string;
@@ -114,10 +115,7 @@ export function QuestTab() {
 
   if (campaigns.length === 0 && !loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📜</div>
-        <p>Join or create a campaign to track quests.</p>
-      </div>
+      <EmptyState emoji="📜" headline="No Quests Yet" message="Join or create a campaign to track quests." />
     );
   }
 

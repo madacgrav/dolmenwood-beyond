@@ -5,6 +5,7 @@ import { loadNpcs, createNpc, updateNpc, deleteNpc, type Npc, type NpcInput } fr
 import { listMyCampaignNames } from '@/lib/api/campaigns';
 import { NpcList } from './NpcList';
 import { NpcForm } from './NpcForm';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface CampaignOption {
   id: string;
@@ -104,10 +105,7 @@ export function NpcTab({ userId }: { userId: string }) {
 
   if (campaigns.length === 0 && !loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>👥</div>
-        <p>Join or create a campaign to track NPCs.</p>
-      </div>
+      <EmptyState emoji="👥" headline="No NPCs Yet" message="Join or create a campaign to track NPCs." />
     );
   }
 
