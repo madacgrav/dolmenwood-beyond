@@ -277,13 +277,17 @@ tab type).
 
 ### Verification
 #### Automated
-- [ ] test + typecheck + lint pass (inventory, magic, pdf, AC tests green)
-#### Manual
+- [x] test + typecheck + lint pass (365 tests total; inventory, magic, pdf tests green)
+#### Manual (requires authed session — user to verify)
 - [ ] Combat: breakdown rows sum to total with armour+shield equipped; saves roll inside collapsed section
-- [ ] Inventory: compact hero shows; restock sheet opens above nav; spend/bank flows work behind Coins section; FAB positioned right
+- [ ] Inventory: compact hero shows; restock sheet opens above nav; spend/bank flows work behind "Spend & Bank" section; FAB positioned right
 - [ ] Magic (Enchanter + Elf/Grimalkin + rune class + non-caster fighter): correct sections, roll/pick glamour + knack inside collapsed section, prepared-cast flow intact
 - [ ] Notes: 3 sub-tabs styled, autosave works
 - [ ] PDF export unchanged (prints all data regardless of collapse state)
+
+**Phase-4 notes**: Combat render order now AC → Attack → HitDice expanded, then
+collapsed Conditions/Ammo/Saves/Mounts (Conditions moved from top); Spend+Bank
+combined behind one "Spend & Bank" CollapsibleSection; inventory FAB offset 96→80px.
 
 ---
 

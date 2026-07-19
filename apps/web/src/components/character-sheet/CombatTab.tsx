@@ -13,6 +13,7 @@ import { SavingThrowsSection } from './combat/SavingThrowsSection';
 import { MountsSection } from './combat/MountsSection';
 import { useAmmoTracking } from './combat/use-ammo-tracking';
 import { useMounts } from './combat/use-mounts';
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection';
 
 interface Props {
   character: Character;
@@ -43,29 +44,27 @@ export function CombatTab({ character, characterId, acBreakdown, readOnly = fals
   const dexMod = getAbilityModifier(character.abilityScores.dex);
   const magicResistance = getMagicResistance(character.abilityScores.wis, getKindredMagicResistance(character.kindred));
 
-  const ac = acBreakdown?.total ?? 10;
   const hitDie = getHitDie(character.characterClass);
 
   const battleAmmoName = ammo.ammoItems.find(a => a.id === ammo.battleAmmoId)?.item_name ?? 'Ammo';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      {/* Conditions */}
-      <ConditionsSection />
-
       {/* AC Breakdown */}
-      <ArmourClassSection ac={ac} dexScore={character.abilityScores.dex} dexMod={dexMod} />
+      <ArmourClassSection breakdown={acBreakdown} dexScore={character.abilityScores.dex} />
 
       {/* Attack — Equipped Weapons */}
       <AttackSection weapons={weapons} attackBonus={attackBonus} strMod={strMod} dexMod={dexMod} />
 
       {/* Ammo Counter */}
       {(hasRangedWeapon || ammo.ammoItems.length > 0) && (
-        <AmmoSection
-          ammoItems={ammo.ammoItems}
-          adjustAmmo={ammo.adjustAmmo}
-          openBattle={ammo.openBattle}
-        />
+        <CollapsibleSection title="Ammo" count={ammo.ammoItems.length}>
+          <AmmoSection
+            ammoItems={ammo.ammoItems}
+            adjustAmmo={ammo.adjustAmmo}
+            openBattle={ammo.openBattle}
+          />
+        </CollapsibleSection>
       )}
 
       {/* Battle Modal */}
@@ -85,11 +84,22 @@ export function CombatTab({ character, characterId, acBreakdown, readOnly = fals
       {/* Hit Dice */}
       <HitDiceSection characterClass={character.characterClass} level={character.level} hitDie={hitDie} />
 
+      {/* Conditions */}
+      <CollapsibleSection title="Conditions">
+        <ConditionsSection />
+      </CollapsibleSection>
+
       {/* Saving Throws */}
-      {saves && <SavingThrowsSection saves={saves as Record<string, number>} magicResistance={magicResistance} readOnly={readOnly} />}
+      {saves && (
+        <CollapsibleSection title="Saving Throws" count={5}>
+          <SavingThrowsSection saves={saves as Record<string, number>} magicResistance={magicResistance} readOnly={readOnly} />
+        </CollapsibleSection>
+      )}
 
       {/* Mounts */}
-      <MountsSection readOnly={readOnly} {...mountsState} />
+      <CollapsibleSection title="Mounts" count={mountsState.mounts?.length ?? 0}>
+        <MountsSection readOnly={readOnly} {...mountsState} />
+      </CollapsibleSection>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { SpellBookSection } from './magic/SpellBookSection';
 import { RunesSection } from './magic/RunesSection';
 import { KindredAbilitiesSection } from './magic/KindredAbilitiesSection';
 import { useSpells } from './magic/use-spells';
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection';
 
 interface Props { character: Character; characterId: string; readOnly?: boolean; }
 
@@ -68,6 +69,10 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
 
       {/* ── Section 0: Kindred Abilities (quasi-magical kindred traits) ── */}
       {magicalTraits.length > 0 && (
+        <CollapsibleSection
+          title="Kindred Abilities"
+          count={magicalTraits.length + (kindredGlamourEntry ? 1 : 0) + (knackEntry ? 1 : 0)}
+        >
         <KindredAbilitiesSection
           kindred={character.kindred}
           traits={magicalTraits}
@@ -87,6 +92,7 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
           onPickKnack={name => magic.addSpell(0, name, 'knack')}
           onDelete={magic.deleteSpell}
         />
+        </CollapsibleSection>
       )}
 
       {/* ── Section 1: Spell Slots / Glamour Circles (casters only) ── */}
@@ -118,41 +124,47 @@ export function MagicTab({ character, characterId, readOnly }: Props) {
 
       {/* ── Section 3: Spell Book (slot casters only) ── */}
       {spellcaster && !isGlamour && (
-        <SpellBookSection
-          characterClass={character.characterClass}
-          isGlamour={false}
-          validRanks={validRanks}
-          spells={spellEntries}
-          readOnly={readOnly}
-          onAdd={(rank, name) => magic.addSpell(rank, name, 'spell')}
-          onToggleMemorized={magic.toggleMemorized}
-          onDelete={magic.deleteSpell}
-        />
+        <CollapsibleSection title="Spell Book" count={spellEntries.length}>
+          <SpellBookSection
+            characterClass={character.characterClass}
+            isGlamour={false}
+            validRanks={validRanks}
+            spells={spellEntries}
+            readOnly={readOnly}
+            onAdd={(rank, name) => magic.addSpell(rank, name, 'spell')}
+            onToggleMemorized={magic.toggleMemorized}
+            onDelete={magic.deleteSpell}
+          />
+        </CollapsibleSection>
       )}
 
       {/* ── Section 3b: Glamours Known (Enchanter class glamours) ── */}
       {isGlamour && (
-        <SpellBookSection
-          characterClass={character.characterClass}
-          isGlamour={true}
-          validRanks={[]}
-          spells={glamourEntries}
-          readOnly={readOnly}
-          onAdd={(rank, name) => magic.addSpell(rank, name, 'glamour')}
-          onToggleMemorized={magic.toggleMemorized}
-          onDelete={magic.deleteSpell}
-        />
+        <CollapsibleSection title="Glamours Known" count={glamourEntries.length}>
+          <SpellBookSection
+            characterClass={character.characterClass}
+            isGlamour={true}
+            validRanks={[]}
+            spells={glamourEntries}
+            readOnly={readOnly}
+            onAdd={(rank, name) => magic.addSpell(rank, name, 'glamour')}
+            onToggleMemorized={magic.toggleMemorized}
+            onDelete={magic.deleteSpell}
+          />
+        </CollapsibleSection>
       )}
 
       {/* ── Section 4: Runes Known (rune classes only) ── */}
       {hasRunes && (
-        <RunesSection
-          characterClass={character.characterClass}
-          runes={runeEntries}
-          readOnly={readOnly}
-          onAdd={name => magic.addSpell(0, name, 'rune')}
-          onDelete={magic.deleteSpell}
-        />
+        <CollapsibleSection title="Runes Known" count={runeEntries.length}>
+          <RunesSection
+            characterClass={character.characterClass}
+            runes={runeEntries}
+            readOnly={readOnly}
+            onAdd={name => magic.addSpell(0, name, 'rune')}
+            onDelete={magic.deleteSpell}
+          />
+        </CollapsibleSection>
       )}
     </div>
   );
