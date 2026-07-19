@@ -45,7 +45,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${cinzel.variable} ${jetbrainsMono.variable} ${inter.variable}`}>
+    // suppressHydrationWarning: the pre-paint theme script legitimately sets
+    // data-theme on <html> before hydration, so the attribute mismatch is expected.
+    <html lang="en" className={`${cinzel.variable} ${jetbrainsMono.variable} ${inter.variable}`} suppressHydrationWarning>
       <head>
         {/* Pre-paint: apply stored theme choice before first render to avoid a flash */}
         <script
