@@ -4,22 +4,13 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   loadQuests, createQuest, updateQuest, deleteQuest, type Quest, type QuestInput,
 } from '@/lib/api/quests';
-import { listMyCampaignNames } from '@/lib/api/campaigns';
 import { QuestList } from './QuestList';
 import { QuestForm } from './QuestForm';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-interface CampaignOption {
-  id: string;
-  name: string;
-  is_dm: boolean;
-}
-
 const EMPTY_INPUT: QuestInput = { title: '', giver: '', status: 'active', note: '' };
 
-export function QuestTab() {
-  const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
-  const [campaignId, setCampaignId] = useState('');
+export function QuestTab({ campaignId }: { campaignId: string }) {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,17 +19,6 @@ export function QuestTab() {
   const [formValue, setFormValue] = useState<QuestInput>(EMPTY_INPUT);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    async function loadCampaigns() {
-      const list: CampaignOption[] = await listMyCampaignNames();
-      setCampaigns(list);
-      const first = list[0];
-      if (first) setCampaignId(first.id);
-      else setLoading(false);
-    }
-    loadCampaigns();
-  }, []);
 
   const refetch = useCallback(async () => {
     if (!campaignId) return;
@@ -113,7 +93,7 @@ export function QuestTab() {
     }
   }
 
-  if (campaigns.length === 0 && !loading) {
+  if (!campaignId) {
     return (
       <EmptyState emoji="📜" headline="No Quests Yet" message="Join or create a campaign to track quests." />
     );
@@ -121,23 +101,6 @@ export function QuestTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {campaigns.length > 1 && (
-        <select
-          value={campaignId}
-          onChange={e => setCampaignId(e.target.value)}
-          style={{
-            padding: '0.5rem 0.625rem', borderRadius: '8px',
-            border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-surface)', color: 'var(--color-text)',
-            fontSize: '0.9rem', minHeight: '40px',
-          }}
-        >
-          {campaigns.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      )}
-
       {showForm ? (
         <QuestForm
           mode={editingId ? 'edit' : 'create'}

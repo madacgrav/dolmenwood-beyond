@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { loadSchedule, createSession, updateSession, deleteSession, setRsvp, type RsvpStatus, type Session } from '@/lib/api/schedule';
-import { listMyCampaignNames } from '@/lib/api/campaigns';
 import { loadRoster, type RosterMember } from '@/lib/api/roster';
 import { toDatetimeLocal } from '@/lib/format';
 import { sameDay } from '@/lib/calendar';
@@ -17,15 +16,14 @@ function firstOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
-interface CampaignOption {
-  id: string;
-  name: string;
-  is_dm: boolean;
+interface Props {
+  userId: string;
+  campaignId: string;
+  /** DM-ship of the selected campaign (derived by the page-level rail). */
+  isDM: boolean;
 }
 
-export function ScheduleTab({ userId }: { userId: string }) {
-  const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
-  const [campaignId, setCampaignId] = useState('');
+export function ScheduleTab({ userId, campaignId, isDM }: Props) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [roster, setRoster] = useState<RosterMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,21 +46,6 @@ export function ScheduleTab({ userId }: { userId: string }) {
   const [view, setView] = useState<'list' | 'grid'>('list');
   const [month, setMonth] = useState<Date>(() => firstOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-
-  // DM-ship is per campaign: derived from the selected campaign, not the account.
-  const isDM = campaigns.find(c => c.id === campaignId)?.is_dm ?? false;
-
-  // Load campaigns the user owns or belongs to.
-  useEffect(() => {
-    async function loadCampaigns() {
-      const list: CampaignOption[] = await listMyCampaignNames();
-      setCampaigns(list);
-      const first = list[0];
-      if (first) setCampaignId(first.id);
-      else setLoading(false);
-    }
-    loadCampaigns();
-  }, []);
 
   const refetch = useCallback(async () => {
     if (!campaignId) return;
@@ -166,29 +149,12 @@ export function ScheduleTab({ userId }: { userId: string }) {
     }
   }
 
-  if (campaigns.length === 0 && !loading) {
+  if (!campaignId) {
     return <EmptyState emoji="📅" headline="No Schedule Yet" message="Join or create a campaign to schedule sessions." />;
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {campaigns.length > 1 && (
-        <select
-          value={campaignId}
-          onChange={e => setCampaignId(e.target.value)}
-          style={{
-            padding: '0.5rem 0.625rem', borderRadius: '8px',
-            border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-surface)', color: 'var(--color-text)',
-            fontSize: '0.9rem', minHeight: '40px',
-          }}
-        >
-          {campaigns.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      )}
-
       {campaignId && (
         <div style={{ border: '1px solid var(--color-gold)', borderRadius: 'var(--radius-md)', padding: '0.625rem' }}>
           <ProposalsSection campaignId={campaignId} userId={userId} isDM={isDM} roster={roster} onConfirmed={refetch} />

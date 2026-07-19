@@ -21,12 +21,12 @@ interface CharacterBank {
   showHistory: boolean;
 }
 
-export function BankingTab() {
+export function BankingTab({ campaignId }: { campaignId?: string }) {
   const [entries, setEntries] = useState<CharacterBank[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const overview = await dmBankOverview();
+    const overview = await dmBankOverview(campaignId);
     setEntries(overview.map(c => ({
       character: c,
       balance: c.balance,
@@ -39,7 +39,7 @@ export function BankingTab() {
       showHistory: false,
     })));
     setLoading(false);
-  }, []);
+  }, [campaignId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

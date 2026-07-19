@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadDMCampaigns, loadPlayerCampaigns, createCampaign, joinCampaign } from '@/lib/api/campaigns';
 import type { CampaignData, PackAnimal } from '@/lib/api/campaigns';
+import { listCharacters } from '@/lib/api/characters';
 import { DMCampaignCard } from './overview/DMCampaignCard';
 import { PlayerCampaignCard } from './overview/PlayerCampaignCard';
 import { CampaignCreateForm } from './overview/CampaignCreateForm';
@@ -10,15 +11,23 @@ import { JoinCampaignForm } from './overview/JoinCampaignForm';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection';
 
+interface Props {
+  userId: string;
+  /** Campaign selected in the page-level rail; empty = no campaigns yet. */
+  campaignId: string;
+  /** Notify the page when join/create changes the campaign list. */
+  onCampaignsChanged: () => void;
+}
+
 /**
- * Party tab — one role-aware card per campaign: the viewer's DM'd campaigns get
- * the DM card, campaigns they only play in get the player card. Join/create
- * flows collapse behind a heading (or the empty state when there's nothing).
+ * Party tab for ONE campaign: the DM card if the viewer runs it, otherwise the
+ * player card. Join/create flows collapse behind a heading (or the empty state).
  */
-export function OverviewTab({ userId }: { userId: string }) {
+export function OverviewTab({ userId, campaignId, onCampaignsChanged }: Props) {
   const [dmCampaigns, setDmCampaigns] = useState<CampaignData[]>([]);
   const [packAnimals, setPackAnimals] = useState<Record<string, PackAnimal[]>>({});
   const [playerCampaigns, setPlayerCampaigns] = useState<CampaignData[]>([]);
+  const [myCharacters, setMyCharacters] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Create form state
@@ -30,15 +39,21 @@ export function OverviewTab({ userId }: { userId: string }) {
   // Join form state
   const [showJoin, setShowJoin] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
+  const [joinCharacterId, setJoinCharacterId] = useState('');
   const [joinError, setJoinError] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);
   const [joinSuccess, setJoinSuccess] = useState('');
 
   const load = useCallback(async () => {
-    const [dm, player] = await Promise.all([loadDMCampaigns(), loadPlayerCampaigns()]);
+    const [dm, player, chars] = await Promise.all([
+      loadDMCampaigns(),
+      loadPlayerCampaigns(),
+      listCharacters(),
+    ]);
     setDmCampaigns(dm?.campaigns ?? []);
     setPackAnimals(dm?.packAnimals ?? {});
     setPlayerCampaigns(player);
+    setMyCharacters(chars.characters.map(c => ({ id: c.id, name: c.name })));
     setLoading(false);
   }, []);
 
@@ -59,15 +74,17 @@ export function OverviewTab({ userId }: { userId: string }) {
     setCreating(false);
     setCreateLoading(false);
     await load();
+    onCampaignsChanged();
   }
 
   async function handleJoin() {
     const code = inviteCode.trim().toUpperCase();
     if (!code) { setJoinError('Enter an invite code.'); return; }
+    if (!joinCharacterId) { setJoinError('Pick which character is joining.'); return; }
     setJoinLoading(true);
     setJoinError('');
     setJoinSuccess('');
-    const { data, error } = await joinCampaign(code);
+    const { data, error } = await joinCampaign(code, joinCharacterId);
     if (error) {
       setJoinError(error.message);
       setJoinLoading(false);
@@ -82,6 +99,7 @@ export function OverviewTab({ userId }: { userId: string }) {
     setJoinSuccess('Joined! Welcome to the party.');
     setJoinLoading(false);
     await load();
+    onCampaignsChanged();
   }
 
   if (loading) {
@@ -94,9 +112,9 @@ export function OverviewTab({ userId }: { userId: string }) {
     );
   }
 
-  const dmIds = new Set(dmCampaigns.map(c => c.id));
-  const playerOnly = playerCampaigns.filter(c => !dmIds.has(c.id));
-  const hasAny = dmCampaigns.length > 0 || playerOnly.length > 0;
+  const dmCampaign = dmCampaigns.find(c => c.id === campaignId);
+  const playerCampaign = playerCampaigns.find(c => c.id === campaignId);
+  const hasAny = dmCampaigns.length > 0 || playerCampaigns.length > 0;
 
   const joinForm = (
     <JoinCampaignForm
@@ -107,6 +125,9 @@ export function OverviewTab({ userId }: { userId: string }) {
       hasCampaigns={hasAny}
       onCodeChange={code => { setInviteCode(code.toUpperCase()); setJoinError(''); setJoinSuccess(''); }}
       onJoin={handleJoin}
+      characters={myCharacters}
+      characterId={joinCharacterId}
+      onCharacterChange={setJoinCharacterId}
     />
   );
 
@@ -163,18 +184,22 @@ export function OverviewTab({ userId }: { userId: string }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {dmCampaigns.map(campaign => (
+      {dmCampaign && (
         <DMCampaignCard
-          key={campaign.id}
-          campaign={campaign}
-          packAnimals={packAnimals[campaign.id] ?? []}
+          campaign={dmCampaign}
+          packAnimals={packAnimals[dmCampaign.id] ?? []}
           onRefresh={load}
         />
-      ))}
+      )}
 
-      {playerOnly.map(campaign => (
-        <PlayerCampaignCard key={campaign.id} campaign={campaign} userId={userId} />
-      ))}
+      {!dmCampaign && playerCampaign && (
+        <PlayerCampaignCard
+          campaign={playerCampaign}
+          userId={userId}
+          myCharacters={myCharacters}
+          onRefresh={load}
+        />
+      )}
 
       <CollapsibleSection title="Join or Create a Campaign">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

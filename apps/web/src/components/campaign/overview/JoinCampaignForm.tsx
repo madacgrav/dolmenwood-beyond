@@ -8,9 +8,13 @@ interface Props {
   hasCampaigns: boolean;
   onCodeChange: (code: string) => void;
   onJoin: () => void;
+  /** Enrollment is per character: the invite enrolls exactly one. */
+  characters: { id: string; name: string }[];
+  characterId: string;
+  onCharacterChange: (id: string) => void;
 }
 
-export function JoinCampaignForm({ inviteCode, error, success, loading, hasCampaigns, onCodeChange, onJoin }: Props) {
+export function JoinCampaignForm({ inviteCode, error, success, loading, hasCampaigns, onCodeChange, onJoin, characters, characterId, onCharacterChange }: Props) {
   return (
     <div style={{
       backgroundColor: 'var(--color-surface)',
@@ -21,6 +25,23 @@ export function JoinCampaignForm({ inviteCode, error, success, loading, hasCampa
       <h3 style={{ fontFamily: 'var(--font-display), Georgia, serif', fontSize: '0.95rem', color: 'var(--color-text)', margin: '0 0 0.75rem' }}>
         {hasCampaigns ? '＋ Join Another Campaign' : 'Enter Invite Code'}
       </h3>
+      <select
+        value={characterId}
+        onChange={e => onCharacterChange(e.target.value)}
+        aria-label="Character to join with"
+        style={{
+          width: '100%', marginBottom: '0.5rem',
+          padding: '0.5rem 0.625rem', borderRadius: '6px',
+          border: '1px solid var(--color-border)',
+          backgroundColor: 'var(--color-bg)', color: 'var(--color-text)',
+          fontSize: '0.875rem', minHeight: '44px', boxSizing: 'border-box',
+        }}
+      >
+        <option value="">Which character is joining?</option>
+        {characters.map(c => (
+          <option key={c.id} value={c.id}>{c.name}</option>
+        ))}
+      </select>
       <div style={{ display: 'flex', gap: '0.5rem' }}>
         <input
           type="text"
