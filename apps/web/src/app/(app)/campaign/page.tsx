@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { BankingTab } from '@/components/campaign/BankingTab';
 import { OverviewTab } from '@/components/campaign/OverviewTab';
 import { ScheduleTab } from '@/components/campaign/ScheduleTab';
 import { NpcTab } from '@/components/campaign/npcs/NpcTab';
 import { QuestTab } from '@/components/campaign/quests/QuestTab';
+import { SegmentedNav } from '@/components/campaign/SegmentedNav';
+import { usePageHeader } from '@/components/layout/PageHeaderContext';
 import { loadDMCampaigns } from '@/lib/api/campaigns';
 
 type TabId = 'overview' | 'bank' | 'schedule' | 'npcs' | 'quests';
@@ -31,15 +33,28 @@ export default function CampaignPage() {
     init();
   }, []);
 
-  const tabs: { id: TabId; label: string; dmOnly?: boolean }[] = [
-    { id: 'overview', label: '⚔️ Party' },
-    { id: 'bank', label: '🏦 Bank', dmOnly: true },
-    { id: 'schedule', label: '📅 Schedule' },
-    { id: 'npcs', label: '👥 NPCs' },
-    { id: 'quests', label: '📜 Quests' },
+  const tabs: { id: TabId; label: string; emoji: string; dmOnly?: boolean }[] = [
+    { id: 'overview', label: 'Party', emoji: '⚔️' },
+    { id: 'schedule', label: 'Schedule', emoji: '📅' },
+    { id: 'quests', label: 'Quests', emoji: '📜' },
+    { id: 'npcs', label: 'NPCs', emoji: '👥' },
+    { id: 'bank', label: 'Bank', emoji: '🏦', dmOnly: true },
   ];
 
   const visibleTabs = tabs.filter(t => !t.dmOnly || hasDMCampaigns);
+
+  usePageHeader(useMemo(() => ({
+    title: 'Campaign',
+    action: (
+      <Link
+        href="/campaign/houses"
+        style={{ fontSize: '1.1rem', textDecoration: 'none', minWidth: '40px', minHeight: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+        aria-label="Noble Houses"
+      >
+        🏰
+      </Link>
+    ),
+  }), []));
 
   if (loading) {
     return (
@@ -51,49 +66,20 @@ export default function CampaignPage() {
 
   return (
     <div style={{ minHeight: '100dvh', backgroundColor: 'var(--color-bg)', paddingBottom: '5rem' }}>
-      {/* Header */}
-      <div style={{ padding: '1.25rem 1rem 0', maxWidth: '600px', margin: '0 auto' }}>
-        <h1 style={{
-          fontFamily: 'var(--font-display), Georgia, serif',
-          fontSize: '1.5rem', color: 'var(--color-primary)',
-          margin: '0 0 0.25rem',
-        }}>
-          Campaign
-        </h1>
-        <Link href="/campaign/houses" style={{ display: 'inline-block', fontSize: '0.8rem', color: 'var(--color-primary)', textDecoration: 'none', marginBottom: '0.75rem' }}>
-          🏰 Noble Houses →
-        </Link>
-      </div>
-
-      {/* Tabs */}
+      {/* Section nav */}
       {visibleTabs.length > 1 && (
         <div style={{
           position: 'sticky', top: 0, zIndex: 10,
           backgroundColor: 'var(--color-bg)',
-          borderBottom: '1px solid var(--color-border)',
-          display: 'flex', maxWidth: '600px', margin: '0 auto',
+          padding: '0.75rem 1rem 0.5rem',
         }}>
-          {visibleTabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                flex: '1 0 auto',
-                padding: '0.625rem 0.75rem',
-                border: 'none',
-                backgroundColor: 'transparent',
-                color: activeTab === tab.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                fontWeight: activeTab === tab.id ? '700' : '400',
-                fontSize: '0.875rem',
-                cursor: 'pointer',
-                borderBottom: activeTab === tab.id ? '2px solid var(--color-primary)' : '2px solid transparent',
-                minHeight: '44px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <SegmentedNav
+              items={visibleTabs}
+              active={activeTab}
+              onChange={id => setActiveTab(id as TabId)}
+            />
+          </div>
         </div>
       )}
 
