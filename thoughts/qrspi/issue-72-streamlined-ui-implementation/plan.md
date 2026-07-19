@@ -218,12 +218,12 @@ sticky + `overflowX:auto` + 44px targets.
 ### Verification
 #### Automated
 - [x] test + typecheck + lint pass (incl. new CollapsibleSection test — 173 web tests)
-#### Manual (requires authed session — blocked locally by missing AUTH_SECRET; user to verify)
-- [ ] Owner sheet: app-bar shows name + Edit + ⋮ (all 4 menu items work: XP log, level-up log, PDF download, delete)
-- [ ] `/view` as non-owner: badge in app-bar, DM XP-correction still works
-- [ ] Hero: portrait upload, HP ±, XP add/set, Level-Up pulse all functional
-- [ ] Stats: ability grid + glance pill visible; 5 collapsed sections expand; pill "Details" jumps to Combat tab
-- [ ] Sheet dividers styled on owner AND view routes; dark theme legible
+#### Manual (verified in browser 2026-07-18 with authed session, prod data — read-only interactions only)
+- [x] Owner sheet: app-bar shows name + Edit + ⋮ with all 4 menu items; XP History navigation confirmed (delete not clicked — prod data)
+- [ ] `/view` as non-owner: badge in app-bar, DM XP-correction still works (needs a second account; user to verify)
+- [x] Hero renders (portrait, HP/XP bars, XP-mod badge); mutation flows (upload/HP±/XP) not exercised against prod — visually intact
+- [x] Stats: ability grid w/ gold primes + glance pill; collapsed sections expand (Saves verified); "Details →" jumps to Combat tab
+- [x] Sheet dividers styled; dark theme legible (verified on sheet + characters list)
 
 **Phase-3 notes**: inner-section duplicate `<h3>`s hidden via one global rule
 (`.collapsible-body > section > h3:first-child`); PortraitButton gained a `size`
@@ -278,12 +278,12 @@ tab type).
 ### Verification
 #### Automated
 - [x] test + typecheck + lint pass (365 tests total; inventory, magic, pdf tests green)
-#### Manual (requires authed session — user to verify)
-- [ ] Combat: breakdown rows sum to total with armour+shield equipped; saves roll inside collapsed section
-- [ ] Inventory: compact hero shows; restock sheet opens above nav; spend/bank flows work behind "Spend & Bank" section; FAB positioned right
-- [ ] Magic (Enchanter + Elf/Grimalkin + rune class + non-caster fighter): correct sections, roll/pick glamour + knack inside collapsed section, prepared-cast flow intact
-- [ ] Notes: 3 sub-tabs styled, autosave works
-- [ ] PDF export unchanged (prints all data regardless of collapse state)
+#### Manual (verified in browser 2026-07-18 where read-only)
+- [x] Combat: breakdown sums (Base 10 + DEX −1 = 9, unarmoured case + hint); saves render rollable inside collapsed section (armour+shield case pending a kitted character)
+- [x] Inventory: compact hero (44px, HP only); Spend & Bank + Light Sources collapsed; Restock button + FAB positioned right (purchase flow not exercised)
+- [x] Magic (Elf Enchanter): Kindred Abilities collapsed w/ count, roll/pick glamour UI intact inside; Glamour Circles expanded; Glamours/Runes collapsed w/ counts (roll not clicked — prod write)
+- [ ] Notes: 3 sub-tabs styled, autosave works (user to verify)
+- [ ] PDF export output unchanged (user to verify download)
 
 **Phase-4 notes**: Combat render order now AC → Attack → HitDice expanded, then
 collapsed Conditions/Ammo/Saves/Mounts (Conditions moved from top); Spend+Bank
@@ -357,10 +357,10 @@ CurrentDateCard read-only, RestPrompt, roster rows (existing HP-bar tiles).
 #### Automated
 - [x] test + typecheck + lint pass (365 tests)
 #### Manual
-- [ ] Dual-role account: DM card for DM'd campaign, player card for played one — no stacked duplicates (auth-gated, user to verify)
-- [ ] Pure player: player card only + collapsed join/create (auth-gated)
-- [ ] No campaigns: EmptyState w/ create CTA + invite-code escape hatch; both flows complete (auth-gated)
-- [ ] XP award (with modifier preview) + rest prompt + invite code + pack animals + date advance all work (auth-gated)
+- [x] Dual-role account verified live: DM card (gold "You are the DM" chip, date controls, roster, XP award, collapsed settings) + player card (green chip, HP-bar roster) — no stacked duplicates
+- [ ] Pure player: player card only + collapsed join/create (needs non-DM account; user to verify)
+- [ ] No campaigns: EmptyState w/ create CTA + invite-code escape hatch (needs empty account; user to verify)
+- [x] Campaign Settings expand shows invite code + Copy + Pack Animals; XP award/rest/date-advance UI present (mutations not exercised — prod)
 - [x] Segments usable at 360px width (verified in browser; 4 fit w/ ellipsis, Bank hidden for non-DM confirmed)
 
 **Phase-5 notes**: per-card state now component-local in `DMCampaignCard`
@@ -403,9 +403,9 @@ proposal border, dimmed past sessions.
 #### Automated
 - [x] test + typecheck + lint pass — full suite final run (365 tests)
 #### Manual
-- [ ] Schedule: propose → vote → auto-session; RSVP from expanded row; edit/delete gated to DM/owner; calendar reachable (auth-gated, user to verify)
-- [ ] Quests/NPCs/Bank: CRUD flows unchanged, restyled (auth-gated)
-- [x] Dark theme spot-checked in browser (campaign segmented nav, app-bar, tokens resolve dark values); auth-gated screens pending user
+- [x] Schedule renders: gold Proposed Dates card, dashed "New session", "Calendar view" toggle, "No Sessions Yet" EmptyState (propose/vote/RSVP mutations not exercised — prod)
+- [ ] Quests/NPCs/Bank: CRUD flows unchanged (rendering verified; mutations user to verify)
+- [x] Dark theme verified with authed session: sheet (parchment-dark hero, gold primes), characters list, campaign nav — all legible; hydration warning from theme script found + fixed (suppressHydrationWarning)
 - [ ] Side-by-side vs mockup gallery: shell, Stats, Inventory, Party, Schedule, empty states (user)
 
 **Phase-6 notes**: session rows are now single-line expandable (tap row for
