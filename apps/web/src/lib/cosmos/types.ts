@@ -253,7 +253,9 @@ export interface CampaignDoc {
   // compatibility (no data migration). UI and identifiers say "DM".
   refereeId: string;
   inviteCode: string;
-  members: { accountId: string; joinedAt: string }[];
+  /** characterId optional: legacy members (pre per-character enrollment) have
+   *  none and hydrate as "all of that account's characters". */
+  members: { accountId: string; joinedAt: string; characterId?: string }[];
   partyMounts: PartyMountDoc[];
   /** Optional: absent on documents created before phase 6 — default to []. */
   sessions?: SessionEntryDoc[];

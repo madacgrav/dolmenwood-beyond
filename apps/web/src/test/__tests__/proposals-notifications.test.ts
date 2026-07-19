@@ -23,6 +23,20 @@ vi.mock('@/lib/notifications/channels/email', () => ({
 }));
 
 import { createCampaign, joinCampaign } from '@/lib/data/campaigns';
+import { createCharacter } from '@/lib/data/characters';
+
+/** Enrollment is per character: create a throwaway character and join with it. */
+async function joinWithNewCharacter(code: string) {
+  const { id } = await createCharacter({
+    name: 'Joiner',
+    kindred: 'Human',
+    characterClass: 'Fighter',
+    alignment: 'lawful',
+    abilityScores: { str: 10, int: 10, wis: 10, dex: 10, con: 10, cha: 10 },
+    hpMax: 6,
+  });
+  await joinCampaign(code, id);
+}
 import {
   createProposal,
   loadProposals,
@@ -49,9 +63,9 @@ async function setupCampaign(): Promise<string> {
   const { id } = await createCampaign('Schedule Camp');
   const code = store('campaigns').get(id)!.inviteCode as string;
   currentAccount = ALICE;
-  await joinCampaign(code);
+  await joinWithNewCharacter(code);
   currentAccount = BOB;
-  await joinCampaign(code);
+  await joinWithNewCharacter(code);
   return id;
 }
 

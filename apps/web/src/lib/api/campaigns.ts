@@ -94,14 +94,29 @@ export async function createCampaign(
 
 export async function joinCampaign(
   inviteCode: string,
+  characterId: string,
 ): Promise<{ data: unknown; error: { message: string } | null }> {
   const res = await fetch('/api/campaigns/join', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inviteCode }),
+    body: JSON.stringify({ inviteCode, characterId }),
   });
   if (res.ok) return { data: await res.json(), error: null };
   return { data: null, error: { message: await errorMessage(res) } };
+}
+
+/** Collapse my enrollment in a campaign to a single character. */
+export async function setMemberCharacter(
+  campaignId: string,
+  characterId: string,
+): Promise<{ error: { message: string } | null }> {
+  const res = await fetch(`/api/campaigns/${campaignId}/member-character`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ characterId }),
+  });
+  if (res.ok) return { error: null };
+  return { error: { message: await errorMessage(res) } };
 }
 
 export async function awardXP(

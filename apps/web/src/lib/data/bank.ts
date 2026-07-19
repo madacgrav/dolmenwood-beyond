@@ -104,18 +104,29 @@ export interface DMBankEntry {
   ledger: LedgerRow[];
 }
 
-/** DM overview: the banks of every character owned by members of my campaigns. */
-export async function dmBankOverview(): Promise<DMBankEntry[]> {
+/** DM overview: the banks of characters enrolled in my campaigns (optionally
+ *  one campaign). Legacy account-level members expose all their characters. */
+export async function dmBankOverview(campaignId?: string): Promise<DMBankEntry[]> {
   const me = await requireAccountId();
-  const myCampaigns = await listCampaignsRunByDM(me);
+  let myCampaigns = await listCampaignsRunByDM(me);
+  if (campaignId) myCampaigns = myCampaigns.filter((c) => c.id === campaignId);
   if (myCampaigns.length === 0) throw forbidden();
-  const memberIds = [
-    ...new Set(myCampaigns.flatMap((c) => c.members.map((m) => m.accountId))),
-  ].filter((id) => id !== me);
+
+  // ownerId → enrolled characterIds; null = legacy member (all characters).
+  const enrolledByOwner = new Map<string, Set<string> | null>();
+  for (const c of myCampaigns) {
+    for (const m of c.members) {
+      if (m.accountId === me) continue;
+      const cur = enrolledByOwner.get(m.accountId);
+      if (cur === null) continue;
+      if (!m.characterId) enrolledByOwner.set(m.accountId, null);
+      else enrolledByOwner.set(m.accountId, (cur ?? new Set()).add(m.characterId));
+    }
+  }
 
   const container = getContainer('characters');
   const perOwner = await Promise.all(
-    memberIds.map(async (ownerId) => {
+    [...enrolledByOwner.keys()].map(async (ownerId) => {
       const { resources } = await container.items
         .query<CharacterDoc>(
           {
@@ -125,7 +136,10 @@ export async function dmBankOverview(): Promise<DMBankEntry[]> {
           { partitionKey: ownerId },
         )
         .fetchAll();
-      return resources;
+      const enrolled = enrolledByOwner.get(ownerId);
+      return enrolled === null || enrolled === undefined
+        ? resources
+        : resources.filter((doc) => enrolled.has(doc.id));
     }),
   );
   const resources = perOwner.flat().sort((a, b) => a.name.localeCompare(b.name));
