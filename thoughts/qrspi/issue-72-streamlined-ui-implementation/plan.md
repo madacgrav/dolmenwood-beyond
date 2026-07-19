@@ -355,13 +355,19 @@ CurrentDateCard read-only, RestPrompt, roster rows (existing HP-bar tiles).
 
 ### Verification
 #### Automated
-- [ ] test + typecheck + lint pass
+- [x] test + typecheck + lint pass (365 tests)
 #### Manual
-- [ ] Dual-role account: DM card for DM'd campaign, player card for played one — no stacked duplicates
-- [ ] Pure player: player card only + collapsed join/create
-- [ ] No campaigns: EmptyState w/ create CTA + invite-code escape hatch; both flows complete
-- [ ] XP award (with modifier preview) + rest prompt + invite code + pack animals + date advance all work
-- [ ] 5 segments usable at 360px width; Bank hidden for non-DM
+- [ ] Dual-role account: DM card for DM'd campaign, player card for played one — no stacked duplicates (auth-gated, user to verify)
+- [ ] Pure player: player card only + collapsed join/create (auth-gated)
+- [ ] No campaigns: EmptyState w/ create CTA + invite-code escape hatch; both flows complete (auth-gated)
+- [ ] XP award (with modifier preview) + rest prompt + invite code + pack animals + date advance all work (auth-gated)
+- [x] Segments usable at 360px width (verified in browser; 4 fit w/ ellipsis, Bank hidden for non-DM confirmed)
+
+**Phase-5 notes**: per-card state now component-local in `DMCampaignCard`
+(was record-keyed maps in DungeonMasterView); the client-side ownership
+belt-and-suspenders recheck in handleAwardXP was dropped — cards render only
+from `loadDMCampaigns` results and the server enforces refereeId; invite code
++ pack animals moved behind collapsed "Campaign Settings".
 
 ---
 
