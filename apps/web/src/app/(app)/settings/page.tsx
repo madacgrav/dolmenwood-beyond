@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Account } from '@/lib/data/account';
+import { usePageHeader } from '@/components/layout/PageHeaderContext';
 import { ProfileSection } from './components/ProfileSection';
 import { NotificationsSection } from './components/NotificationsSection';
 import { InviteCodeSection } from './components/InviteCodeSection';
@@ -32,12 +33,10 @@ export default function SettingsPage() {
     loadAccount();
   }, [router]);
 
+  usePageHeader(useMemo(() => ({ title: 'Settings' }), []));
+
   return (
     <div style={{ padding: '1.25rem', paddingTop: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
-      <h1 style={{ fontFamily: 'var(--font-display), Georgia, serif', color: 'var(--color-primary)', fontSize: '1.5rem', marginBottom: '1.5rem' }}>
-        Settings
-      </h1>
-
       <ProfileSection
         account={account}
         displayName={displayName}

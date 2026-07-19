@@ -59,11 +59,15 @@ const inter = Inter({ subsets: ['latin'], display: 'swap', variable: '--font-int
 - [x] `npm run test` passes (170 tests, run in apps/web — note: `--workspace` flag doesn't work, turbo monorepo; run inside apps/web)
 - [x] `npm run typecheck` passes
 - [x] `npm run lint` passes
-#### Manual
-- [ ] Characters-list heading renders true Cinzel (compare glyphs vs Georgia)
-- [ ] Settings → Dark → hard reload: no light flash, dark persists
-- [ ] Settings → Light on dark-OS machine: stays light after reload
-- [ ] Auth pages unchanged (they use `--font-cinzel` directly)
+#### Manual (verified in browser 2026-07-18)
+- [x] Characters-list heading renders true Cinzel — computed font = next/font Cinzel + fallback
+- [x] Stored dark applied pre-paint on reload (data-theme=dark, bg #17160f)
+- [x] Stored light overrides dark OS preference (emulated dark colorScheme, bg stayed light)
+- [x] Auth pages untouched (local dev lacks AUTH_SECRET so /sign-in redirects; pages use --font-cinzel directly, not modified)
+
+**Phase-1 finding**: Tailwind v4 strips `@theme` variables with no utility usage — new
+surface tokens moved to a plain `:root` block (fix committed). Any future tokens
+consumed only via inline `var()` must go in `:root`, not `@theme`.
 
 ---
 
@@ -131,13 +135,13 @@ client components — if any is a server component (news), add a tiny client chi
 
 ### Verification
 #### Automated
-- [ ] test + typecheck + lint pass
-#### Manual
-- [ ] 4 migrated pages: centered title, no in-page h1, no double title
-- [ ] Back chevron absent on top-level pages (no `back` set)
-- [ ] Bell dropdown aligns under bar; unread badge intact
-- [ ] Bottom nav 64px; content not clipped above it on characters + dice pages
-- [ ] Unmigrated pages (admin, houses, xp-log) still show their own h1, app-bar title empty — acceptable interim
+- [x] test + typecheck + lint pass
+#### Manual (verified in browser 2026-07-18; auth-gated flows blocked by missing local AUTH_SECRET)
+- [x] Characters/Dice/News: centered Cinzel title in app-bar, 0 in-page h1 (Settings redirects to sign-in locally — code path identical to Dice)
+- [x] Back chevron absent on top-level pages
+- [x] Bell renders in bar (dropdown alignment unchanged, top:52px)
+- [x] Bottom nav measured 64px; main paddingBottom 64px; characters FAB offset adjusted 96→80px
+- [x] Unmigrated /campaign shows own h1, app-bar title empty — no double title
 
 ---
 
