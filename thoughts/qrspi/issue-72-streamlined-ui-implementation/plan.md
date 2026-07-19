@@ -217,13 +217,17 @@ sticky + `overflowX:auto` + 44px targets.
 
 ### Verification
 #### Automated
-- [ ] test + typecheck + lint pass (incl. new CollapsibleSection test)
-#### Manual
+- [x] test + typecheck + lint pass (incl. new CollapsibleSection test — 173 web tests)
+#### Manual (requires authed session — blocked locally by missing AUTH_SECRET; user to verify)
 - [ ] Owner sheet: app-bar shows name + Edit + ⋮ (all 4 menu items work: XP log, level-up log, PDF download, delete)
 - [ ] `/view` as non-owner: badge in app-bar, DM XP-correction still works
 - [ ] Hero: portrait upload, HP ±, XP add/set, Level-Up pulse all functional
 - [ ] Stats: ability grid + glance pill visible; 5 collapsed sections expand; pill "Details" jumps to Combat tab
 - [ ] Sheet dividers styled on owner AND view routes; dark theme legible
+
+**Phase-3 notes**: inner-section duplicate `<h3>`s hidden via one global rule
+(`.collapsible-body > section > h3:first-child`); PortraitButton gained a `size`
+prop; compact hero variant switch landed early (plan had it in Phase 4).
 
 ---
 

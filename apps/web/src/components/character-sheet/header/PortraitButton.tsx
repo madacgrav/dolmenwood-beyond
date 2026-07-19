@@ -9,9 +9,11 @@ interface Props {
   readOnly: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
   onSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Diameter in px (default 64; compact hero uses 44). */
+  size?: number;
 }
 
-export function PortraitButton({ initials, portraitUrl, portraitUploading, uploadError, readOnly, fileInputRef, onSelect }: Props) {
+export function PortraitButton({ initials, portraitUrl, portraitUploading, uploadError, readOnly, fileInputRef, onSelect, size = 64 }: Props) {
   return (
     <>
       {/* Tappable portrait with upload */}
@@ -21,14 +23,14 @@ export function PortraitButton({ initials, portraitUrl, portraitUploading, uploa
         aria-label={readOnly ? 'Character portrait' : 'Upload portrait photo'}
         style={{
           position: 'relative',
-          width: 64, height: 64, borderRadius: '50%', flexShrink: 0,
+          width: size, height: size, borderRadius: '50%', flexShrink: 0,
           backgroundColor: 'var(--color-primary)',
           backgroundImage: portraitUrl ? `url(${portraitUrl})` : undefined,
           backgroundSize: 'cover', backgroundPosition: 'center',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: 'white',
           fontFamily: 'var(--font-display), Georgia, serif',
-          fontSize: '1.75rem', fontWeight: '700',
+          fontSize: size >= 64 ? '1.75rem' : '1.2rem', fontWeight: '700',
           border: readOnly ? '2px solid transparent' : '2px solid var(--color-border)',
           cursor: readOnly ? 'default' : 'pointer',
           overflow: 'hidden',

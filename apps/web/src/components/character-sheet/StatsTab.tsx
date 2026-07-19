@@ -18,6 +18,7 @@ import { PromoteRetainerModal } from './stats/PromoteRetainerModal';
 import { PromoteSuccessToast } from './stats/PromoteSuccessToast';
 import { useLanguages } from './stats/use-languages';
 import { useRetainers } from './stats/use-retainers';
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection';
 
 interface Props {
   character: CharacterWithNotes;
@@ -27,9 +28,10 @@ interface Props {
   editMode: boolean;
   onUpdate: (updates: Partial<CharacterWithNotes>) => void;
   readOnly?: boolean;
+  onGoToCombat?: () => void;
 }
 
-export function StatsTab({ character, acBreakdown, carriedWeight, editMode, onUpdate, readOnly }: Props) {
+export function StatsTab({ character, acBreakdown, carriedWeight, editMode, onUpdate, readOnly, onGoToCombat }: Props) {
   const primes = getPrimeAbilities(character.characterClass);
   const saves = getSaveTargets(character.characterClass, character.level);
   const attackBonus = getAttackBonus(character.characterClass, character.level);
@@ -46,6 +48,10 @@ export function StatsTab({ character, acBreakdown, carriedWeight, editMode, onUp
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+        ▸ sections are collapsed, nothing removed — tap to expand.
+      </p>
+
       <AbilityScoresSection
         abilityScores={character.abilityScores}
         primes={primes}
@@ -54,32 +60,41 @@ export function StatsTab({ character, acBreakdown, carriedWeight, editMode, onUp
         onUpdate={onUpdate}
       />
 
-      <CombatStatsSection ac={ac} attackBonus={attackBonus} speed={speed} exploring={exploring} overland={overland} />
+      <CombatStatsSection ac={ac} attackBonus={attackBonus} speed={speed} exploring={exploring} overland={overland} onGoToCombat={onGoToCombat} />
 
-      <TraitsSection traits={character.traits} onUpdate={onUpdate} readOnly={readOnly} />
+      <CollapsibleSection title="Traits">
+        <TraitsSection traits={character.traits} onUpdate={onUpdate} readOnly={readOnly} />
+      </CollapsibleSection>
 
-      <SkillsSection
-        characterClass={character.characterClass}
-        level={character.level}
-        kindred={character.kindred}
-      />
+      <CollapsibleSection title="Skills">
+        <SkillsSection
+          characterClass={character.characterClass}
+          level={character.level}
+          kindred={character.kindred}
+        />
+      </CollapsibleSection>
 
-      <SavingThrowsSection saves={saves} magicResistance={magicResistance} />
+      <CollapsibleSection title="Saving Throws" count={5}>
+        <SavingThrowsSection saves={saves} magicResistance={magicResistance} />
+      </CollapsibleSection>
 
-      <LanguagesSection
-        kindred={character.kindred}
-        intScore={character.abilityScores.int}
-        editMode={editMode}
-        readOnly={readOnly}
-        extraLanguages={languages.extraLanguages}
-        newLang={languages.newLang}
-        setNewLang={languages.setNewLang}
-        langError={languages.langError}
-        addLanguage={languages.addLanguage}
-        removeLanguage={languages.removeLanguage}
-      />
+      <CollapsibleSection title="Languages">
+        <LanguagesSection
+          kindred={character.kindred}
+          intScore={character.abilityScores.int}
+          editMode={editMode}
+          readOnly={readOnly}
+          extraLanguages={languages.extraLanguages}
+          newLang={languages.newLang}
+          setNewLang={languages.setNewLang}
+          langError={languages.langError}
+          addLanguage={languages.addLanguage}
+          removeLanguage={languages.removeLanguage}
+        />
+      </CollapsibleSection>
 
-      <RetainersSection
+      <CollapsibleSection title="Retainers" count={retainerState.retainers.length}>
+        <RetainersSection
         readOnly={readOnly}
         maxRetainers={maxRetainers}
         loyaltyBase={loyaltyBase}
@@ -95,7 +110,8 @@ export function StatsTab({ character, acBreakdown, carriedWeight, editMode, onUp
         updateRetainerHP={retainerState.updateRetainerHP}
         handlePromoteClick={retainerState.handlePromoteClick}
         dismissRetainer={retainerState.dismissRetainer}
-      />
+        />
+      </CollapsibleSection>
 
       <PromoteRetainerModal
         retainers={retainerState.retainers}

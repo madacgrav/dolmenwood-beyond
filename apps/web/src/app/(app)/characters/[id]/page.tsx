@@ -1,18 +1,19 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { fetchCharacterWithNotes, updateCharacter, deleteCharacter, adjustXP } from '@/lib/api/characters';
 import { listInventory, type InventoryItem } from '@/lib/api/inventory';
 import { deriveCharacterAC, type ACItem } from '@dolmenwood/rules-engine';
 import type { CharacterWithNotes } from '@dolmenwood/types';
 import { CharacterSheetHeader } from '@/components/character-sheet/CharacterSheetHeader';
+import { SheetActions } from '@/components/character-sheet/header/SheetActions';
+import { SheetTabs, type TabName } from '@/components/character-sheet/SheetTabs';
+import { usePageHeader } from '@/components/layout/PageHeaderContext';
 import { StatsTab } from '@/components/character-sheet/StatsTab';
 import { CombatTab } from '@/components/character-sheet/CombatTab';
 import { InventoryTab } from '@/components/character-sheet/InventoryTab';
 import { MagicTab } from '@/components/character-sheet/MagicTab';
 import { NotesTab } from '@/components/character-sheet/NotesTab';
-
-type TabName = 'stats' | 'combat' | 'inventory' | 'magic' | 'notes';
 
 export default function CharacterSheetPage() {
   const params = useParams<{ id: string }>();
@@ -41,6 +42,22 @@ export default function CharacterSheetPage() {
   // Re-fetch on tab switch so AC reflects items equipped/unequipped in the
   // Inventory tab (matches the old per-mount fetch CombatTab did itself).
   useEffect(() => { listInventory(id).then(setItems); }, [id, activeTab]);
+
+  const sheetAction = useMemo(() => (
+    <SheetActions
+      characterId={id}
+      editMode={editMode}
+      readOnly={false}
+      onToggleEdit={() => setEditMode(e => !e)}
+      onDelete={() => { setDeleteError(null); setShowDeleteConfirm(true); }}
+    />
+  ), [id, editMode]);
+
+  usePageHeader(useMemo(() => ({
+    title: character?.name ?? '',
+    back: '/characters',
+    action: sheetAction,
+  }), [character?.name, sheetAction]));
 
   async function handleUpdate(updates: Partial<CharacterWithNotes>) {
     if (!character) return;
@@ -102,57 +119,18 @@ export default function CharacterSheetPage() {
   // (coins aren't loaded on this page); the Inventory WeightBar stays authoritative.
   const carriedWeight = items.reduce((sum, i) => i.location === 'tiny' ? sum : sum + i.weight_coins * i.quantity, 0);
 
-  const tabs: { id: TabName; label: string }[] = [
-    { id: 'stats', label: 'Stats' },
-    { id: 'combat', label: 'Combat' },
-    { id: 'inventory', label: 'Inventory' },
-    { id: 'magic', label: 'Magic and Abilities' },
-    { id: 'notes', label: 'Notes' },
-  ];
-
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh', paddingBottom: '5rem' }}>
       <CharacterSheetHeader
         character={character}
-        editMode={editMode}
-        onToggleEdit={() => setEditMode(e => !e)}
         onUpdate={handleUpdate}
         onAdjustXP={handleAdjustXP}
-        onBack={() => router.push('/characters')}
-        onDelete={() => { setDeleteError(null); setShowDeleteConfirm(true); }}
+        variant={activeTab === 'inventory' ? 'compact' : 'full'}
       />
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        backgroundColor: 'var(--color-bg)',
-        borderBottom: '1px solid var(--color-border)',
-        display: 'flex', overflowX: 'auto',
-        scrollbarWidth: 'none',
-      }}>
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              flex: '1 0 auto',
-              padding: '0.625rem 0.75rem',
-              border: 'none',
-              backgroundColor: 'transparent',
-              color: activeTab === tab.id ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              fontWeight: activeTab === tab.id ? '700' : '400',
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              borderBottom: activeTab === tab.id ? '2px solid var(--color-primary)' : '2px solid transparent',
-              minHeight: '44px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <SheetTabs active={activeTab} onChange={setActiveTab} />
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
-        {activeTab === 'stats' && <StatsTab character={character} acBreakdown={acBreakdown} carriedWeight={carriedWeight} editMode={editMode} onUpdate={handleUpdate} />}
+        {activeTab === 'stats' && <StatsTab character={character} acBreakdown={acBreakdown} carriedWeight={carriedWeight} editMode={editMode} onUpdate={handleUpdate} onGoToCombat={() => setActiveTab('combat')} />}
         {activeTab === 'combat' && <CombatTab character={character} characterId={id} acBreakdown={acBreakdown} />}
         {activeTab === 'inventory' && <InventoryTab characterId={id} ownerId={character.ownerId} />}
         {activeTab === 'magic' && <MagicTab character={character} characterId={id} />}

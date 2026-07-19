@@ -101,6 +101,12 @@ html {
   to   { transform: rotate(360deg); }
 }
 
+/* CollapsibleSection provides the heading; hide the wrapped section's own
+   duplicate small-caps <h3> so legacy sections need no per-component change. */
+.collapsible-body > section > h3:first-child {
+  display: none;
+}
+
 /* Ensure touch targets meet 44px minimum */
 button, [role="button"], a {
   min-height: var(--touch-target);
