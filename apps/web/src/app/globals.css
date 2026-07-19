@@ -13,11 +13,6 @@
   --color-danger: #8b1a1a;
   --color-border: #d4ceb8;
 
-  /* Surface styles: sheet = immersive document, dash = flat dashboard */
-  --color-sheet-surface: #f8f4e6;
-  --color-sheet-surface-deep: #efe8d4;
-  --color-dash-surface: #faf8f0;
-
   /* Typography — wired to next/font-loaded webfonts (see app/layout.tsx) */
   --font-display: var(--font-cinzel), 'Georgia', serif;
   --font-body: var(--font-inter), 'Inter', sans-serif;
@@ -28,6 +23,15 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --touch-target: 44px;
+}
+
+/* Surface styles: sheet = immersive document, dash = flat dashboard.
+   Plain :root (not @theme) — Tailwind v4 strips @theme vars with no utility usage,
+   and the app consumes tokens via inline var() only. */
+:root {
+  --color-sheet-surface: #f8f4e6;
+  --color-sheet-surface-deep: #efe8d4;
+  --color-dash-surface: #faf8f0;
 }
 
 /* Dark mode overrides — system preference */
