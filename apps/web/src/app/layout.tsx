@@ -1,10 +1,16 @@
 import type { Metadata, Viewport } from 'next';
-import { Cinzel, JetBrains_Mono } from 'next/font/google';
+import { Cinzel, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
 const cinzel = Cinzel({
   subsets: ['latin'],
   variable: '--font-cinzel',
+  display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
   display: 'swap',
 });
 
@@ -39,7 +45,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${cinzel.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${cinzel.variable} ${jetbrainsMono.variable} ${inter.variable}`}>
+      <head>
+        {/* Pre-paint: apply stored theme choice before first render to avoid a flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('dolmenwood-theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t)}catch(e){}`,
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );
