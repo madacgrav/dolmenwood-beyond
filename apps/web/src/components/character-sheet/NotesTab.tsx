@@ -217,7 +217,9 @@ export function NotesTab({ character, onUpdate, readOnly }: Props) {
               onClick={() => setSubTab(t)}
               style={{
                 padding: '0.5rem 0.875rem',
-                border: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                borderTop: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                borderLeft: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                borderRight: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
                 borderBottom: 'none',
                 borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
                 background: isActive

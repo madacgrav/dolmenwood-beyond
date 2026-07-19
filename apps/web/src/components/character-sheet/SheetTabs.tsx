@@ -35,7 +35,9 @@ export function SheetTabs({ active, onChange }: Props) {
             style={{
               flex: '1 0 auto',
               padding: '0.5rem 0.75rem',
-              border: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+              borderTop: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+              borderLeft: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+              borderRight: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
               borderBottom: 'none',
               borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
               background: isActive

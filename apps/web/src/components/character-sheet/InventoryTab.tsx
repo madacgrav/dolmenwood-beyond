@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { WeightBar } from './inventory/WeightBar';
 import { CoinPurse } from './inventory/CoinPurse';
 import { SpendForm } from './inventory/SpendForm';
@@ -22,6 +23,7 @@ interface Props {
 
 export function InventoryTab({ characterId, readOnly = false }: Props) {
   const inv = useInventory(characterId);
+  const [showSpendBank, setShowSpendBank] = useState(false);
 
   const addItemCtl = useAddItem({
     characterId,
@@ -60,11 +62,40 @@ export function InventoryTab({ characterId, readOnly = false }: Props) {
       {/* Encumbrance + Speed */}
       <WeightBar items={inv.items} coinWeight={coinWeight} />
 
-      {/* Coins */}
-      <CoinPurse coins={inv.coins} isOwner={isOwner} onCoinChange={inv.handleCoinChange} />
+      {/* Light & fire burn tracker */}
+      <CollapsibleSection title="Light Sources">
+        <LightTracker
+          characterId={characterId}
+          items={inv.items}
+          isOwner={isOwner}
+          onItemConsumed={id => inv.setItems(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(0, i.quantity - 1) } : i))}
+        />
+      </CollapsibleSection>
 
-      {/* Spend + bank forms tucked behind a heading next to the purse */}
-      <CollapsibleSection title="Spend & Bank">
+      {/* Coins, with the spend/bank forms behind a small heading-row button */}
+      <CoinPurse
+        coins={inv.coins}
+        isOwner={isOwner}
+        onCoinChange={inv.handleCoinChange}
+        action={
+          <button
+            onClick={() => setShowSpendBank(s => !s)}
+            aria-expanded={showSpendBank}
+            style={{
+              padding: '0.25rem 0.625rem', borderRadius: '6px',
+              border: '1px solid var(--color-border)',
+              backgroundColor: showSpendBank ? 'var(--color-primary)' : 'var(--color-surface)',
+              color: showSpendBank ? 'white' : 'var(--color-primary)',
+              fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
+              minHeight: '36px', whiteSpace: 'nowrap',
+            }}
+          >
+            💰 Spend & Bank
+          </button>
+        }
+      />
+
+      {showSpendBank && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {isOwner && (
             <SpendForm characterId={characterId} coins={inv.coins} onSpent={next => inv.setCoins(next)} />
@@ -80,7 +111,7 @@ export function InventoryTab({ characterId, readOnly = false }: Props) {
             }}
           />
         </div>
-      </CollapsibleSection>
+      )}
 
       {/* Restock button + Item list */}
       {isOwner && (
@@ -110,16 +141,6 @@ export function InventoryTab({ characterId, readOnly = false }: Props) {
         onMove={inv.moveItem}
         onDelete={inv.deleteItem}
       />
-
-      {/* Light & fire burn tracker */}
-      <CollapsibleSection title="Light Sources">
-        <LightTracker
-          characterId={characterId}
-          items={inv.items}
-          isOwner={isOwner}
-          onItemConsumed={id => inv.setItems(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(0, i.quantity - 1) } : i))}
-        />
-      </CollapsibleSection>
 
       {inv.items.length === 0 && !addItemCtl.showAddForm && (
         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '2rem 0' }}>

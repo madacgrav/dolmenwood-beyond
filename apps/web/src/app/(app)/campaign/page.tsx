@@ -117,8 +117,10 @@ export default function CampaignPage() {
                   title={c.name}
                   style={{
                     padding: '0.5rem 0.5rem',
-                    border: active ? '1px solid var(--color-border)' : '1px solid transparent',
-                    borderRight: active ? '1px solid transparent' : undefined,
+                    borderTop: active ? '1px solid var(--color-border)' : '1px solid transparent',
+                    borderBottom: active ? '1px solid var(--color-border)' : '1px solid transparent',
+                    borderLeft: active ? '1px solid var(--color-border)' : '1px solid transparent',
+                    borderRight: '1px solid transparent',
                     borderRadius: 'var(--radius-md) 0 0 var(--radius-md)',
                     backgroundColor: active ? 'var(--color-dash-surface)' : 'transparent',
                     color: active ? 'var(--color-primary)' : 'var(--color-text-muted)',

@@ -1,17 +1,15 @@
 'use client';
 import type { ACBreakdown, CharacterWithNotes } from '@dolmenwood/types';
 import {
-  getPrimeAbilities, getSaveTargets,
+  getPrimeAbilities,
   getAttackBonus, calculateSpeed,
   getMaxRetainers, getRetainerLoyaltyBase,
-  getMagicResistance, getKindredMagicResistance,
   getExplorationRate, getOverlandRate,
 } from '@dolmenwood/rules-engine';
 import { AbilityScoresSection } from './stats/AbilityScoresSection';
 import { CombatStatsSection } from './stats/CombatStatsSection';
 import { TraitsSection } from './stats/TraitsSection';
 import { SkillsSection } from './stats/SkillsSection';
-import { SavingThrowsSection } from './stats/SavingThrowsSection';
 import { LanguagesSection } from './stats/LanguagesSection';
 import { RetainersSection } from './stats/RetainersSection';
 import { PromoteRetainerModal } from './stats/PromoteRetainerModal';
@@ -33,13 +31,11 @@ interface Props {
 
 export function StatsTab({ character, acBreakdown, carriedWeight, editMode, onUpdate, readOnly, onGoToCombat }: Props) {
   const primes = getPrimeAbilities(character.characterClass);
-  const saves = getSaveTargets(character.characterClass, character.level);
   const attackBonus = getAttackBonus(character.characterClass, character.level);
   const ac = acBreakdown?.total ?? 10;
   const speed = calculateSpeed(carriedWeight);
   const exploring = getExplorationRate(speed);
   const overland = getOverlandRate(speed);
-  const magicResistance = getMagicResistance(character.abilityScores.wis, getKindredMagicResistance(character.kindred));
   const maxRetainers = getMaxRetainers(character.abilityScores.cha);
   const loyaltyBase = getRetainerLoyaltyBase(character.abilityScores.cha);
 
@@ -72,10 +68,6 @@ export function StatsTab({ character, acBreakdown, carriedWeight, editMode, onUp
           level={character.level}
           kindred={character.kindred}
         />
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Saving Throws" count={5}>
-        <SavingThrowsSection saves={saves} magicResistance={magicResistance} />
       </CollapsibleSection>
 
       <CollapsibleSection title="Languages">

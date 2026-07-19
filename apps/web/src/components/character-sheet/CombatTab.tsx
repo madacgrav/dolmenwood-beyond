@@ -1,14 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import type { ACBreakdown, Character } from '@dolmenwood/types';
-import { getAttackBonus, getSaveTargets, getHitDie, getAbilityModifier, getMagicResistance, getKindredMagicResistance } from '@dolmenwood/rules-engine';
+import { getAttackBonus, getSaveTargets, getAbilityModifier, getMagicResistance, getKindredMagicResistance } from '@dolmenwood/rules-engine';
 import { listEquippedWeapons, type EquippedWeapon } from '@/lib/api/inventory';
 import { ConditionsSection } from './combat/ConditionsSection';
 import { ArmourClassSection } from './combat/ArmourClassSection';
 import { AttackSection } from './combat/AttackSection';
 import { AmmoSection } from './combat/AmmoSection';
 import { BattleModal } from './combat/BattleModal';
-import { HitDiceSection } from './combat/HitDiceSection';
 import { SavingThrowsSection } from './combat/SavingThrowsSection';
 import { MountsSection } from './combat/MountsSection';
 import { useAmmoTracking } from './combat/use-ammo-tracking';
@@ -44,12 +43,15 @@ export function CombatTab({ character, characterId, acBreakdown, readOnly = fals
   const dexMod = getAbilityModifier(character.abilityScores.dex);
   const magicResistance = getMagicResistance(character.abilityScores.wis, getKindredMagicResistance(character.kindred));
 
-  const hitDie = getHitDie(character.characterClass);
-
   const battleAmmoName = ammo.ammoItems.find(a => a.id === ammo.battleAmmoId)?.item_name ?? 'Ammo';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {/* Conditions */}
+      <CollapsibleSection title="Conditions">
+        <ConditionsSection />
+      </CollapsibleSection>
+
       {/* AC Breakdown */}
       <ArmourClassSection breakdown={acBreakdown} dexScore={character.abilityScores.dex} />
 
@@ -80,14 +82,6 @@ export function CombatTab({ character, characterId, acBreakdown, readOnly = fals
           closeBattle={ammo.closeBattle}
         />
       )}
-
-      {/* Hit Dice */}
-      <HitDiceSection characterClass={character.characterClass} level={character.level} hitDie={hitDie} />
-
-      {/* Conditions */}
-      <CollapsibleSection title="Conditions">
-        <ConditionsSection />
-      </CollapsibleSection>
 
       {/* Saving Throws */}
       {saves && (
