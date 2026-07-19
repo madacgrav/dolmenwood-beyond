@@ -17,6 +17,20 @@ vi.mock('@/lib/cosmos/client', async () => await import('@/test/cosmos-fake'));
 
 import { getCampaignNpcs, addNpc, updateNpc, deleteNpc } from '@/lib/data/npcs';
 import { createCampaign, joinCampaign } from '@/lib/data/campaigns';
+import { createCharacter } from '@/lib/data/characters';
+
+/** Enrollment is per character: create a throwaway character and join with it. */
+async function joinWithNewCharacter(code: string) {
+  const { id } = await createCharacter({
+    name: 'Joiner',
+    kindred: 'Human',
+    characterClass: 'Fighter',
+    alignment: 'lawful',
+    abilityScores: { str: 10, int: 10, wis: 10, dex: 10, con: 10, cha: 10 },
+    hpMax: 6,
+  });
+  await joinCampaign(code, id);
+}
 
 function seedAccounts() {
   for (const a of [REFEREE, PLAYER, OUTSIDER, MEMBER2]) {
@@ -35,9 +49,9 @@ async function setupCampaign(): Promise<string> {
   const { id } = await createCampaign('The Hollow Hills');
   const code = store('campaigns').get(id)!.inviteCode as string;
   currentAccount = PLAYER;
-  await joinCampaign(code);
+  await joinWithNewCharacter(code);
   currentAccount = MEMBER2;
-  await joinCampaign(code);
+  await joinWithNewCharacter(code);
   currentAccount = REFEREE;
   return id;
 }

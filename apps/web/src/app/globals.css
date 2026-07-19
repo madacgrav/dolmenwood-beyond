@@ -13,16 +13,25 @@
   --color-danger: #8b1a1a;
   --color-border: #d4ceb8;
 
-  /* Typography */
-  --font-display: 'Cinzel', 'Georgia', serif;
-  --font-body: 'Satoshi', 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  /* Typography — wired to next/font-loaded webfonts (see app/layout.tsx) */
+  --font-display: var(--font-cinzel), 'Georgia', serif;
+  --font-body: var(--font-inter), 'Inter', sans-serif;
+  --font-mono: var(--font-jetbrains), 'Courier New', monospace;
 
   /* Spacing / Sizing */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --touch-target: 44px;
+}
+
+/* Surface styles: sheet = immersive document, dash = flat dashboard.
+   Plain :root (not @theme) — Tailwind v4 strips @theme vars with no utility usage,
+   and the app consumes tokens via inline var() only. */
+:root {
+  --color-sheet-surface: #f8f4e6;
+  --color-sheet-surface-deep: #efe8d4;
+  --color-dash-surface: #faf8f0;
 }
 
 /* Dark mode overrides — system preference */
@@ -37,6 +46,9 @@
     --color-gold: #e8b830;
     --color-danger: #c44040;
     --color-border: #2e2c1e;
+    --color-sheet-surface: #262218;
+    --color-sheet-surface-deep: #1f1c14;
+    --color-dash-surface: #1e1d15;
   }
 }
 
@@ -51,6 +63,9 @@
   --color-gold: #e8b830;
   --color-danger: #c44040;
   --color-border: #2e2c1e;
+  --color-sheet-surface: #262218;
+  --color-sheet-surface-deep: #1f1c14;
+  --color-dash-surface: #1e1d15;
 }
 
 html {
@@ -84,6 +99,12 @@ html {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+/* CollapsibleSection provides the heading; hide the wrapped section's own
+   duplicate small-caps <h3> so legacy sections need no per-component change. */
+.collapsible-body > section > h3:first-child {
+  display: none;
 }
 
 /* Ensure touch targets meet 44px minimum */

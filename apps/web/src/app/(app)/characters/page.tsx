@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useCharacters } from '@/hooks/use-characters';
 import { CharacterCard } from '@/components/characters/CharacterCard';
+import { usePageHeader } from '@/components/layout/PageHeaderContext';
 
 type SortOption = 'recently_viewed' | 'name' | 'level' | 'class';
 
@@ -20,6 +21,33 @@ export default function CharactersPage() {
     }
   });
 
+  const sortAction = useMemo(() => (
+    characters.length > 1 ? (
+      <select
+        value={sort}
+        onChange={e => setSort(e.target.value as SortOption)}
+        aria-label="Sort characters"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          borderRadius: '8px',
+          color: 'var(--color-text)',
+          fontSize: '0.8rem',
+          padding: '0.375rem 0.625rem',
+          cursor: 'pointer',
+          minHeight: '36px',
+        }}
+      >
+        <option value="recently_viewed">Recent</option>
+        <option value="name">Name</option>
+        <option value="level">Level</option>
+        <option value="class">Class</option>
+      </select>
+    ) : null
+  ), [characters.length, sort]);
+
+  usePageHeader(useMemo(() => ({ title: 'Characters', action: sortAction }), [sortAction]));
+
   return (
     <div style={{
       padding: '1rem',
@@ -27,41 +55,6 @@ export default function CharactersPage() {
       margin: '0 auto',
       minHeight: '100dvh',
     }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h1 style={{
-          margin: 0,
-          fontFamily: 'var(--font-display), Georgia, serif',
-          fontSize: '1.5rem',
-          color: 'var(--color-text)',
-        }}>
-          Characters
-        </h1>
-
-        {/* Sort dropdown */}
-        {characters.length > 1 && (
-          <select
-            value={sort}
-            onChange={e => setSort(e.target.value as SortOption)}
-            style={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '8px',
-              color: 'var(--color-text)',
-              fontSize: '0.8rem',
-              padding: '0.375rem 0.625rem',
-              cursor: 'pointer',
-              minHeight: '36px',
-            }}
-          >
-            <option value="recently_viewed">Recent</option>
-            <option value="name">Name</option>
-            <option value="level">Level</option>
-            <option value="class">Class</option>
-          </select>
-        )}
-      </div>
-
       {/* Loading state */}
       {loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -134,7 +127,7 @@ export default function CharactersPage() {
       {/* Floating Action Button */}
       {!loading && (
         <Link href="/characters/new" style={{
-          position: 'fixed', bottom: '96px', right: '1.25rem',
+          position: 'fixed', bottom: '80px', right: '1.25rem',
           width: '56px', height: '56px', borderRadius: '50%',
           backgroundColor: 'var(--color-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',

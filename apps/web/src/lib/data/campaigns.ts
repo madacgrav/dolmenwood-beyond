@@ -127,12 +127,17 @@ export async function createCampaign(name: string): Promise<{ id: string }> {
   return { id: doc.id };
 }
 
-/** Port of join_campaign: invalid code and already-a-member both raise. */
+/** Enrollment is per character: a valid code enrolls one owned character.
+ *  Joining again with a different character adds a second enrollment. */
 export async function joinCampaign(
   inviteCode: string,
+  characterId: string,
 ): Promise<{ campaign_id: string; campaign_name: string }> {
   const me = await requireAccountId();
   const code = inviteCode.trim().toUpperCase();
+  if (!characterId) throw badRequest('Pick a character to join with');
+  const character = await fetchCharacterDocById(characterId);
+  if (!character || character.ownerId !== me) throw badRequest('Character not found');
   const { resources } = await campaigns()
     .items.query<CampaignDoc>({
       query: 'SELECT * FROM c WHERE c.inviteCode = @code',
@@ -146,13 +151,44 @@ export async function joinCampaign(
     found.id,
     () => undefined, // any authenticated account may join with a valid code
     (c) => {
-      if (c.members.some((m) => m.accountId === me)) {
+      if (c.members.some((m) => m.characterId === characterId)) {
+        throw badRequest('That character is already in this campaign');
+      }
+      // Legacy account-level membership counts as "already joined" until the
+      // member picks a character via setMemberCharacter.
+      if (c.members.some((m) => m.accountId === me && !m.characterId)) {
         throw badRequest('You are already a member of this campaign');
       }
-      c.members = [...c.members, { accountId: me, joinedAt: new Date().toISOString() }];
+      c.members = [...c.members, { accountId: me, characterId, joinedAt: new Date().toISOString() }];
     },
   );
   return { campaign_id: doc.id, campaign_name: doc.name };
+}
+
+/** Player-scoped: collapse my enrollment(s) in a campaign to one character.
+ *  Fix-up path for legacy account-level memberships (which show every
+ *  character) and for switching which character is in the party. */
+export async function setMemberCharacter(
+  campaignId: string,
+  characterId: string,
+): Promise<void> {
+  const me = await requireAccountId();
+  const character = await fetchCharacterDocById(characterId);
+  if (!character || character.ownerId !== me) throw badRequest('Character not found');
+  await replaceCampaignWithRetry(
+    campaignId,
+    (doc, meId) => {
+      if (!doc.members.some((m) => m.accountId === meId)) throw forbidden();
+    },
+    (doc) => {
+      const mine = doc.members.filter((m) => m.accountId === me);
+      const joinedAt = mine[0]!.joinedAt;
+      doc.members = [
+        ...doc.members.filter((m) => m.accountId !== me),
+        { accountId: me, characterId, joinedAt },
+      ];
+    },
+  );
 }
 
 // ── Roster hydration ──────────────────────────────────────────────────────────
@@ -216,12 +252,28 @@ function mountToPackAnimal(campaignId: string, m: PartyMountDoc): PackAnimal {
 async function hydrateCampaign(doc: CampaignDoc): Promise<CampaignData> {
   const names = await displayNamesFor(doc.members.map((m) => m.accountId));
   const chars = await charactersByOwner(doc.members.map((m) => m.accountId));
-  const members: Member[] = doc.members.map((m) => ({
-    account_id: m.accountId,
-    display_name: names[m.accountId] ?? 'Unknown',
-    joined_at: m.joinedAt,
-    characters: (chars[m.accountId] ?? []).map(charToMemberCharacter),
-  }));
+  // One Member row per account; characters = the enrolled ones. Legacy
+  // entries without characterId hydrate as all of the account's characters.
+  const byAccount = new Map<string, { joinedAt: string; characterIds: string[]; legacy: boolean }>();
+  for (const m of doc.members) {
+    const entry = byAccount.get(m.accountId) ?? { joinedAt: m.joinedAt, characterIds: [], legacy: false };
+    if (m.joinedAt < entry.joinedAt) entry.joinedAt = m.joinedAt;
+    if (m.characterId) entry.characterIds.push(m.characterId);
+    else entry.legacy = true;
+    byAccount.set(m.accountId, entry);
+  }
+  const members: Member[] = [...byAccount.entries()].map(([accountId, entry]) => {
+    const owned = chars[accountId] ?? [];
+    const enrolled = entry.legacy
+      ? owned
+      : owned.filter((c) => entry.characterIds.includes(c.id));
+    return {
+      account_id: accountId,
+      display_name: names[accountId] ?? 'Unknown',
+      joined_at: entry.joinedAt,
+      characters: enrolled.map(charToMemberCharacter),
+    };
+  });
   return {
     id: doc.id,
     name: doc.name,

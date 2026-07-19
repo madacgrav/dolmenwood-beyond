@@ -46,7 +46,7 @@ async function seedFullLog(): Promise<string> {
 
     currentAccount = PLAYER;
     const { id: charId } = await createCharacter(CHAR_INPUT);
-    await joinCampaign(code);
+    await joinCampaign(code, charId);
 
     currentAccount = REFEREE;
     vi.setSystemTime(new Date('2026-07-11T10:00:00Z'));

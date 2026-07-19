@@ -13,7 +13,6 @@ const BASE_NAV_ITEMS: NavItem[] = [
   { href: '/characters', label: 'Characters', icon: '🏠' },
   { href: '/news', label: 'News', icon: '📜' },
   { href: '/campaign', label: 'Campaign', icon: '⚔️' },
-  { href: '/dice', label: 'Dice', icon: '🎲' },
   { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
@@ -34,7 +33,7 @@ export function BottomNav({ isAdmin = false }: Props) {
         bottom: 0,
         left: 0,
         right: 0,
-        height: '80px',
+        height: '64px',
         backgroundColor: 'var(--color-surface)',
         borderTop: '1px solid var(--color-border)',
         display: 'flex',
@@ -54,7 +53,7 @@ export function BottomNav({ isAdmin = false }: Props) {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '4px',
+              gap: '2px',
               minWidth: '44px',
               minHeight: '44px',
               color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',

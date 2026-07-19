@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { loadSchedule, createSession, updateSession, deleteSession, setRsvp, type RsvpStatus, type Session } from '@/lib/api/schedule';
-import { listMyCampaignNames } from '@/lib/api/campaigns';
 import { loadRoster, type RosterMember } from '@/lib/api/roster';
 import { toDatetimeLocal } from '@/lib/format';
 import { sameDay } from '@/lib/calendar';
@@ -11,20 +10,20 @@ import { SessionForm, type SessionFormField } from '@/components/campaign/schedu
 import { SessionCalendar } from '@/components/campaign/schedule/SessionCalendar';
 import { DeleteSessionModal } from '@/components/campaign/schedule/DeleteSessionModal';
 import { ProposalsSection } from '@/components/campaign/schedule/ProposalsSection';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 function firstOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
-interface CampaignOption {
-  id: string;
-  name: string;
-  is_dm: boolean;
+interface Props {
+  userId: string;
+  campaignId: string;
+  /** DM-ship of the selected campaign (derived by the page-level rail). */
+  isDM: boolean;
 }
 
-export function ScheduleTab({ userId }: { userId: string }) {
-  const [campaigns, setCampaigns] = useState<CampaignOption[]>([]);
-  const [campaignId, setCampaignId] = useState('');
+export function ScheduleTab({ userId, campaignId, isDM }: Props) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [roster, setRoster] = useState<RosterMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,21 +46,6 @@ export function ScheduleTab({ userId }: { userId: string }) {
   const [view, setView] = useState<'list' | 'grid'>('list');
   const [month, setMonth] = useState<Date>(() => firstOfMonth(new Date()));
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
-
-  // DM-ship is per campaign: derived from the selected campaign, not the account.
-  const isDM = campaigns.find(c => c.id === campaignId)?.is_dm ?? false;
-
-  // Load campaigns the user owns or belongs to.
-  useEffect(() => {
-    async function loadCampaigns() {
-      const list: CampaignOption[] = await listMyCampaignNames();
-      setCampaigns(list);
-      const first = list[0];
-      if (first) setCampaignId(first.id);
-      else setLoading(false);
-    }
-    loadCampaigns();
-  }, []);
 
   const refetch = useCallback(async () => {
     if (!campaignId) return;
@@ -165,36 +149,16 @@ export function ScheduleTab({ userId }: { userId: string }) {
     }
   }
 
-  if (campaigns.length === 0 && !loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📅</div>
-        <p>Join or create a campaign to schedule sessions.</p>
-      </div>
-    );
+  if (!campaignId) {
+    return <EmptyState emoji="📅" headline="No Schedule Yet" message="Join or create a campaign to schedule sessions." />;
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {campaigns.length > 1 && (
-        <select
-          value={campaignId}
-          onChange={e => setCampaignId(e.target.value)}
-          style={{
-            padding: '0.5rem 0.625rem', borderRadius: '8px',
-            border: '1px solid var(--color-border)',
-            backgroundColor: 'var(--color-surface)', color: 'var(--color-text)',
-            fontSize: '0.9rem', minHeight: '40px',
-          }}
-        >
-          {campaigns.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      )}
-
       {campaignId && (
-        <ProposalsSection campaignId={campaignId} userId={userId} isDM={isDM} roster={roster} onConfirmed={refetch} />
+        <div style={{ border: '1px solid var(--color-gold)', borderRadius: 'var(--radius-md)', padding: '0.625rem' }}>
+          <ProposalsSection campaignId={campaignId} userId={userId} isDM={isDM} roster={roster} onConfirmed={refetch} />
+        </div>
       )}
 
       {showForm ? (
@@ -213,8 +177,9 @@ export function ScheduleTab({ userId }: { userId: string }) {
         <button
           onClick={() => setShowForm(true)}
           style={{
-            padding: '0.625rem', borderRadius: '8px', border: 'none',
-            backgroundColor: 'var(--color-primary)', color: 'white',
+            padding: '0.625rem', borderRadius: '8px',
+            border: '1px dashed var(--color-border)',
+            backgroundColor: 'transparent', color: 'var(--color-primary)',
             fontWeight: '600', fontSize: '0.875rem', cursor: 'pointer', minHeight: '44px',
           }}
         >
@@ -222,27 +187,18 @@ export function ScheduleTab({ userId }: { userId: string }) {
         </button>
       )}
 
-      {/* List / grid toggle */}
-      <div style={{ display: 'flex', gap: '0.375rem' }}>
-        {(['list', 'grid'] as const).map(v => {
-          const active = view === v;
-          return (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              style={{
-                flex: 1, padding: '0.4rem', borderRadius: '8px',
-                border: active ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-                backgroundColor: active ? 'var(--color-primary)' : 'transparent',
-                color: active ? 'white' : 'var(--color-text-muted)',
-                fontWeight: active ? '700' : '500',
-                fontSize: '0.8rem', cursor: 'pointer', minHeight: '36px',
-              }}
-            >
-              {v === 'list' ? '📋 List' : '📅 Month'}
-            </button>
-          );
-        })}
+      {/* Calendar is the secondary view — list is the default */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          onClick={() => { setView(v => v === 'list' ? 'grid' : 'list'); setSelectedDay(null); }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--color-primary)', fontSize: '0.8rem', fontWeight: 600,
+            padding: '0.25rem 0.5rem', minHeight: '36px',
+          }}
+        >
+          {view === 'list' ? '📅 Calendar view' : '📋 List view'}
+        </button>
       </div>
 
       {loading ? (

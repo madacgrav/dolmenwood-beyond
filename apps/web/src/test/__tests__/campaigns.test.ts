@@ -17,6 +17,7 @@ vi.mock('@/lib/cosmos/client', async () => await import('@/test/cosmos-fake'));
 import {
   createCampaign,
   joinCampaign,
+  setMemberCharacter,
   loadDMCampaigns,
   loadPlayerCampaigns,
   awardXP,
@@ -55,12 +56,12 @@ describe('campaign lifecycle', () => {
 
     currentAccount = PLAYER;
     const { id: charId } = await createCharacter(CHAR_INPUT);
-    const joined = await joinCampaign(`  ${(doc.inviteCode as string).toLowerCase()} `);
+    const joined = await joinCampaign(`  ${(doc.inviteCode as string).toLowerCase()} `, charId);
     expect(joined).toEqual({ campaign_id: id, campaign_name: 'The Ruined Abbey' });
 
     // Duplicate join rejected (port of join_campaign's raise)
-    await expect(joinCampaign(doc.inviteCode as string)).rejects.toMatchObject({ status: 400 });
-    await expect(joinCampaign('ZZZZZZ')).rejects.toMatchObject({ status: 400 });
+    await expect(joinCampaign(doc.inviteCode as string, charId)).rejects.toMatchObject({ status: 400 });
+    await expect(joinCampaign('ZZZZZZ', charId)).rejects.toMatchObject({ status: 400 });
 
     // Player sees the roster (replaces get_campaign_party_data RPC)
     const playerView = await loadPlayerCampaigns();
@@ -78,6 +79,44 @@ describe('campaign lifecycle', () => {
     currentAccount = PLAYER;
     expect(await loadDMCampaigns()).toBeNull();
   });
+
+  it('enrollment is per character: only enrolled characters appear; legacy members show all; setMemberCharacter collapses', async () => {
+    const { id } = await createCampaign('Per Character');
+    const code = store('campaigns').get(id)!.inviteCode as string;
+
+    currentAccount = PLAYER;
+    const { id: charA } = await createCharacter(CHAR_INPUT);
+    const { id: charB } = await createCharacter({ ...CHAR_INPUT, name: 'Beorn' });
+    await joinCampaign(code, charA);
+
+    // Only the enrolled character is in the roster, not everything the account owns.
+    let view = await loadPlayerCampaigns();
+    expect(view[0]!.members[0]!.characters.map((c) => c.id)).toEqual([charA]);
+
+    // A second character may join the same campaign; the first cannot rejoin.
+    await expect(joinCampaign(code, charA)).rejects.toMatchObject({ status: 400 });
+    await joinCampaign(code, charB);
+    view = await loadPlayerCampaigns();
+    expect(view[0]!.members).toHaveLength(1); // still one Member row per account
+    expect(view[0]!.members[0]!.characters.map((c) => c.id).sort()).toEqual([charA, charB].sort());
+
+    // setMemberCharacter collapses my enrollments to one character.
+    await setMemberCharacter(id, charB);
+    view = await loadPlayerCampaigns();
+    expect(view[0]!.members[0]!.characters.map((c) => c.id)).toEqual([charB]);
+
+    // Cannot enroll a character I do not own.
+    currentAccount = OUTSIDER;
+    await expect(joinCampaign(code, charA)).rejects.toMatchObject({ status: 400 });
+
+    // Legacy account-level membership (no characterId) hydrates as all characters.
+    currentAccount = PLAYER;
+    const doc = store('campaigns').get(id)!;
+    doc.members = [{ accountId: PLAYER.id, joinedAt: new Date().toISOString() }];
+    store('campaigns').set(id, doc);
+    view = await loadPlayerCampaigns();
+    expect(view[0]!.members[0]!.characters.map((c) => c.id).sort()).toEqual([charA, charB].sort());
+  });
 });
 
 describe('awardXP (port of award_xp RPC)', () => {
@@ -86,7 +125,7 @@ describe('awardXP (port of award_xp RPC)', () => {
     const code = store('campaigns').get(id)!.inviteCode as string;
     currentAccount = PLAYER;
     const { id: charId } = await createCharacter(CHAR_INPUT);
-    await joinCampaign(code);
+    await joinCampaign(code, charId);
     return charId;
   }
 
@@ -161,7 +200,7 @@ describe('referee visibility (port of the referee RLS reads)', () => {
     const code = store('campaigns').get(id)!.inviteCode as string;
     currentAccount = PLAYER;
     const { id: charId } = await createCharacter(CHAR_INPUT);
-    await joinCampaign(code);
+    await joinCampaign(code, charId);
 
     currentAccount = REFEREE;
     expect((await fetchCharacterWithNotes(charId)).name).toBe('Aldric');

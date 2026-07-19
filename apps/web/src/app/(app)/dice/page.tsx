@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { rollDie, rollFromNotation, type DieType } from '@dolmenwood/rules-engine';
+import { usePageHeader } from '@/components/layout/PageHeaderContext';
 
 const DICE: DieType[] = [4, 6, 8, 10, 12, 20, 100];
 
@@ -33,17 +34,10 @@ export default function DicePage() {
 
   const latest = history[0];
 
+  usePageHeader(useMemo(() => ({ title: 'Dice' }), []));
+
   return (
     <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto', minHeight: '100dvh' }}>
-      <h1 style={{
-        margin: '0 0 1rem',
-        fontFamily: 'var(--font-display), Georgia, serif',
-        fontSize: '1.5rem',
-        color: 'var(--color-text)',
-      }}>
-        Dice
-      </h1>
-
       {/* Latest result */}
       <div style={{
         backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)',

@@ -207,28 +207,37 @@ export function NotesTab({ character, onUpdate, readOnly }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      {/* Sub-tab bar */}
-      <div style={{ display: 'flex', gap: '0.25rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0' }}>
-        {SUBTABS.map(t => (
-          <button
-            key={t}
-            onClick={() => setSubTab(t)}
-            style={{
-              padding: '0.5rem 0.875rem',
-              background: 'none',
-              border: 'none',
-              borderBottom: subTab === t ? '2px solid var(--color-primary)' : '2px solid transparent',
-              color: subTab === t ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: subTab === t ? '600' : '400',
-              marginBottom: '-1px',
-              transition: 'color 0.15s',
-            }}
-          >
-            {t}
-          </button>
-        ))}
+      {/* Sub-tab bar — matches SheetTabs divider styling */}
+      <div style={{ display: 'flex', gap: '2px', borderBottom: '1px solid var(--color-border)', padding: '0 0.25rem' }}>
+        {SUBTABS.map(t => {
+          const isActive = subTab === t;
+          return (
+            <button
+              key={t}
+              onClick={() => setSubTab(t)}
+              style={{
+                padding: '0.5rem 0.875rem',
+                borderTop: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                borderLeft: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                borderRight: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                borderBottom: 'none',
+                borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+                background: isActive
+                  ? 'linear-gradient(var(--color-sheet-surface), var(--color-sheet-surface-deep))'
+                  : 'none',
+                color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                fontFamily: isActive ? 'var(--font-display), Georgia, serif' : 'inherit',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: isActive ? '700' : '400',
+                marginBottom: '-1px',
+                transition: 'color 0.15s',
+              }}
+            >
+              {t}
+            </button>
+          );
+        })}
       </div>
 
       {subTab === 'General' && <GeneralNotes character={character} onUpdate={onUpdate} readOnly={readOnly} />}

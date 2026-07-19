@@ -55,8 +55,8 @@ export interface DMBankEntry {
 }
 
 /** DM-only: every character's balance + ledger in one call. */
-export async function dmBankOverview(): Promise<DMBankEntry[]> {
-  const res = await fetch('/api/bank');
+export async function dmBankOverview(campaignId?: string): Promise<DMBankEntry[]> {
+  const res = await fetch(campaignId ? `/api/bank?campaignId=${campaignId}` : '/api/bank');
   if (!res.ok) return [];
   const body = await res.json();
   return body.entries ?? [];

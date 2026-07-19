@@ -1,6 +1,7 @@
 import { fetchPosts, formatWPDate, stripHtml } from '@/lib/wordpress';
 import Link from 'next/link';
 import Image from 'next/image';
+import { SetPageHeader } from '@/components/layout/PageHeaderContext';
 
 export const revalidate = 3600;
 
@@ -10,12 +11,7 @@ export default async function NewsPage() {
 
   return (
     <div style={{ backgroundColor: 'var(--color-bg)', minHeight: '100dvh', paddingBottom: '5rem' }}>
-      {/* Header */}
-      <div style={{ padding: '1.5rem 1rem 0.5rem', borderBottom: '1px solid var(--color-border)' }}>
-        <h1 style={{ fontFamily: 'var(--font-display), Georgia, serif', color: 'var(--color-primary)', fontSize: '1.75rem', margin: 0 }}>
-          News & Updates
-        </h1>
-      </div>
+      <SetPageHeader title="News & Updates" />
 
       <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>

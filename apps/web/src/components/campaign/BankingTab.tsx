@@ -7,6 +7,7 @@ import {
   type LedgerRow,
   type DMBankEntry,
 } from '@/lib/api/bank';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface CharacterBank {
   character: DMBankEntry;
@@ -20,12 +21,12 @@ interface CharacterBank {
   showHistory: boolean;
 }
 
-export function BankingTab() {
+export function BankingTab({ campaignId }: { campaignId?: string }) {
   const [entries, setEntries] = useState<CharacterBank[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    const overview = await dmBankOverview();
+    const overview = await dmBankOverview(campaignId);
     setEntries(overview.map(c => ({
       character: c,
       balance: c.balance,
@@ -38,7 +39,7 @@ export function BankingTab() {
       showHistory: false,
     })));
     setLoading(false);
-  }, []);
+  }, [campaignId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -78,10 +79,7 @@ export function BankingTab() {
 
   if (entries.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--color-text-muted)' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🏦</div>
-        <p>No characters found. Players need to create characters first.</p>
-      </div>
+      <EmptyState emoji="🏦" headline="No Deposits Yet" message="No characters found. Players need to create characters first." />
     );
   }
 
